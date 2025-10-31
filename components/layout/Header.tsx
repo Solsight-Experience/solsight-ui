@@ -20,7 +20,7 @@ function HeaderIcon() {
   return (
     <div className="flex gap-2">
       <Coins />
-      <h1>SolSight</h1>
+      <p>SolSight</p>
     </div>
   )
 }
