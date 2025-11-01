@@ -319,14 +319,18 @@ function TimeFilters() {
     return (
         <div className="flex gap-5 font-medium">
             {variantList.map((variant) => (
-                <TimeFilterItem key={variant} value={variant} isActive={true} />
+                <TimeFilterItem key={variant} value={variant} isActive={variant === '1m'} />
             ))}
         </div>
     );
 }
 
 function TimeFilterItem({ value, isActive }: { value: string; isActive: boolean }) {
-    return <span className={`${isActive && 'text-brand-200'}`}>{value}</span>;
+    return (
+        <Button variant="link" className={`text-neutral-500 ${isActive && 'text-brand-200'}`}>
+            {value}
+        </Button>
+    );
 }
 
 function FilterButton() {
@@ -360,7 +364,7 @@ function FilterButton() {
 
 function QuickBuyInput() {
     return (
-        <div className="flex items-center border-2 border-brand-200 rounded-full overflow-hidden px-4 py-0.5 gap-7">
+        <div className="flex items-center border-[1.25] border-brand-200 rounded-full overflow-hidden px-4 py-0.5 gap-7">
             <Label htmlFor="input--quickBuy" className="w-auto text-dark-default-hover">
                 Quick Buy
             </Label>
