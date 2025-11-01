@@ -12,9 +12,19 @@ import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-tabl
 import columns from '../config/columns';
 import { TokenTableData } from '../config/types';
 import { TokenTabs } from './TokenTabs';
-import { Filter } from 'lucide-react';
+import { Filter, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogTitle,
+    DialogTrigger,
+    DialogContent,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import FilterDialog from './FilterDialog';
+import { DialogClose } from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
 
 const data: TokenTableData[] = [
     // 1. MORON
@@ -321,10 +331,30 @@ function TimeFilterItem({ value, isActive }: { value: string; isActive: boolean 
 
 function FilterButton() {
     return (
-        <div className="flex items-center px-4">
-            <Filter fill="var(--color-brand-200)" stroke="none" size="1rem" />
-            <span>Filter</span>
-        </div>
+        <Dialog>
+            <form>
+                <DialogTrigger>
+                    <Button asChild variant="ghost">
+                        <div className="flex items-center px-4 cursor-pointer">
+                            <Filter fill="var(--color-brand-200)" stroke="none" size="1rem" />
+                            <span>Filter</span>
+                        </div>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogTitle className="text-brand-200">Filter</DialogTitle>
+                    <FilterDialog />
+                    <DialogFooter>
+                        <div className="flex justify-between flex-1">
+                            <Button variant="secondary">{<RefreshCw />}Reset</Button>
+                            <DialogClose asChild>
+                                <Button type="submit">Apply</Button>
+                            </DialogClose>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </form>
+        </Dialog>
     );
 }
 
