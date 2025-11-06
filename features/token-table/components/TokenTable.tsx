@@ -17,11 +17,13 @@ import { RightPanelFilter } from './RightPanelFilter';
 import { SortPanel } from './SortPanel';
 import { CategorySearch } from './CategorySearch';
 import { EmptyState } from './EmptyState';
+import { CategoryTable } from './CategoryTable';
 import { useTokenTable } from '../hooks/useTokenTable';
 
 /**
  * TokenTable Component
  * Displays a table of cryptocurrency tokens with filtering and sorting capabilities
+ * For Categories tab, displays CategoryTable instead
  */
 export default function TokenTable() {
     const {
@@ -107,6 +109,23 @@ export default function TokenTable() {
 
     const hasData = table.getRowModel().rows.length > 0;
 
+    // Render CategoryTable for Categories tab
+    if (filters.activeTab === 'CATEGORIES') {
+        return (
+            <>
+                <div className="flex justify-between">
+                    <TokenTabs 
+                        activeTab={filters.activeTab}
+                        onTabClick={setActiveTab}
+                    />
+                    {renderRightPanel()}
+                </div>
+                <CategoryTable searchQuery={filters.categorySearch} />
+            </>
+        );
+    }
+
+    // Render regular TokenTable for other tabs
     return (
         <>
             <div className="flex justify-between">

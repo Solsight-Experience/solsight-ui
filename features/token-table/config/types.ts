@@ -32,3 +32,20 @@ export type TokenTableData = {
         trend: 'up' | 'down' | 'neutral';
     }>;
 };
+
+/**
+ * CategoryOverview type for Categories tab
+ * Represents aggregated data for a token category
+ */
+export interface CategoryOverview {
+    name: string;
+    slug: string;
+    description: string;
+    market_cap: number;
+    change_1h: number;
+    change_24h: number;
+    change_7d: number;
+    volume: number;
+    num_tokens: number;
+    top_tokens: string[]; // token addresses
+}
