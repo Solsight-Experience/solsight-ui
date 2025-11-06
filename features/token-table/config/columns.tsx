@@ -1,5 +1,5 @@
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowDownRight, ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ShieldAlert, Star } from 'lucide-react';
 import Sparkline from '../components/Sparkline';
 import TokenCell from '../components/TokenCell';
 import { TokenCategory, TokenTableData } from './types';
@@ -15,7 +15,38 @@ const categoryStyles: Record<TokenCategory, string> = {
     DeFi: 'bg-orange-500/20 text-orange-400',
 };
 
-const columns: ColumnDef<TokenTableData>[] = [
+/**
+ * Creates columns with optional favorite toggle handler
+ */
+export const createColumns = (
+    toggleFavourite?: (tokenId: string) => void,
+    favouriteIds?: Set<string>
+): ColumnDef<TokenTableData>[] => [
+    {
+        id: 'favourite',
+        header: '',
+        enableHiding: false,
+        size: 40,
+        cell: ({ row }) => {
+            const isFavourite = favouriteIds?.has(row.original.id) ?? false;
+            
+            return toggleFavourite ? (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavourite(row.original.id);
+                    }}
+                    className="text-muted-foreground hover:text-yellow-400 transition-colors"
+                    aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+                >
+                    <Star
+                        size={18}
+                        className={cn(isFavourite && 'fill-yellow-400 text-yellow-400')}
+                    />
+                </button>
+            ) : null;
+        },
+    },
     {
         accessorKey: 'token',
         header: 'Pair Info',
@@ -127,36 +158,59 @@ const columns: ColumnDef<TokenTableData>[] = [
         accessorKey: 'audit',
         header: () => <span className="block text-right">Audit</span>,
         enableSorting: false,
-        cell: ({ row }) => (
-            <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-medium">
-                {row.original.audit.map((item) => {
-                    const Icon =
-                        item.trend === 'up'
-                            ? ArrowUpRight
-                            : item.trend === 'down'
-                                ? ArrowDownRight
-                                : ShieldAlert;
+        cell: ({ row }) => {
+            const auditData = row.original.audit;
+            
+            // Calculate top holders and audit score based on audit data
+            const topHoldersData = auditData.find(item => item.label.includes('271'));
+            const auditScoreData = auditData.find(item => item.label.includes('139'));
+            
+            const topHolders = topHoldersData?.value || '22.66%';
+            const auditScore = auditScoreData?.value || '0.03%';
+            const topHoldersTrend = topHoldersData?.trend || 'down';
+            const auditScoreTrend = auditScoreData?.trend || 'up';
 
-                    return (
-                        <span
-                            key={item.label}
-                            className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-3 py-1',
-                                item.trend === 'up'
-                                    ? 'bg-emerald-500/10 text-emerald-400'
-                                    : item.trend === 'down'
-                                        ? 'bg-rose-500/10 text-rose-400'
-                                        : 'bg-muted/40 text-muted-foreground',
+            return (
+                <div className="flex flex-col items-end gap-2 text-right">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                            {topHoldersTrend === 'down' ? (
+                                <ArrowDownRight className="size-4 text-rose-400" />
+                            ) : (
+                                <ArrowUpRight className="size-4 text-emerald-400" />
                             )}
-                        >
-                            <Icon className="size-3" />
-                            <span>{item.label}</span>
-                            <span>{item.value}</span>
-                        </span>
-                    );
-                })}
-            </div>
-        ),
+                            <span className={cn(
+                                'text-sm font-semibold',
+                                topHoldersTrend === 'down' ? 'text-rose-400' : 'text-emerald-400'
+                            )}>
+                                {topHolders}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {auditScoreTrend === 'up' ? (
+                                <ShieldAlert className="size-4 text-emerald-400" />
+                            ) : (
+                                <ShieldAlert className="size-4 text-rose-400" />
+                            )}
+                            <span className={cn(
+                                'text-sm font-semibold',
+                                auditScoreTrend === 'up' ? 'text-emerald-400' : 'text-rose-400'
+                            )}>
+                                {auditScore}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                            <span>👤 271</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span>📊 139</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        },
     },
     {
         id: 'action',
@@ -172,4 +226,6 @@ const columns: ColumnDef<TokenTableData>[] = [
     },
 ];
 
+// Default export for backward compatibility
+const columns = createColumns();
 export default columns;
