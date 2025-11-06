@@ -54,6 +54,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-default-light: var(--default-light);
+  --color-black-dark: var(--black-dark);
+  --color-default-dark: var(--default-dark);
+  --color-default-darker: var(--default-darker);
+
 }
 
 :root {
@@ -89,6 +98,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --brand-100: #D59AFD;
+  --brand-200: #C36FFC;
+  --brand-300: #B751FB;
+  --black-dark: #1F1F1F;
+  --default-light: #FBFBFB;
+  --default-dark: #A1A1A1;
+  --default-darker: #4B4B4B;
 }
 
 .dark {
