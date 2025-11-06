@@ -5,6 +5,7 @@ import TokenCell from '../components/TokenCell';
 import { TokenCategory, TokenTableData } from './types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatCompact, formatCurrency, formatPercent } from '@/lib/formatters';
 
 const categoryStyles: Record<TokenCategory, string> = {
     MEME: 'bg-fuchsia-500/20 text-fuchsia-400',
@@ -12,36 +13,6 @@ const categoryStyles: Record<TokenCategory, string> = {
     Infrastructure: 'bg-blue-500/20 text-blue-400',
     AI: 'bg-indigo-500/20 text-indigo-400',
     DeFi: 'bg-orange-500/20 text-orange-400',
-};
-
-const compactNumber = new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-});
-
-const formatCompact = (value: number) => {
-    if (!Number.isFinite(value)) {
-        return '0';
-    }
-
-    if (Math.abs(value) < 1000) {
-        return value.toLocaleString('en-US');
-    }
-
-    return compactNumber.format(value);
-};
-
-const formatCurrency = (value: number, symbol: string) => {
-    return `${symbol}${formatCompact(value)}`;
-};
-
-const formatPercent = (value: number) => {
-    const rounded = Math.abs(value).toFixed(1);
-    if (value === 0) {
-        return `${rounded}%`;
-    }
-
-    return `${value > 0 ? '+' : '-'}${rounded}%`;
 };
 
 const columns: ColumnDef<TokenTableData>[] = [

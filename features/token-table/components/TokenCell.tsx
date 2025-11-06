@@ -1,15 +1,20 @@
+import { memo } from 'react';
 import { TokenTableData } from '../config/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TokenCellProps {
     token: TokenTableData['token'];
-};
+}
 
-export default function TokenCell({ token }: TokenCellProps) {
+/**
+ * TokenCell Component
+ * Displays token icon, ticker, name, and age
+ */
+const TokenCell = memo<TokenCellProps>(function TokenCell({ token }) {
     return (
         <div className="flex items-center gap-3">
             <Avatar>
-                <AvatarImage src={token.iconUrl} alt={token.name} />
+                <AvatarImage src={token.iconUrl} alt={`${token.name} logo`} />
                 <AvatarFallback>{token.ticker.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -17,8 +22,12 @@ export default function TokenCell({ token }: TokenCellProps) {
                     <span className="font-bold">{token.ticker}</span>
                     <span className="text-sm text-gray-400">{token.name}</span>
                 </div>
-                <div className="text-xs text-gray-500">{token.age}</div>
+                <time className="text-xs text-gray-500" dateTime={token.age}>
+                    {token.age}
+                </time>
             </div>
         </div>
     );
-}
+});
+
+export default TokenCell;

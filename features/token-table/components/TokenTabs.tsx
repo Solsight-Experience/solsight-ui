@@ -1,49 +1,63 @@
 import { cn } from '@/lib/utils';
-import { HTMLAttributes, useState } from 'react';
+import { memo, HTMLAttributes } from 'react';
 
-export function TokenTabs({ onTabClick }: { onTabClick: (tab: TokenTableTabOption) => void }) {
-    const [activeTab, setActiveTab] = useState<TokenTableTabOption>('TRENDING');
+export type TokenTableTabOption = 'TRENDING' | 'TOP' | 'CATEGORIES' | 'FAVOURITES';
 
-    const handleTabClick = (tab: TokenTableTabOption) => {
-        onTabClick(tab);
-        setActiveTab(tab);
-    };
+const TAB_OPTIONS: Array<{ value: TokenTableTabOption; label: string }> = [
+    { value: 'TRENDING', label: 'Trending' },
+    { value: 'TOP', label: 'Top' },
+    { value: 'CATEGORIES', label: 'Categories' },
+    { value: 'FAVOURITES', label: 'Favourites' },
+];
 
-    return (
-        <div className="flex gap-5 p-4">
-            <TokenTab
-                title="Trending"
-                isActive={activeTab === 'TRENDING'}
-                onClick={() => handleTabClick('TRENDING')}
-            />
-            <TokenTab title="Top" isActive={activeTab === 'TOP'} onClick={() => handleTabClick('TOP')} />
-            <TokenTab
-                title="Categories"
-                isActive={activeTab === 'CATEGORIES'}
-                onClick={() => handleTabClick('CATEGORIES')}
-            />
-            <TokenTab
-                title="Favourites"
-                isActive={activeTab === 'FAVOURITES'}
-                onClick={() => handleTabClick('FAVOURITES')}
-            />
-        </div>
-    );
+interface TokenTabsProps {
+    onTabClick: (tab: TokenTableTabOption) => void;
+    activeTab?: TokenTableTabOption;
 }
 
-type TokenTabProps = { title: string; isActive?: boolean } & HTMLAttributes<HTMLHeadingElement>;
-function TokenTab({ className, title, isActive = false, ...props }: TokenTabProps) {
+export const TokenTabs = memo<TokenTabsProps>(function TokenTabs({
+    onTabClick,
+    activeTab = 'TRENDING',
+}) {
+    return (
+        <div className="flex gap-5 p-4" role="tablist" aria-label="Token categories">
+            {TAB_OPTIONS.map((tab) => (
+                <TokenTab
+                    key={tab.value}
+                    title={tab.label}
+                    isActive={activeTab === tab.value}
+                    onClick={() => onTabClick(tab.value)}
+                    aria-selected={activeTab === tab.value}
+                />
+            ))}
+        </div>
+    );
+});
+
+type TokenTabProps = { 
+    title: string; 
+    isActive?: boolean;
+} & HTMLAttributes<HTMLHeadingElement>;
+
+const TokenTab = memo<TokenTabProps>(function TokenTab({ 
+    className, 
+    title, 
+    isActive = false, 
+    ...props 
+}) {
     return (
         <h5
+            role="tab"
+            tabIndex={0}
             className={cn(
-                `cursor-pointer font-medium ${isActive && 'text-brand-75 drop-shadow-xs/25 drop-shadow-[0_7px_19px_rgba(151,32,139,0.6)]'}`,
+                'cursor-pointer font-medium transition-all hover:text-brand-100',
+                isActive && 'text-brand-75 drop-shadow-xs/25 drop-shadow-[0_7px_19px_rgba(151,32,139,0.6)]',
                 className
             )}
+            aria-label={`${title} tab`}
             {...props}
         >
             {title}
         </h5>
     );
-}
-
-export type TokenTableTabOption = 'TRENDING' | 'TOP' | 'CATEGORIES' | 'FAVOURITES';
+});
