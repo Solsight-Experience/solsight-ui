@@ -9,11 +9,14 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { flexRender } from '@tanstack/react-table';
-import columns from '../config/columns';
 import { TokenTabs } from './TokenTabs';
 import { TimeFilters } from './TimeFilters';
 import { FilterButton } from './FilterButton';
 import { QuickBuyInput } from './QuickBuyInput';
+import { RightPanelFilter } from './RightPanelFilter';
+import { SortPanel } from './SortPanel';
+import { CategorySearch } from './CategorySearch';
+import { EmptyState } from './EmptyState';
 import { useTokenTable } from '../hooks/useTokenTable';
 
 /**
@@ -27,8 +30,82 @@ export default function TokenTable() {
         setTimeFilter,
         setActiveTab,
         setQuickBuyAmount,
+        setCategorySearch,
+        toggleSort,
+        toggleFavourite,
         resetFilters,
     } = useTokenTable();
+
+    // Render different right panel content based on active tab
+    const renderRightPanel = () => {
+        switch (filters.activeTab) {
+            case 'TOP':
+                return (
+                    <RightPanelFilter>
+                        <TimeFilters
+                            activeFilter={filters.timeFilter}
+                            onFilterChange={setTimeFilter}
+                        />
+                        <SortPanel
+                            sortState={{
+                                option: filters.sortOption,
+                                direction: filters.sortDirection,
+                            }}
+                            onSortChange={toggleSort}
+                        />
+                        <FilterButton onReset={resetFilters} onApply={() => {
+                            console.log('Filters applied', filters);
+                        }} />
+                        <QuickBuyInput
+                            value={filters.quickBuyAmount}
+                            onChange={setQuickBuyAmount}
+                        />
+                    </RightPanelFilter>
+                );
+            
+            case 'CATEGORIES':
+                return (
+                    <RightPanelFilter>
+                        <TimeFilters
+                            activeFilter={filters.timeFilter}
+                            onFilterChange={setTimeFilter}
+                        />
+                        <CategorySearch
+                            value={filters.categorySearch}
+                            onChange={setCategorySearch}
+                        />
+                        <FilterButton onReset={resetFilters} onApply={() => {
+                            console.log('Filters applied', filters);
+                        }} />
+                        <QuickBuyInput
+                            value={filters.quickBuyAmount}
+                            onChange={setQuickBuyAmount}
+                        />
+                    </RightPanelFilter>
+                );
+            
+            case 'FAVOURITES':
+            case 'TRENDING':
+            default:
+                return (
+                    <RightPanelFilter>
+                        <TimeFilters
+                            activeFilter={filters.timeFilter}
+                            onFilterChange={setTimeFilter}
+                        />
+                        <FilterButton onReset={resetFilters} onApply={() => {
+                            console.log('Filters applied', filters);
+                        }} />
+                        <QuickBuyInput
+                            value={filters.quickBuyAmount}
+                            onChange={setQuickBuyAmount}
+                        />
+                    </RightPanelFilter>
+                );
+        }
+    };
+
+    const hasData = table.getRowModel().rows.length > 0;
 
     return (
         <>
@@ -37,45 +114,29 @@ export default function TokenTable() {
                     activeTab={filters.activeTab}
                     onTabClick={setActiveTab}
                 />
-                <div className="flex items-center gap-[18px]">
-                    <TimeFilters
-                        activeFilter={filters.timeFilter}
-                        onFilterChange={setTimeFilter}
-                    />
-                    <FilterButton
-                        onReset={resetFilters}
-                        onApply={() => {
-                            // TODO: Implement filter apply logic
-                            console.log('Filters applied', filters);
-                        }}
-                    />
-                    <QuickBuyInput
-                        value={filters.quickBuyAmount}
-                        onChange={setQuickBuyAmount}
-                    />
-                </div>
+                {renderRightPanel()}
             </div>
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl px-4">
-                <Table>
-                    <TableHeader className="bg-muted/20">
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead
-                                        key={header.id}
-                                        className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                                    >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map((row) => (
+                {hasData ? (
+                    <Table>
+                        <TableHeader className="bg-muted/20">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead
+                                            key={header.id}
+                                            className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                        >
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows.map((row) => (
                                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id} className="py-4">
@@ -83,16 +144,12 @@ export default function TokenTable() {
                                         </TableCell>
                                     ))}
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <EmptyState message="Oops, it's empty!" />
+                )}
             </div>
         </>
     );
