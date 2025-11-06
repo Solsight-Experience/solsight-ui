@@ -16,6 +16,7 @@ export { RightPanelFilter } from './RightPanelFilter';
 export { SortPanel } from './SortPanel';
 export { CategorySearch } from './CategorySearch';
 export { EmptyState } from './EmptyState';
+export { CategoryTable } from './CategoryTable';
 
 export type { TokenTableTabOption } from './TokenTabs';
 export type { TimeFilterValue } from './TimeFilters';
