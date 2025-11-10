@@ -1,26 +1,34 @@
+'use client';
+
 import { Coins, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { SearchDialog } from '@/components/search/SearchDialog';
 
 /**
  * Main application header component
  * Contains navigation, search, and authentication
  */
 export default function Header() {
+    const [searchOpen, setSearchOpen] = useState(false);
+    const handleOpen = useCallback(() => setSearchOpen(true), []);
+    const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
     return (
         <header className="p-2 border-[1.25] border-purple-500 border-t-0 rounded-full">
             <div className="container mx-auto flex justify-between items-center">
-                <div className="flex gap-5">
+                <div className="flex gap-5 items-center">
                     <HeaderIcon />
                     <NavLinks />
                 </div>
                 <div className="flex items-center gap-4">
-                    <SearchBox />
+                    <SearchBox onActivate={handleOpen} />
                     <ActionArea />
                 </div>
             </div>
+            {/* Search Dialog mounted at root so it can overlay */}
+            <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
         </header>
     );
 }
@@ -28,7 +36,7 @@ export default function Header() {
 const HeaderIcon = memo(function HeaderIcon() {
     return (
         <Link href="/" className="flex gap-2 items-center hover:opacity-80 transition-opacity">
-            <Coins aria-hidden="true" />
+            <img src="/app_icon.png" alt="SolSight" className="w-10 h-8" aria-hidden="true" />
             <span className="font-semibold">SolSight</span>
         </Link>
     );
@@ -58,21 +66,29 @@ const NavLinks = memo(function NavLinks() {
     );
 });
 
-const SearchBox = memo(function SearchBox() {
+interface SearchBoxProps { onActivate: () => void }
+const SearchBox = memo(function SearchBox({ onActivate }: SearchBoxProps) {
     return (
-        <div className="flex gap-4 border dark:border-input rounded-3xl px-4 py-1 items-center w-72">
+        <button
+            type="button"
+            onClick={onActivate}
+            className="flex gap-4 border dark:border-input rounded-3xl px-4 py-1 items-center w-72 text-left hover:border-purple-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            aria-haspopup="dialog"
+            aria-label="Open search dialog"
+        >
             <label htmlFor="search-input" className="sr-only">
-                Search tokens and wallets
+                Search tokens and pools
             </label>
             <Input
                 id="search-input"
+                readOnly
                 type="search"
-                placeholder="Search token, wallet"
-                className="flex-1 border-none dark:bg-transparent p-0 focus-visible:ring-0"
-                aria-label="Search tokens and wallets"
+                placeholder="Search token or pool"
+                className="flex-1 border-none dark:bg-transparent p-0 focus-visible:ring-0 pointer-events-none"
+                aria-hidden="true"
             />
             <SearchIcon size="1rem" aria-hidden="true" />
-        </div>
+        </button>
     );
 });
 
