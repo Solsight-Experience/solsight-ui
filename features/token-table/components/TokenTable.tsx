@@ -79,10 +79,7 @@ export default function TokenTable() {
                         <FilterButton onReset={resetFilters} onApply={() => {
                             console.log('Filters applied', filters);
                         }} />
-                        <QuickBuyInput
-                            value={filters.quickBuyAmount}
-                            onChange={setQuickBuyAmount}
-                        />
+
                     </RightPanelFilter>
                 );
             

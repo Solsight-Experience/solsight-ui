@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Dialog,
   DialogContent,
@@ -21,11 +23,11 @@ type FilterDialogProps = {
 };
 
 export const FilterDialog = ({ isOpen, onClose }: FilterDialogProps) => {
-  const { resetFilters, applyFilters } = useFilterStore();
+  const { resetFilters } = useFilterStore();
   const [activeTab, setActiveTab] = useState<string>('metrics');
 
   const handleApply = () => {
-    applyFilters();
+    // Filter application is handled by the parent component
     onClose(false);
   };
 
