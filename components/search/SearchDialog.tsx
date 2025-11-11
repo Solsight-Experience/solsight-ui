@@ -5,19 +5,23 @@ import { Button } from '../ui/button';
 import { RotateCw, Search } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { SortButton } from '../sort/sort-button/SortButton';
 import { DialogClose } from '@radix-ui/react-dialog';
-import apiClient from '@/lib/api-client';
-import { FilterButton } from '@/features/token-table/components';
-import { useFilterStore } from '@/stores/filter.stores';
-import filterService from '@/lib/filter-service';
-import type { TokenOverview, PoolOverview, SortBy, PoolSortBy } from '@/types/filter';
+import { 
+  FilterButton, 
+  useSearchWithFilters,
+  type FilterFormData,
+  getFilterRequestBody 
+} from '@/features/token-table/components';
+import type { TokenOverview, PoolOverview, SortBy, PoolSortBy, SortOrder, TokenFilterResponse, PoolFilterResponse } from '@/types/filter';
 
 type SearchDialogProps = {
   isOpen: boolean;
   onClose: (arg: boolean) => void;
 };
+
+type TabType = 'token' | 'pool';
 
 type SortItem = {
   id: SortBy | PoolSortBy;
@@ -41,37 +45,25 @@ const poolSorts: SortItem[] = [
   { id: 'age', label: 'Age' },
 ];
 
-type SearchResponse = {
-  tokens: TokenOverview[];
-  pools: PoolOverview[];
-  total: number;
-};
-
 export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
-  const { 
-    activeTab, 
-    setActiveTab, 
-    searchQuery, 
-    setSearchQuery,
-    sortBy,
-    sortOrder,
-    setSortBy,
-    setSortOrder,
-    getTokenFilterRequest,
-    getPoolFilterRequest,
-    resetFilters 
-  } = useFilterStore();
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Local state
+  const [activeTab, setActiveTab] = useState<TabType>('token');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy | PoolSortBy | ''>('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [filterFormData, setFilterFormData] = useState<FilterFormData | null>(null);
   const [results, setResults] = useState<{ tokens: TokenOverview[]; pools: PoolOverview[]; total: number }>({ 
     tokens: [], 
     pools: [], 
     total: 0 
   });
-  const controllerRef = useRef<AbortController | null>(null);
 
+  // React Query hook
+  const { searchTokens, searchPools, isSearchingTokens, isSearchingPools } = useSearchWithFilters();
+  
+  const isLoading = isSearchingTokens || isSearchingPools;
   const currentSorts = activeTab === 'token' ? tokenSorts : poolSorts;
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSortClick = (id: SortBy | PoolSortBy) => {
     if (sortBy === id) {
@@ -83,112 +75,114 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
   };
 
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab as 'token' | 'pool');
-    // Clear results when switching tabs
+    setActiveTab(tab as TabType);
     setResults({ tokens: [], pools: [], total: 0 });
-    setError(null);
+    setSortBy('');
+    setSortOrder('desc');
   };
 
-  const handleFilterReset = () => {
-    resetFilters();
-    setResults({ tokens: [], pools: [], total: 0 });
-    setError(null);
+  const performSearch = useCallback(async () => {
+    const query = searchQuery.trim();
+    
+    // Check if we have any filters applied
+    const hasFilters = filterFormData !== null;
+    const hasSearchQuery = query.length >= 2;
+    
+    // If no search query and no filters, clear results
+    if (!hasSearchQuery && !hasFilters) {
+      setResults({ tokens: [], pools: [], total: 0 });
+      return;
+    }
+
+    try {
+      if (activeTab === 'token') {
+        const filters = filterFormData 
+          ? getFilterRequestBody(filterFormData, 'token')
+          : {};
+
+        const response = await searchTokens({
+          searchQuery: query,
+          filters,
+          params: {
+            sort_by: sortBy as SortBy || 'market_cap',
+            sort_order: sortOrder,
+            limit: 50,
+          },
+        });
+        
+        setResults({ tokens: response.tokens, pools: [], total: response.total });
+      } else {
+        const filters = filterFormData 
+          ? getFilterRequestBody(filterFormData, 'pool')
+          : {};
+
+        const response = await searchPools({
+          searchQuery: query,
+          filters,
+          params: {
+            sort_by: sortBy as PoolSortBy || 'liquidity',
+            sort_order: sortOrder,
+            limit: 50,
+          },
+        });
+        
+        setResults({ tokens: [], pools: response.pools, total: response.total });
+      }
+    } catch (error) {
+      // Error already handled by toast in hook
+      console.error('Search error:', error);
+    }
+  }, [searchQuery, filterFormData, activeTab, sortBy, sortOrder, searchTokens, searchPools]);
+
+  const handleFilterApply = (response: TokenFilterResponse | PoolFilterResponse) => {
+    // Update results with filter response
+    if ('tokens' in response) {
+      setResults({ tokens: response.tokens, pools: [], total: response.total });
+    } else {
+      setResults({ tokens: [], pools: response.pools, total: response.total });
+    }
   };
 
-  const handleFilterApply = async () => {
-    await performSearch();
-  };
-
-  // Reset search state on open/close
+  // Reset on dialog open/close
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery('');
       setResults({ tokens: [], pools: [], total: 0 });
-      setError(null);
-      setLoading(false);
+      setFilterFormData(null);
+      setSortBy('');
+      setSortOrder('desc');
     }
-  }, [isOpen, setSearchQuery]);
+  }, [isOpen]);
 
-  const performSearch = async () => {
-    const query = searchQuery.trim();
-    
-    // If no query and no filters, clear results
-    const hasFilters = activeTab === 'token' 
-      ? Object.keys(getTokenFilterRequest()).length > 0
-      : Object.keys(getPoolFilterRequest()).length > 0;
-      
-    if (query.length < 2 && !hasFilters) {
-      setResults({ tokens: [], pools: [], total: 0 });
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    // Abort previous request
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
-    try {
-      if (activeTab === 'token') {
-        const tokenFilters = getTokenFilterRequest();
-        if (query) {
-          tokenFilters.search_query = query;
-        }
-        
-        const data = await filterService.filterTokens({
-          filters: tokenFilters,
-          sort_by: sortBy as SortBy || 'market_cap',
-          sort_order: sortOrder,
-          limit: 50,
-        });
-        
-        setResults({ tokens: data.tokens, pools: [], total: data.total });
-      } else {
-        const poolFilters = getPoolFilterRequest();
-        if (query) {
-          poolFilters.search_query = query;
-        }
-        
-        const data = await filterService.filterPools({
-          filters: poolFilters,
-          sort_by: sortBy as PoolSortBy || 'liquidity',
-          sort_order: sortOrder,
-          limit: 50,
-        });
-        
-        setResults({ tokens: [], pools: data.pools, total: data.total });
-      }
-    } catch (e: unknown) {
-      if (e && typeof e === 'object' && ('name' in e && e.name === 'CanceledError' || 'code' in e && e.code === 'ERR_CANCELED')) return;
-      const message = e && typeof e === 'object' && 'message' in e && typeof e.message === 'string' ? e.message : 'Search failed';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Debounced search for query changes
+  // Debounced search on query change
   useEffect(() => {
     if (!isOpen) return;
-    
-    const timeout = setTimeout(() => {
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
       performSearch();
     }, 300);
 
     return () => {
-      clearTimeout(timeout);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
-  }, [searchQuery, isOpen]); // Don't include performSearch to avoid infinite loop
+  }, [searchQuery, isOpen, performSearch]);
 
-  // Trigger search when sort changes
+  // Trigger search when sort changes (only if we have query or filters)
   useEffect(() => {
-    if (!isOpen || (!searchQuery.trim() && Object.keys(activeTab === 'token' ? getTokenFilterRequest() : getPoolFilterRequest()).length === 0)) return;
-    performSearch();
-  }, [sortBy, sortOrder, activeTab, isOpen]);
+    if (!isOpen) return;
+    const hasContent = searchQuery.trim().length >= 2 || filterFormData !== null;
+    if (hasContent) {
+      performSearch();
+    }
+  }, [sortBy, sortOrder, activeTab, isOpen, performSearch]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -234,26 +228,36 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                 </div>
               ))}
             </div>
-            <FilterButton onReset={handleFilterReset} onApply={handleFilterApply} />
+            <FilterButton 
+              filterOptions={{
+                filterType: activeTab,
+                sort_by: sortBy || undefined,
+                sort_order: sortOrder,
+                limit: 50,
+              }}
+              onApply={handleFilterApply}
+              onReset={() => {
+                setFilterFormData(null);
+                setResults({ tokens: [], pools: [], total: 0 });
+              }}
+            />
           </div>
         </div>
 
         {/* Results Area */}
         <div className="mt-2 min-h-56 max-h-96 overflow-auto rounded-lg border border-border p-2">
-          {loading && (
+          {isLoading && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <RotateCw className="animate-spin" />
               <span>Searching…</span>
             </div>
           )}
-          {!loading && error && (
-            <div className="text-destructive">{error}</div>
-          )}
-          {!loading && !error && searchQuery.trim().length < 2 && results.total === 0 && (
+          
+          {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
             <div className="text-muted-foreground">Type at least 2 characters to search or apply filters.</div>
           )}
 
-          {!loading && !error && results.total > 0 && (
+          {!isLoading && results.total > 0 && (
             <div className="space-y-4">
               {activeTab === 'token' && (
                 <TokenResults tokens={results.tokens} />
@@ -264,7 +268,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
             </div>
           )}
           
-          {!loading && !error && searchQuery.trim().length >= 2 && results.total === 0 && (
+          {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
             <div className="text-muted-foreground">No results found.</div>
           )}
         </div>

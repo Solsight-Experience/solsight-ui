@@ -30,5 +30,6 @@ export {
     useCategories,
     useApplyTokenFilter,
     useApplyPoolFilter,
+    useSearchWithFilters,
     useTokenFilter,
 } from '../hooks/useTokenFilter';
