@@ -1,6 +1,8 @@
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { ComponentProps, ReactNode } from 'react';
 
 enum FilterTabList {
@@ -31,7 +33,7 @@ export default function FilterDialog() {
             </TabsContent>
 
             <TabsContent value={FilterTabList.CATEGORIES}>
-                <MetricsFilterList />
+                <CategoriesFilterList />
             </TabsContent>
         </Tabs>
     );
@@ -53,14 +55,29 @@ function MetricsFilterList() {
 
 function AuditsFilterList() {
     return (
-        <FilterListContainer>
-            <FilterField label="Test" />
+        <FilterListContainer className="grid grid-cols-1 md:grid-cols-2 px-4">
+            <FilterCheckBoxField label="Mint Auth Disable" />
+            <FilterCheckBoxField label="Freezable Disabled" />
+            <FilterCheckBoxField label="At least 1 Social" />
+            <FilterCheckBoxField label="Burnt" />
         </FilterListContainer>
     );
 }
 
-function FilterListContainer({ children }: { children: ReactNode }) {
-    return <div className="space-y-4 mt-5">{children}</div>;
+
+function CategoriesFilterList() {
+    return (
+        <FilterListContainer className="grid grid-cols-1 px-4">
+            <FilterCheckBoxField label="All Categories" />
+            <FilterCheckBoxField label="GameFi Token" />
+            <FilterCheckBoxField label="Meme Token" />
+            <FilterCheckBoxField label="AI Token" />
+        </FilterListContainer>
+    );
+}
+
+function FilterListContainer({ className, children }: { children: ReactNode; className?: string }) {
+    return <div className={cn('space-y-4 my-5', className)}>{children}</div>;
 }
 
 type FilterFieldProps = {
@@ -83,6 +100,15 @@ function FilterField({ label, ...props }: FilterFieldProps) {
                 <span>~</span>
                 {input()}
             </div>
+        </div>
+    );
+}
+
+function FilterCheckBoxField({ label, ...props }: FilterFieldProps) {
+    return (
+        <div className="flex items-center gap-4">
+            <Checkbox />
+            <Label>{label}</Label>
         </div>
     );
 }
