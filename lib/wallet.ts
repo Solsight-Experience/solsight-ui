@@ -1,6 +1,16 @@
 // Minimal wallet adapter setup - only for connecting and getting public key
 // All blockchain operations are handled by the NestJS backend
 
+declare global {
+  interface Window {
+    solana?: {
+      isPhantom?: boolean;
+      connect(): Promise<{ publicKey: { toString(): string } }>;
+      disconnect(): Promise<void>;
+    };
+  }
+}
+
 export interface WalletAdapter {
   publicKey: string | null;
   connected: boolean;
@@ -14,7 +24,7 @@ export class PhantomWalletAdapter implements WalletAdapter {
 
   async connect(): Promise<void> {
     try {
-      const { solana } = window as any;
+      const { solana } = window;
       
       if (!solana?.isPhantom) {
         throw new Error('Phantom wallet not found! Please install Phantom.');
@@ -33,7 +43,7 @@ export class PhantomWalletAdapter implements WalletAdapter {
 
   async disconnect(): Promise<void> {
     try {
-      const { solana } = window as any;
+      const { solana } = window;
       
       if (solana) {
         await solana.disconnect();
@@ -53,7 +63,7 @@ export class PhantomWalletAdapter implements WalletAdapter {
 // Utility function to check if wallet is available
 export const isPhantomAvailable = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return !!(window as any).solana?.isPhantom;
+  return !!window.solana?.isPhantom;
 };
 
 // Export singleton instance
