@@ -11,6 +11,7 @@ import { useTransfer } from '../hooks/useTransfer';
 import { useWallet, useWalletBalance } from '@/features/wallets/hooks/useWallet';
 import { Wallet, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatWalletAddress } from '@/lib/formatters';
 
 export default function TransferForm() {
   const { connectWallet, isConnecting, connected, publicKey } = useWallet();
@@ -106,7 +107,7 @@ export default function TransferForm() {
                       Wallet Connected
                     </p>
                     <p className="text-xs text-green-700 dark:text-green-300 font-mono">
-                      {publicKey?.slice(0, 8)}...{publicKey?.slice(-8)}
+                      {publicKey ? formatWalletAddress(publicKey) : ''}
                     </p>
                   </div>
                   <div className="text-right">

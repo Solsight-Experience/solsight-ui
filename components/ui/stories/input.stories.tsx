@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Input } from '../input';
-import { SearchIcon, Mail, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 
 const meta: Meta<typeof Input> = {
   title: 'Components/Input',
@@ -86,7 +86,7 @@ export const WithHelperText: Story = {
         Email
       </label>
       <Input id="email" type="email" placeholder="you@example.com" />
-      <p className="text-xs text-muted-foreground">We'll never share your email.</p>
+      <p className="text-xs text-muted-foreground">We`&apos;ll never share your email.</p>
     </div>
   ),
 };
