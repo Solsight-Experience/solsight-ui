@@ -1,73 +1,133 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+
+declare global {
+    interface Window {
+        google?: any;
+    }
+}
 
 export default function SocialAuthButtons() {
-    const [googleLoaded, setGoogleLoaded] = useState(false);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (window.google) {
-                setGoogleLoaded(true);
-                clearInterval(interval);
-            }
-        }, 200);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const handleGoogleSignIn = () => {
-        if (!googleLoaded) {
-            console.log("Google SDK not loaded yet");
-            return;
-        }
-
-        window.google.accounts.id.initialize({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-            callback: handleCredentialResponse,
-        });
-
-        window.google.accounts.id.prompt();
-    };
+    const router = useRouter();
+    const { login } = useAuth();
+    const googleButtonRef = useRef<HTMLDivElement>(null);
+    const isInitialized = useRef(false);
 
     const handleCredentialResponse = async (response: any) => {
-        console.log("Google credential:", response.credential);
+        try {
+            console.log("Google credential received");
 
-        // Gửi credential lên backend => backend verify JWT Google
-        const res = await fetch("http://localhost:4000/api/auth/google", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: response.credential }),
-        });
+            // Decode JWT để lấy thông tin user
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
 
-        const data = await res.json();
-        console.log("Verified by backend:", data);
+            const userData = JSON.parse(jsonPayload);
+            console.log("User info:", userData);
 
-        alert("Google login success!");
+            // Trong production, gửi credential lên backend để verify
+            // const res = await fetch('/api/auth/google', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ credential: response.credential }),
+            // });
+
+            // Login thành công
+            login();
+            router.push('/');
+
+        } catch (error) {
+            console.error('Google login failed:', error);
+            alert('Google login failed. Please try again.');
+        }
+    };
+
+    useEffect(() => {
+        // Tránh initialize nhiều lần
+        if (isInitialized.current) return;
+
+        const initializeGoogleSignIn = () => {
+            if (!window.google || !googleButtonRef.current) return;
+
+            const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+            if (!clientId) {
+                console.error('NEXT_PUBLIC_GOOGLE_CLIENT_ID not found');
+                return;
+            }
+
+            try {
+                // Initialize Google Sign-In
+                window.google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleCredentialResponse,
+                });
+
+                // Render button
+                window.google.accounts.id.renderButton(
+                    googleButtonRef.current,
+                    {
+                        theme: 'outline',
+                        size: 'large',
+                        width: googleButtonRef.current.offsetWidth,
+                        text: 'signin_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left',
+                    }
+                );
+
+                isInitialized.current = true;
+                console.log('Google Sign-In initialized');
+            } catch (error) {
+                console.error('Failed to initialize Google Sign-In:', error);
+            }
+        };
+
+        // Load Google SDK
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            // Đợi một chút để đảm bảo SDK loaded hoàn toàn
+            setTimeout(initializeGoogleSignIn, 100);
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []);
+
+    const handleWalletConnect = () => {
+        alert('Wallet connection coming soon!');
     };
 
     return (
         <div className="space-y-3">
-            <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-900 font-medium py-3 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-            >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.20-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Sign in with Google
-            </button>
+            {/* Google Sign-In Button - SDK sẽ render vào đây */}
+            <div
+                ref={googleButtonRef}
+                className="w-full flex items-center justify-center"
+                style={{ minHeight: '44px' }}
+            />
 
             <button
                 type="button"
+                onClick={handleWalletConnect}
                 className="w-full flex items-center justify-center gap-3 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-slate-700"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                    <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11zm-8-9c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                 </svg>
                 Connect Wallet
             </button>
