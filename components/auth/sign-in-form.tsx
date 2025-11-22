@@ -1,14 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SignInFormProps {
     onToggle: () => void;
 }
 
 export default function SignInForm({ onToggle }: SignInFormProps) {
+    const router = useRouter();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -20,32 +24,32 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
         setIsLoading(true);
         setError('');
 
-        try {
-            console.log('Sign in:', { email, password });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            alert('Login successful!');
-            // TODO: redirect to home
-        } catch (err) {
-            console.error(err);
-            setError('Invalid email or password');
-        } finally {
+        // Giả lập API call
+        setTimeout(() => {
+            // Giả lập login thành công
+            login();
+
+            // Redirect về trang chủ sau khi login thành công
+            router.push('/');
             setIsLoading(false);
-        }
+        }, 1000);
     };
 
     return (
         <div className="relative z-10 w-full max-w-md backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-purple-500/20">
-            {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
                     Welcome Back
                 </h1>
-                <p className="text-slate-400 text-sm">Sign in to continue to SolSight</p>
+                <p className="text-slate-400 text-sm">Sign in to continue</p>
             </div>
 
-            {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">{error}</div>}
+            {error && (
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                    {error}
+                </div>
+            )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                     <label htmlFor="email" className="block text-slate-300 text-sm font-medium mb-2">
@@ -90,14 +94,16 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
                     </div>
                 </div>
 
-                <div className="text-right">
-                    <a
-                        href="/forgot-password"
-                        className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-                    >
-                        Forgot Password?
+                <div className="flex items-center justify-between text-sm">
+                    <label className="flex items-center gap-2 text-slate-400 cursor-pointer">
+                        <input type="checkbox" className="rounded border-slate-700" />
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">
+                        Forgot password?
                     </a>
                 </div>
+
                 <button
                     type="submit"
                     disabled={isLoading}
@@ -107,7 +113,6 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
                 </button>
             </form>
 
-            {/* Divider */}
             <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-700"></div>

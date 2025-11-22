@@ -1,14 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SignUpFormProps {
     onToggle: () => void;
 }
 
 export default function SignUpForm({ onToggle }: SignUpFormProps) {
+    const router = useRouter();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,13 +32,21 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
         }
 
         try {
-            console.log('Sign up:', { email, password });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            alert('Sign up successful!');
-            onToggle(); // tự chuyển về Sign In sau khi signup thành công
-        } catch (err) {
-            console.error(err);
-            setError('Sign up failed');
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (!res.ok) throw new Error('Sign up failed');
+
+            // Cập nhật auth state
+            login();
+
+            // Redirect về trang chủ sau khi sign up thành công
+            router.push('/');
+        } catch (err: any) {
+            setError(err.message || 'Sign up failed');
         } finally {
             setIsLoading(false);
         }
@@ -42,18 +54,20 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
 
     return (
         <div className="relative z-10 w-full max-w-md backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-purple-500/20">
-            {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
                     Create Account
                 </h1>
-                <p className="text-slate-400 text-sm">Sign up to start using SolSight</p>
+                <p className="text-slate-400 text-sm">Sign up to start using the app</p>
             </div>
 
-            {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">{error}</div>}
-            {/* Form */}
+            {error && (
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                    {error}
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email */}
                 <div>
                     <label htmlFor="email" className="block text-slate-300 text-sm font-medium mb-2">
                         Email Address
@@ -72,7 +86,6 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     </div>
                 </div>
 
-                {/* Password */}
                 <div>
                     <label htmlFor="password" className="block text-slate-300 text-sm font-medium mb-2">
                         Password
@@ -98,7 +111,6 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     </div>
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                     <label htmlFor="confirmPassword" className="block text-slate-300 text-sm font-medium mb-2">
                         Confirm Password
@@ -126,7 +138,6 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                 </button>
             </form>
 
-            {/* Divider */}
             <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-700"></div>
