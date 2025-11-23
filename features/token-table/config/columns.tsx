@@ -219,7 +219,11 @@ export const createColumns = (
         enableHiding: false,
         cell: () => (
             <div className="flex justify-end">
-                <Button size="sm" className="bg-primary text-white rounded-full hover:bg-fuchsia-500/90">
+                <Button 
+                    size="sm" 
+                    className="bg-primary text-white rounded-full hover:bg-fuchsia-500/90"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     Buy {quickBuyAmount} SOL
                 </Button>
             </div>
