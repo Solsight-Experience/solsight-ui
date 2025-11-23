@@ -1,51 +1,59 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+interface User {
+    email: string;
+    name: string;
+    avatar?: string;
+}
+
 interface AuthContextType {
     isAuthenticated: boolean;
-    login: () => void;
+    user?: User | null;
+    login: (token: string, user: User) => void;
     logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+    isAuthenticated: false,
+    user: null,
+    login: () => { },
+    logout: () => { },
+});
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(null);
 
-    // Load authentication state từ localStorage khi component mount
     useEffect(() => {
-        const authState = localStorage.getItem('isAuthenticated');
-        if (authState === 'true') {
+        // Kiểm tra token khi load trang
+        const token = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('userData');
+        if (token && userData) {
             setIsAuthenticated(true);
+            setUser(JSON.parse(userData));
         }
-        setIsLoading(false);
     }, []);
 
-    const login = () => {
+    const login = (token: string, user: User) => {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userData', JSON.stringify(user));
         setIsAuthenticated(true);
-        localStorage.setItem('isAuthenticated', 'true');
+        setUser(user);
     };
 
     const logout = () => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
         setIsAuthenticated(false);
-        localStorage.removeItem('isAuthenticated');
+        setUser(null);
     };
 
-    // Tránh flash of wrong content khi loading
-    if (isLoading) {
-        return null; // hoặc return <LoadingSpinner />
-    }
-
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('useAuth must be used within AuthProvider');
-    return context;
-}
+export const useAuth = () => useContext(AuthContext);
