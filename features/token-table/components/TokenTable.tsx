@@ -9,6 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { flexRender } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 import { TokenTabs } from './TokenTabs';
 import { TimeFilters } from './TimeFilters';
 import { FilterButton } from './FilterButton';
@@ -26,6 +27,7 @@ import { useTokenTable } from '../hooks/useTokenTable';
  * For Categories tab, displays CategoryTable instead
  */
 export default function TokenTable() {
+    const router = useRouter();
     const {
         table,
         filters,
@@ -36,7 +38,13 @@ export default function TokenTable() {
         toggleSort,
         toggleFavourite,
         resetFilters,
+        isLoading,
+        error,
     } = useTokenTable();
+
+    const handleRowClick = (tokenAddress: string) => {
+        router.push(`/token/${tokenAddress}`);
+    };
 
     // Render different right panel content based on active tab
     const renderRightPanel = () => {
@@ -64,7 +72,7 @@ export default function TokenTable() {
                         />
                     </RightPanelFilter>
                 );
-            
+
             case 'CATEGORIES':
                 return (
                     <RightPanelFilter>
@@ -82,7 +90,7 @@ export default function TokenTable() {
 
                     </RightPanelFilter>
                 );
-            
+
             case 'FAVOURITES':
             case 'TRENDING':
             default:
@@ -111,7 +119,7 @@ export default function TokenTable() {
         return (
             <>
                 <div className="flex justify-between">
-                    <TokenTabs 
+                    <TokenTabs
                         activeTab={filters.activeTab}
                         onTabClick={setActiveTab}
                     />
@@ -126,43 +134,54 @@ export default function TokenTable() {
     return (
         <>
             <div className="flex justify-between">
-                <TokenTabs 
+                <TokenTabs
                     activeTab={filters.activeTab}
                     onTabClick={setActiveTab}
                 />
                 {renderRightPanel()}
             </div>
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl px-4">
-                {hasData ? (
-                    <Table>
-                        <TableHeader className="bg-muted/20">
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead
-                                            key={header.id}
-                                            className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(header.column.columnDef.header, header.getContext())}
-                                        </TableHead>
-                                    ))}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="py-4">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+                {error ? (
+                    <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : 'Unknown error'}`} />
+                ) : isLoading ? (
+                    <EmptyState message="Loading tokens..." emptyStateForLoading={true} />
+                ) : hasData ? (
+                    <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
+                        <Table className="px-4">
+                            <TableHeader className="bg-muted/20">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <TableHead
+                                                key={header.id}
+                                                className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(header.column.columnDef.header, header.getContext())}
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows.map((row) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && 'selected'}
+                                        onClick={() => handleRowClick(row.original.id)}
+                                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id} className="py-4">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 ) : (
                     <EmptyState message="Oops, it's empty!" />
                 )}
