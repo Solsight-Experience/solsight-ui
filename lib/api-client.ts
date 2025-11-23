@@ -4,7 +4,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 class ApiClient {
-  private client: AxiosInstance;
+  public client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
@@ -35,11 +35,11 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized - redirect to login
-          localStorage.removeItem('auth_token');
-          window.location.href = '/auth/login';
-        }
+        // if (error.response?.status === 401) {
+        //   // Handle unauthorized - redirect to login
+        //   localStorage.removeItem('auth_token');
+        //   window.location.href = '/auth/login';
+        // }
         return Promise.reject(error);
       }
     );

@@ -8,8 +8,8 @@ type SortButtonProps = {
 
 export const SortButton = ({ label, type }: SortButtonProps) => {
   return (
-    <div className="text-neutral-100 select-none flex items-center gap-1 hover:cursor-pointer">
-      <div className={cn(type != 'none' ? 'text-brand-200' : '')}>{label}</div>
+    <div className="text-neutral-100 whitespace-nowrap select-none flex items-center gap-1 hover:cursor-pointer">
+      <div className={cn(type != 'none' ? 'text-brand-200 whitespace-nowrap' : '')}>{label}</div>
       <div>
         <div className="relative w-5">
           <ChevronUp
