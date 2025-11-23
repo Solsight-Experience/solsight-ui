@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
     PROFILE: '/auth/profile',
   },
   WALLETS: {
-    LIST: '/wallets',
+    LIST: '/api/users/me/wallets',
     CREATE: '/wallets',
     BALANCE: (address: string) => `/wallets/${address}/balance`,
     CONNECT: '/wallets/connect',
@@ -74,3 +74,49 @@ export const UI_CONSTANTS = {
   DEFAULT_PAGINATION_LIMIT: 20,
   WALLET_CONNECTION_TIMEOUT: 30000, // 30 seconds
 } as const;
+
+// Portfolio API Endpoints
+export const PORTFOLIO_ENDPOINTS = {
+  // Wallet Management
+  WALLETS: '/api/users/me/wallets',
+  WALLET_DETAIL: (address: string) => `/api/users/me/wallets/${address}`,
+  SET_DEFAULT_WALLET: (address: string) => `/api/users/me/wallets/${address}/set-default`,
+
+  // Portfolio Overview
+  OVERVIEW: '/api/portfolio/overview',
+  PNL_CHART: '/api/portfolio/pnl-chart',
+  POSITIONS: '/api/portfolio/positions',
+  ACTIVITIES: '/api/portfolio/activities',
+  PERFORMANCE: '/api/portfolio/performance',
+} as const;
+
+// User API Endpoints
+export const USER_ENDPOINTS = {
+  ME: '/api/users/me',
+  STATS: '/api/users/me/stats',
+  FAVORITES: '/api/users/me/favorites',
+  FAVORITE_DETAIL: (tokenAddress: string) => `/api/users/me/favorites/${tokenAddress}`,
+} as const;
+
+// Token API Endpoints
+export const TOKEN_ENDPOINTS = {
+  // Token Details
+  TOKEN_DETAIL: (address: string) => `/api/tokens/${address}`,
+  TOKEN_CHART: (address: string) => `/api/tokens/${address}/chart`,
+  TOKEN_TRADES: (address: string) => `/api/tokens/${address}/trades`,
+  TOKEN_HOLDERS: (address: string) => `/api/tokens/${address}/holders`,
+  TOKEN_TOP_TRADERS: (address: string) => `/api/tokens/${address}/top-traders`,
+
+  // Token Actions
+  SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
+  ADD_FAVORITE: (address: string) => `/api/users/me/favorites`,
+  REMOVE_FAVORITE: (address: string) => `/api/users/me/favorites/${address}`,
+} as const;
+
+// Chart intervals
+export const CHART_INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d', '1w'] as const;
+export type ChartInterval = (typeof CHART_INTERVALS)[number];
+
+// Trade tabs
+export const TRADE_TABS = ['trades', 'top_traders', 'holders'] as const;
+export type TradeTab = (typeof TRADE_TABS)[number];
