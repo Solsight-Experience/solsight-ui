@@ -20,7 +20,8 @@ const categoryStyles: Record<TokenCategory, string> = {
  */
 export const createColumns = (
     toggleFavourite?: (tokenId: string) => void,
-    favouriteIds?: Set<string>
+    favouriteIds?: Set<string>,
+    quickBuyAmount?: string,
 ): ColumnDef<TokenTableData>[] => [
     {
         id: 'favourite',
@@ -219,7 +220,7 @@ export const createColumns = (
         cell: () => (
             <div className="flex justify-end">
                 <Button size="sm" className="bg-primary text-white rounded-full hover:bg-fuchsia-500/90">
-                    Buy 0.1 SOL
+                    Buy {quickBuyAmount} SOL
                 </Button>
             </div>
         ),

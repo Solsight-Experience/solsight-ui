@@ -43,8 +43,8 @@ export function useTokenTable() {
 
     // Memoize columns
     const columns = useMemo(
-        () => createColumns(toggleFavourite, filters.favouriteIds),
-        [toggleFavourite, filters.favouriteIds]
+        () => createColumns(toggleFavourite, filters.favouriteIds, filters.quickBuyAmount),
+        [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount]
     );
 
     // TODO: Replace with actual API call
