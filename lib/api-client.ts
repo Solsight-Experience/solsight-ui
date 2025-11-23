@@ -35,11 +35,11 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized - redirect to login
-          localStorage.removeItem('auth_token');
-          window.location.href = '/auth/login';
-        }
+        // if (error.response?.status === 401) {
+        //   // Handle unauthorized - redirect to login
+        //   localStorage.removeItem('auth_token');
+        //   window.location.href = '/auth/login';
+        // }
         return Promise.reject(error);
       }
     );
