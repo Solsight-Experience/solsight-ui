@@ -9,37 +9,33 @@ import { Avatar } from '../ui/avatar';
 import { SearchDialog } from '@/components/search/SearchDialog';
 import { SearchIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import LogoutConfirmDialog from '../auth/LogoutConfirmDialog'; // Import component mới
+import LogoutConfirmDialog from '../auth/LogoutConfirmDialog';
 
 export default function Header() {
     const router = useRouter();
-    const { isAuthenticated, logout } = useAuth();
+    const { isAuthenticated, user, logout } = useAuth();
+
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
-    const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false); // state để mở popup confirm logout
+    const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
     const toggleAvatarMenu = () => setAvatarMenuOpen(!avatarMenuOpen);
 
     const handleLogout = () => {
-        logout();
-        setConfirmLogoutOpen(false); // Đóng popup sau khi logout
-        router.push('/');  // Redirect về trang chủ
+        logout(); // xóa token + user
+        setConfirmLogoutOpen(false);
+        router.push('/');
     };
 
-    const handleShowConfirmLogout = () => {
-        setConfirmLogoutOpen(true); // Hiển thị popup xác nhận logout
-    };
-
-    const handleCloseConfirmLogout = () => {
-        setConfirmLogoutOpen(false); // Đóng popup
-    };
+    const handleShowConfirmLogout = () => setConfirmLogoutOpen(true);
+    const handleCloseConfirmLogout = () => setConfirmLogoutOpen(false);
 
     const handleDisconnectAllWallets = () => {
-        console.log("Disconnecting all wallets...");
-        // Logic ngắt kết nối ví ở đây
-        setConfirmLogoutOpen(false); // Đóng popup sau khi ngắt kết nối ví
+        console.log('Disconnecting all wallets...');
+        // Logic ngắt kết nối ví
+        setConfirmLogoutOpen(false);
     };
 
     return (
@@ -59,7 +55,7 @@ export default function Header() {
                         <div className="relative">
                             <button onClick={toggleAvatarMenu} className="flex items-center gap-2">
                                 <Avatar size={32} src="/user.png" alt="User Avatar" />
-                                <span className="text-white font-medium">Hi, User</span>
+                                <span className="text-white font-medium">Hi, {user?.name || 'User'}</span>
                             </button>
 
                             {avatarMenuOpen && (
@@ -68,7 +64,7 @@ export default function Header() {
                                     <Link href="/notifications" className="block px-4 py-2 hover:bg-purple-500/20">Notifications</Link>
                                     <Link href="/settings" className="block px-4 py-2 hover:bg-purple-500/20">Settings</Link>
                                     <button
-                                        onClick={handleShowConfirmLogout} // Hiển thị popup khi click logout
+                                        onClick={handleShowConfirmLogout}
                                         className="block w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
                                     >
                                         Logout
@@ -82,17 +78,17 @@ export default function Header() {
 
             <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
 
-            {/* Sử dụng component LogoutConfirmDialog */}
             <LogoutConfirmDialog
                 isOpen={confirmLogoutOpen}
                 onClose={handleCloseConfirmLogout}
                 onLogout={handleLogout}
-                onDisconnectWallets={handleLogout}
+                onDisconnectWallets={handleDisconnectAllWallets}
             />
         </header>
     );
 }
 
+// Header Icon
 const HeaderIcon = memo(() => (
     <Link href="/" className="flex gap-2 items-center hover:opacity-80 transition-opacity">
         <img src="/app_icon.png" alt="SolSight" className="w-10 h-8" />
@@ -100,6 +96,7 @@ const HeaderIcon = memo(() => (
     </Link>
 ));
 
+// Navigation
 const NAV_ITEMS = [
     { href: '/', label: 'Discover' },
     { href: '/portfolio', label: 'Portfolio' },
@@ -110,7 +107,7 @@ const NAV_ITEMS = [
 
 const NavLinks = memo(() => (
     <nav className="space-x-4 font-medium text-white" aria-label="Main navigation">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map(item => (
             <Link key={item.href} href={item.href} className="hover:text-purple-300 transition-colors">
                 {item.label}
             </Link>
@@ -118,6 +115,7 @@ const NavLinks = memo(() => (
     </nav>
 ));
 
+// Search box
 interface SearchBoxProps { onActivate: () => void }
 const SearchBox = memo(({ onActivate }: SearchBoxProps) => (
     <button
@@ -137,6 +135,7 @@ const SearchBox = memo(({ onActivate }: SearchBoxProps) => (
     </button>
 ));
 
+// Sign In button
 const SignInButton = memo(() => (
     <Button
         className="rounded-b-full rounded-t-none px-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold"
