@@ -9,12 +9,14 @@ import { Avatar } from '../ui/avatar';
 import { SearchDialog } from '@/components/search/SearchDialog';
 import { SearchIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import LogoutConfirmDialog from '../auth/LogoutConfirmDialog'; // Import component mới
 
 export default function Header() {
     const router = useRouter();
     const { isAuthenticated, logout } = useAuth();
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+    const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false); // state để mở popup confirm logout
 
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
@@ -22,7 +24,22 @@ export default function Header() {
 
     const handleLogout = () => {
         logout();
-        router.push('/');
+        setConfirmLogoutOpen(false); // Đóng popup sau khi logout
+        router.push('/');  // Redirect về trang chủ
+    };
+
+    const handleShowConfirmLogout = () => {
+        setConfirmLogoutOpen(true); // Hiển thị popup xác nhận logout
+    };
+
+    const handleCloseConfirmLogout = () => {
+        setConfirmLogoutOpen(false); // Đóng popup
+    };
+
+    const handleDisconnectAllWallets = () => {
+        console.log("Disconnecting all wallets...");
+        // Logic ngắt kết nối ví ở đây
+        setConfirmLogoutOpen(false); // Đóng popup sau khi ngắt kết nối ví
     };
 
     return (
@@ -51,7 +68,7 @@ export default function Header() {
                                     <Link href="/notifications" className="block px-4 py-2 hover:bg-purple-500/20">Notifications</Link>
                                     <Link href="/settings" className="block px-4 py-2 hover:bg-purple-500/20">Settings</Link>
                                     <button
-                                        onClick={handleLogout}
+                                        onClick={handleShowConfirmLogout} // Hiển thị popup khi click logout
                                         className="block w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
                                     >
                                         Logout
@@ -64,6 +81,14 @@ export default function Header() {
             </div>
 
             <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+
+            {/* Sử dụng component LogoutConfirmDialog */}
+            <LogoutConfirmDialog
+                isOpen={confirmLogoutOpen}
+                onClose={handleCloseConfirmLogout}
+                onLogout={handleLogout}
+                onDisconnectWallets={handleLogout}
+            />
         </header>
     );
 }
