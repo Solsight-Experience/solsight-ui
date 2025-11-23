@@ -18,32 +18,44 @@ export default function SocialAuthButtons() {
 
     const handleCredentialResponse = async (response: any) => {
         try {
-            console.log("Google credential received");
+            if (!response || !response.credential) {
+                console.error('Google Sign-In did not return a credential', response);
+                alert('Google login failed. No credential returned.');
+                return;
+            }
 
-            // Decode JWT để lấy thông tin user
-            const base64Url = response.credential.split('.')[1];
+            console.log("Google credential received:", response.credential);
+
+            const token = response.credential;
+
+            // Decode JWT an toàn
+            const base64Url = token.split('.')[1];
+            if (!base64Url) {
+                console.error('Invalid token format', token);
+                return;
+            }
+
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64)
-                    .split('')
-                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
+            const userData = JSON.parse(
+                decodeURIComponent(
+                    atob(base64)
+                        .split('')
+                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                        .join('')
+                )
             );
 
-            const userData = JSON.parse(jsonPayload);
             console.log("User info:", userData);
 
-            // Trong production, gửi credential lên backend để verify
-            // const res = await fetch('/api/auth/google', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ credential: response.credential }),
-            // });
+            // Lưu token và thông tin user vào localStorage
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('userData', JSON.stringify(userData));
 
-            // Login thành công
+            // Cập nhật state login
             login();
-            router.push('/');
 
+            // Redirect về home
+            router.push('/');
         } catch (error) {
             console.error('Google login failed:', error);
             alert('Google login failed. Please try again.');
