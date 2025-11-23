@@ -9,6 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { flexRender } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 import { TokenTabs } from './TokenTabs';
 import { TimeFilters } from './TimeFilters';
 import { FilterButton } from './FilterButton';
@@ -26,6 +27,7 @@ import { useTokenTable } from '../hooks/useTokenTable';
  * For Categories tab, displays CategoryTable instead
  */
 export default function TokenTable() {
+    const router = useRouter();
     const {
         table,
         filters,
@@ -39,6 +41,10 @@ export default function TokenTable() {
         isLoading,
         error,
     } = useTokenTable();
+
+    const handleRowClick = (tokenAddress: string) => {
+        router.push(`/token/${tokenAddress}`);
+    };
 
     // Render different right panel content based on active tab
     const renderRightPanel = () => {
@@ -159,7 +165,12 @@ export default function TokenTable() {
                         </TableHeader>
                         <TableBody>
                             {table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                                <TableRow 
+                                    key={row.id} 
+                                    data-state={row.getIsSelected() && 'selected'}
+                                    onClick={() => handleRowClick(row.original.id)}
+                                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id} className="py-4">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}

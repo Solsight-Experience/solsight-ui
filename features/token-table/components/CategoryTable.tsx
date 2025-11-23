@@ -9,6 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { flexRender } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 import { EmptyState } from './EmptyState';
 import { useCategoryTable } from '../hooks/useCategoryTable';
 
@@ -21,7 +22,13 @@ interface CategoryTableProps {
  * Displays category overview data for the Categories tab
  */
 export function CategoryTable({ searchQuery = '' }: CategoryTableProps) {
+    const router = useRouter();
     const { table, isLoading, error } = useCategoryTable({ searchQuery });
+
+    const handleRowClick = (categorySlug: string) => {
+        // Navigate to category detail page - you can customize this route
+        router.push(`/category/${categorySlug}`);
+    };
 
     const hasData = table.getRowModel().rows.length > 0;
 
@@ -51,7 +58,11 @@ export function CategoryTable({ searchQuery = '' }: CategoryTableProps) {
                     </TableHeader>
                     <TableBody>
                         {table.getRowModel().rows.map((row) => (
-                            <TableRow key={row.id}>
+                            <TableRow 
+                                key={row.id}
+                                onClick={() => handleRowClick(row.original.slug)}
+                                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id} className="py-4">
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
