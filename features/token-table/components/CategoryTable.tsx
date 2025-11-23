@@ -8,11 +8,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { useMemo } from 'react';
-import { categoryColumns } from '../config/categoryColumns';
-import { mockCategoryData } from '../config/mock-data';
+import { flexRender } from '@tanstack/react-table';
 import { EmptyState } from './EmptyState';
+import { useCategoryTable } from '../hooks/useCategoryTable';
 
 interface CategoryTableProps {
     searchQuery?: string;
@@ -23,27 +21,17 @@ interface CategoryTableProps {
  * Displays category overview data for the Categories tab
  */
 export function CategoryTable({ searchQuery = '' }: CategoryTableProps) {
-    // Filter categories based on search query
-    const data = useMemo(() => {
-        if (!searchQuery) return mockCategoryData;
-        
-        return mockCategoryData.filter((category) =>
-            category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            category.slug.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [searchQuery]);
-
-    const table = useReactTable({
-        data,
-        columns: categoryColumns,
-        getCoreRowModel: getCoreRowModel(),
-    });
+    const { table, isLoading, error } = useCategoryTable({ searchQuery });
 
     const hasData = table.getRowModel().rows.length > 0;
 
     return (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl px-4">
-            {hasData ? (
+            {error ? (
+                <EmptyState message={`Error loading categories: ${error instanceof Error ? error.message : 'Unknown error'}`} />
+            ) : isLoading ? (
+                <EmptyState message="Loading categories..." />
+            ) : hasData ? (
                 <Table>
                     <TableHeader className="bg-muted/20">
                         {table.getHeaderGroups().map((headerGroup) => (

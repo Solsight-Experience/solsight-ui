@@ -1,10 +1,13 @@
 import { useState, useCallback, useMemo } from 'react';
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from '@tanstack/react-table';
+import { useQuery } from '@tanstack/react-query';
 import { TimeFilterValue } from '../components/TimeFilters';
 import { TokenTableTabOption } from '../components/TokenTabs';
 import { SortOption, SortDirection } from '../components/SortPanel';
 import { createColumns } from '../config/columns';
-import { mockTokenData } from '../config/mock-data';
+import { TokenDiscoveryService, SortBy, TimeFrame } from '../services/token-discovery.service';
+import { transformTokenOverviews } from '../utils/transform';
+import { queryKeys } from '@/lib/react-query-keys';
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -47,25 +50,92 @@ export function useTokenTable() {
         [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount]
     );
 
-    // TODO: Replace with actual API call
+    // Map time filter to API TimeFrame
+    const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => {
+        switch (timeFilter) {
+            case '1h':
+                return '1h';
+            case '1m':
+            case '5m':
+            case '30m':
+            default:
+                return '24h';
+        }
+    };
+
+    // Map sort option to API SortBy
+    const mapSortOptionToSortBy = (sortOption: SortOption): SortBy => {
+        switch (sortOption) {
+            case 'volumes':
+                return 'volume_24h';
+            case 'txns':
+                return 'txns_24h';
+            default:
+                return 'volume_24h';
+        }
+    };
+
+    // Fetch tokens based on active tab
+    const { data: apiData, isLoading, error } = useQuery({
+        queryKey: queryKeys.tokens.trending({
+            tab: filters.activeTab,
+            timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+            sortBy: mapSortOptionToSortBy(filters.sortOption),
+        }),
+        queryFn: async () => {
+            const timeFrame = mapTimeFilterToTimeFrame(filters.timeFilter);
+            
+            switch (filters.activeTab) {
+                case 'TRENDING':
+                    return TokenDiscoveryService.getTrending({
+                        time_frame: timeFrame,
+                        sort_by: 'volume_24h',
+                        limit: 100,
+                    });
+                
+                case 'TOP':
+                    return TokenDiscoveryService.getTrending({
+                        time_frame: timeFrame,
+                        sort_by: mapSortOptionToSortBy(filters.sortOption),
+                        limit: 100,
+                    });
+                
+                case 'CATEGORIES':
+                case 'FAVOURITES':
+                default:
+                    // For categories and favourites, still fetch trending data
+                    // and filter client-side
+                    return TokenDiscoveryService.getTrending({
+                        time_frame: timeFrame,
+                        limit: 100,
+                    });
+            }
+        },
+        staleTime: 30000, // 30 seconds
+        refetchInterval: 60000, // Refetch every minute
+    });
+
+    // Process and filter data
     const data = useMemo(() => {
-        let filteredData = [...mockTokenData];
+        if (!apiData?.tokens) return [];
+
+        let transformedData = transformTokenOverviews(apiData.tokens);
 
         // Filter by favourites
         if (filters.activeTab === 'FAVOURITES') {
-            filteredData = filteredData.filter((token) => filters.favouriteIds.has(token.id));
+            transformedData = transformedData.filter((token) => filters.favouriteIds.has(token.id));
         }
 
         // Filter by category search
         if (filters.categorySearch && filters.activeTab === 'CATEGORIES') {
-            filteredData = filteredData.filter((token) =>
+            transformedData = transformedData.filter((token) =>
                 token.token.category.toLowerCase().includes(filters.categorySearch.toLowerCase())
             );
         }
 
         // Apply custom sorting for Top tab
         if (filters.activeTab === 'TOP' && filters.sortDirection !== 'none') {
-            filteredData.sort((a, b) => {
+            transformedData.sort((a, b) => {
                 let aValue = 0;
                 let bValue = 0;
 
@@ -81,8 +151,8 @@ export function useTokenTable() {
             });
         }
 
-        return filteredData;
-    }, [filters]);
+        return transformedData;
+    }, [apiData, filters]);
 
     const table = useReactTable({
         data,
@@ -157,5 +227,7 @@ export function useTokenTable() {
         toggleSort,
         toggleFavourite,
         resetFilters,
+        isLoading,
+        error,
     };
 }
