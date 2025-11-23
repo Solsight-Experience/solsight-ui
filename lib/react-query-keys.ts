@@ -19,4 +19,16 @@ export const queryKeys = {
     stats: (timeFrame: string) => [...queryKeys.user.all, 'stats', timeFrame] as const,
     favorites: () => [...queryKeys.user.all, 'favorites'] as const,
   },
+  tokens: {
+    all: ['tokens'] as const,
+    trending: (params?: Record<string, any>) => 
+      [...queryKeys.tokens.all, 'trending', params] as const,
+    newListings: (params?: Record<string, any>) => 
+      [...queryKeys.tokens.all, 'new-listings', params] as const,
+    categories: () => [...queryKeys.tokens.all, 'categories'] as const,
+    categoryDetail: (slug: string, params?: Record<string, any>) => 
+      [...queryKeys.tokens.all, 'category', slug, params] as const,
+    gainersLosers: (params?: Record<string, any>) => 
+      [...queryKeys.tokens.all, 'gainers-losers', params] as const,
+  },
 };

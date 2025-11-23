@@ -36,6 +36,8 @@ export default function TokenTable() {
         toggleSort,
         toggleFavourite,
         resetFilters,
+        isLoading,
+        error,
     } = useTokenTable();
 
     // Render different right panel content based on active tab
@@ -133,7 +135,11 @@ export default function TokenTable() {
                 {renderRightPanel()}
             </div>
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl px-4">
-                {hasData ? (
+                {error ? (
+                    <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : 'Unknown error'}`} />
+                ) : isLoading ? (
+                    <EmptyState message="Loading tokens..." />
+                ) : hasData ? (
                     <Table>
                         <TableHeader className="bg-muted/20">
                             {table.getHeaderGroups().map((headerGroup) => (
