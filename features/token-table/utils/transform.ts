@@ -44,12 +44,12 @@ function calculateAuditScore(audit: TokenOverview['audit']): string {
   if (audit.has_social_links) points += 10;
   
   // Add points based on holders and distribution
-  if (audit.holders_count > 1000) points += 20;
-  if (audit.top_10_holders_percent < 30) points += 20;
-  if (audit.insider_percent < 10) points += 20;
+  if (Number(audit.holders_count) > 1000) points += 20;
+  if (Number(audit.top_10_holders_percent) < 30) points += 20;
+  if (Number(audit.insider_percent) < 10) points += 20;
   
   // Bonus from risk score (normalized to 0-50 range)
-  points += Math.floor(audit.risk_score / 2);
+  points += Math.floor(Number(audit.risk_score) / 2);
   
   // Cap at reasonable maximum
   points = Math.min(points, 300);
@@ -104,12 +104,12 @@ export function transformTokenOverview(token: TokenOverview): TokenTableData {
     audit: [
       {
         label: 'Risk',
-        value: calculateRiskPercentage(token.audit.risk_score),
-        trend: token.audit.risk_score > 70 ? 'down' : token.audit.risk_score > 40 ? 'neutral' : 'up',
+        value: calculateRiskPercentage(Number(token.audit.risk_score)),
+        trend: Number(token.audit.risk_score) > 70 ? 'down' : Number(token.audit.risk_score) > 40 ? 'neutral' : 'up',
       },
       {
         label: 'Fees',
-        value: calculateFees(token.volume_24h),
+        value: calculateFees(Number(token.volume_24h)),
         trend: 'up',
       },
       {
