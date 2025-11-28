@@ -48,7 +48,7 @@ export const QuickBuyInput = memo<QuickBuyInputProps>(function QuickBuyInput({
         alt={`${currency} icon`}
         width={24}
         height={24}
-        className="w-6 h-6"
+        className="w-5 h-5"
       />
     </div>
   );
