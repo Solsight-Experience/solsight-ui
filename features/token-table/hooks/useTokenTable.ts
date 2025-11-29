@@ -90,14 +90,14 @@ export function useTokenTable() {
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: 'volume_24h',
-                        limit: 100,
+                        limit: 20,
                     });
                 
                 case 'TOP':
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: mapSortOptionToSortBy(filters.sortOption),
-                        limit: 100,
+                        limit: 20,
                     });
                 
                 case 'CATEGORIES':
@@ -107,7 +107,7 @@ export function useTokenTable() {
                     // and filter client-side
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        limit: 100,
+                        limit: 20,
                     });
             }
         },
