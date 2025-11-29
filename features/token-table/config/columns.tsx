@@ -91,7 +91,7 @@ export const createColumns = (
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
                     <span className="font-semibold">
-                        {formatCurrency(marketCap.value, marketCap.currencySymbol)}
+                        {formatCurrency(Number(marketCap.value), marketCap.currencySymbol)}
                     </span>
                     <div className="flex items-center gap-1 text-xs font-medium">
                         {ChangeIcon ? <ChangeIcon className={cn('size-4', accentColor)} /> : null}
@@ -109,7 +109,7 @@ export const createColumns = (
 
             return (
                 <span className="block text-right font-medium">
-                    {formatCurrency(row.original.liquidity, symbol)}
+                    {formatCurrency(Number(row.original.liquidity), symbol)}
                 </span>
             );
         },
@@ -124,7 +124,7 @@ export const createColumns = (
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
                     <span className="font-medium">
-                        {formatCurrency(row.original.volume24h, symbol)}
+                        {formatCurrency(Number(row.original.volume24h), symbol)}
                     </span>
                     <div className="flex items-center gap-1 text-xs font-medium">
                         <span className="text-emerald-400">{formatCompact(buyVolumn)}</span>
@@ -141,7 +141,7 @@ export const createColumns = (
         accessorFn: (row) => row.transactions.buyCount + row.transactions.sellCount,
         cell: ({ row }) => {
             const { buyCount, sellCount } = row.original.transactions;
-            const total = buyCount + sellCount;
+            const total = Number(buyCount) + Number(sellCount);
 
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
@@ -162,51 +162,40 @@ export const createColumns = (
         cell: ({ row }) => {
             const auditData = row.original.audit;
             
-            // Calculate top holders and audit score based on audit data
-            const topHoldersData = auditData.find(item => item.label.includes('271'));
-            const auditScoreData = auditData.find(item => item.label.includes('139'));
-            
-            const topHolders = topHoldersData?.value || '22.66%';
-            const auditScore = auditScoreData?.value || '0.03%';
-            const topHoldersTrend = topHoldersData?.trend || 'down';
-            const auditScoreTrend = auditScoreData?.trend || 'up';
+            if (!auditData || auditData.length === 0) {
+                return (
+                    <div className="text-right text-muted-foreground text-sm">
+                        No audit data
+                    </div>
+                );
+            }
+
+            // Assuming first item is the red/down trend (22.66%) and second is green/up trend (0.03%)
+            const firstItem = auditData[0] || { value: '-', trend: 'neutral', label: '' };
+            const secondItem = auditData[1] || { value: '-', trend: 'neutral', label: '' };
 
             return (
                 <div className="flex flex-col items-end gap-2 text-right">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
-                            {topHoldersTrend === 'down' ? (
-                                <ArrowDownRight className="size-4 text-rose-400" />
-                            ) : (
-                                <ArrowUpRight className="size-4 text-emerald-400" />
-                            )}
-                            <span className={cn(
-                                'text-sm font-semibold',
-                                topHoldersTrend === 'down' ? 'text-rose-400' : 'text-emerald-400'
-                            )}>
-                                {topHolders}
+                            <span className="text-rose-400 text-lg">👤</span>
+                            <span className="text-sm font-semibold text-rose-400">
+                                {firstItem.value}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            {auditScoreTrend === 'up' ? (
-                                <ShieldAlert className="size-4 text-emerald-400" />
-                            ) : (
-                                <ShieldAlert className="size-4 text-rose-400" />
-                            )}
-                            <span className={cn(
-                                'text-sm font-semibold',
-                                auditScoreTrend === 'up' ? 'text-emerald-400' : 'text-rose-400'
-                            )}>
-                                {auditScore}
+                            <span className="text-emerald-400 text-lg">🛡️</span>
+                            <span className="text-sm font-semibold text-emerald-400">
+                                {secondItem.value}
                             </span>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
-                            <span>👤 271</span>
+                            <span>👤 {firstItem.label || '271'}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <span>📊 139</span>
+                            <span>🛡️ {secondItem.label || '139'}</span>
                         </div>
                     </div>
                 </div>
