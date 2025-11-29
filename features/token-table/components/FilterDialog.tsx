@@ -8,7 +8,7 @@ import { TokenFilterRequest, PoolFilterRequest } from '@/types/filter';
 import { LoadingSpinner } from '@/components/loading';
 import { useCategories } from '../hooks/useTokenFilter';
 import { NumbericInput } from '@/components/ui/NumbericInput';
-import { CurrencyFormatter } from '@/lib/number-formatters';
+import { CurrencyFormatter, DecimalFormatter, INumberFormatter, Locale } from '@/lib/number-formatters';
 
 enum FilterTabList {
   METRICS = 'Metrics',
@@ -160,6 +160,7 @@ function MetricsFilterList({
         maxValue={formData.age_max_minutes}
         onMinChange={(value) => handleFieldChange('age_min_minutes', value)}
         onMaxChange={(value) => handleFieldChange('age_max_minutes', value)}
+        inputFormatter={new DecimalFormatter()}
       />
       <FilterField
         label="Liquidity"
@@ -168,6 +169,7 @@ function MetricsFilterList({
         maxValue={formData.liquidity_max}
         onMinChange={(value) => handleFieldChange('liquidity_min', value)}
         onMaxChange={(value) => handleFieldChange('liquidity_max', value)}
+        inputFormatter={new CurrencyFormatter(Locale.US)}
       />
       <FilterField
         label="Market Cap"
@@ -176,6 +178,7 @@ function MetricsFilterList({
         maxValue={formData.market_cap_max}
         onMinChange={(value) => handleFieldChange('market_cap_min', value)}
         onMaxChange={(value) => handleFieldChange('market_cap_max', value)}
+        inputFormatter={new CurrencyFormatter()}
       />
       <FilterField
         label="Volume"
@@ -184,6 +187,7 @@ function MetricsFilterList({
         maxValue={formData.volume_24h_max}
         onMinChange={(value) => handleFieldChange('volume_24h_min', value)}
         onMaxChange={(value) => handleFieldChange('volume_24h_max', value)}
+        inputFormatter={new CurrencyFormatter()}
       />
       <FilterField
         label="Txns"
@@ -191,6 +195,7 @@ function MetricsFilterList({
         maxValue={formData.txns_24h_max}
         onMinChange={(value) => handleFieldChange('txns_24h_min', value)}
         onMaxChange={(value) => handleFieldChange('txns_24h_max', value)}
+        inputFormatter={new DecimalFormatter()}
       />
     </FilterListContainer>
   );
@@ -313,6 +318,7 @@ type FilterFieldProps = {
   maxValue: number;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
+  inputFormatter: INumberFormatter;
 };
 
 function FilterField({
@@ -322,6 +328,7 @@ function FilterField({
   maxValue,
   onMinChange,
   onMaxChange,
+  inputFormatter,
 }: FilterFieldProps) {
   const input = (value: number, onChange: (value: string) => void) => (
     <NumbericInput
@@ -331,7 +338,7 @@ function FilterField({
           onChange(val.toString());
         }
       }}
-      formatter={new CurrencyFormatter()}
+      formatter={inputFormatter}
       placeholder={placeholder}
       className="text-right rounded-2xl [appearance:textfield] [::-webkit-inner-spin-button]:appearance-none [::-webkit-outer-spin-button]:appearance-none"
     />

@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, ComponentProps, useEffect, useState } from "react";
+import { ChangeEvent, ComponentProps, useEffect, useRef, useState } from "react";
 import { Input } from "./input";
 import { INumberFormatter } from "@/lib/number-formatters";
 
@@ -19,10 +19,14 @@ export const NumbericInput = ({
   ...rest
 }: NumbericInputProps) => {
   const [display, setDisplay] = useState("");
+  const isFocused = useRef(false);
 
   useEffect(() => {
-    setDisplay(formatter.format(value))
+    if (!isFocused.current) {
+      setDisplay(formatter.format(value));
+    }
   }, [value, formatter]);
+
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -39,8 +43,15 @@ export const NumbericInput = ({
     setDisplay(formatter.format(value));
   }
 
+  const handleFocus = () => {
+    isFocused.current = true;
+    // convert formatted value to raw number string on focus
+    const num = formatter.convertBack(display);
+    setDisplay(num !== null ? num.toString() : "");
+  }
+
   return (
-    <Input type="text" value={display} onChange={handleInput} onBlur={handleBlur} {...rest} />
+    <Input type="text" onFocusCapture={handleFocus} value={display} onChange={handleInput} onBlur={handleBlur} {...rest} />
   )
 }
 
