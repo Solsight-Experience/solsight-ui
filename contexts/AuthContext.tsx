@@ -29,9 +29,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Kiểm tra token khi load trang
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('userData');
-        if (token && userData) {
-            setIsAuthenticated(true);
-            setUser(JSON.parse(userData));
+        if (token && userData && userData !== 'undefined') {
+            try {
+                setIsAuthenticated(true);
+                setUser(JSON.parse(userData));
+            } catch (error) {
+                console.error('Failed to parse userData:', error);
+                // Clear invalid data
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+            }
         }
     }, []);
 
