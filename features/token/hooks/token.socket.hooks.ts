@@ -1,9 +1,9 @@
-import { SocketManager } from '@/lib/socket-client';
+import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
 import type { Trade, TopTrader, Holder, ChartDataPoint } from '../types/token.types';
 import type { ChartInterval, TradeTab } from '@/lib/constants';
 
-const socketManager = SocketManager.getInstance();
+const tokenSocketManager = TokenSocketManager.getInstance();
 
 export function useTradeStream(
   address: string,
@@ -13,9 +13,9 @@ export function useTradeStream(
 ) {
   const [trade, setTrade] = useState<Trade>();
   useEffect(() => {
-    socketManager.onTokenEvent(address, 'trades', setTrade);
+    tokenSocketManager.onTokenEvent(address, 'trades', setTrade);
     return () => {
-      socketManager.offTokenEvents(address);
+      tokenSocketManager.offTokenEvents(address);
     };
   }, []);
   return trade;
@@ -27,9 +27,9 @@ export function useTopTradersStream(
 ) {
   const [topTraders, setTopTraders] = useState<TopTrader>();
   useEffect(() => {
-    socketManager.onTokenEvent(address, 'top_traders', setTopTraders);
+    tokenSocketManager.onTokenEvent(address, 'top_traders', setTopTraders);
     return () => {
-      socketManager.offTokenEvents(address);
+      tokenSocketManager.offTokenEvents(address);
     };
   }, []);
   return topTraders;
@@ -38,9 +38,9 @@ export function useTopTradersStream(
 export function useHoldersStream(address: string) {
   const [holders, setHolders] = useState<Holder>();
   useEffect(() => {
-    socketManager.onTokenEvent(address, 'holders', setHolders);
+    tokenSocketManager.onTokenEvent(address, 'holders', setHolders);
     return () => {
-      socketManager.offTokenEvents(address);
+      tokenSocketManager.offTokenEvents(address);
     };
   }, []);
   return holders;
@@ -56,10 +56,10 @@ export function useChartDataStream(address: string, interval: ChartInterval) {
       setChart((prev) => ({ price: prev?.price || 0, volume, timestamp }));
     };
 
-    socketManager.onTokenEvent(address, 'price', handlePrice);
-    socketManager.onTokenEvent(address, 'volume', handleVolume);
+    tokenSocketManager.onTokenEvent(address, 'price', handlePrice);
+    tokenSocketManager.onTokenEvent(address, 'volume', handleVolume);
     return () => {
-      socketManager.offTokenEvents(address);
+      tokenSocketManager.offTokenEvents(address);
     };
   }, []);
   return chart;

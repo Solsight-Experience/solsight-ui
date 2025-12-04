@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tokenApi } from '../services/token.services';
 import type { Holder, SwapPreviewRequest, TopTrader, Trade } from '../types/token.types';
-import { useHoldersStream, useTopTradersStream, useTradeStream } from './token.socket.hook';
+import { useHoldersStream, useTopTradersStream, useTradeStream } from './token.socket.hooks';
 import { useEffect, useState } from 'react';
 
 // Query Keys
