@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-type EventHandler = (...args: any[]) => void;
+export type EventHandler = (...args: any[]) => void;
+
 interface EventRecord {
   event: string;
   handler: EventHandler;
@@ -8,17 +9,16 @@ interface EventRecord {
 
 export class SocketManager {
   private static instance: SocketManager;
-  private socket: Socket | null = null;
-  private eventMap: Record<string, EventRecord[]> = {};
+  protected socket: Socket | null = null;
+  protected eventMap: Record<string, EventRecord[]> = {};
 
-  private constructor() {
+  protected constructor() {
     this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       transports: ['websocket'],
       autoConnect: false,
     });
   }
 
-  // Singleton instance
   public static getInstance(): SocketManager {
     if (!SocketManager.instance) {
       SocketManager.instance = new SocketManager();
@@ -26,7 +26,7 @@ export class SocketManager {
     return SocketManager.instance;
   }
 
-  private getSocket(): Socket {
+  protected getSocket(): Socket {
     if (!this.socket) {
       this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
         transports: ['websocket'],
@@ -41,35 +41,39 @@ export class SocketManager {
     if (!socket.connected) socket.connect();
   }
 
-  public onTokenEvent(token: string, event: string, handler: EventHandler) {
+  public on(event: string, handler: EventHandler, key?: string) {
     this.connect();
-    this.socket!.emit('subscribe', { token });
+    this.socket!.on(event, handler);
 
-    const wrappedHandler = (payload: { token: string; data: any }) => {
-      if (payload.token === token) handler(payload.data);
-    };
-
-    this.socket!.on(event, wrappedHandler);
-
-    if (!this.eventMap[token]) this.eventMap[token] = [];
-    this.eventMap[token].push({ event, handler: wrappedHandler });
+    if (key) {
+      if (!this.eventMap[key]) this.eventMap[key] = [];
+      this.eventMap[key].push({ event, handler });
+    }
   }
 
-  public offTokenEvents(token: string): void {
-    this.socket!.emit('unsubscribe', { token });
+  public off(event: string, handler: EventHandler) {
+    this.socket!.off(event, handler);
+  }
 
-    if (this.eventMap[token]) {
-      this.eventMap[token].forEach(({ event, handler }) => {
+  public offByKey(key: string) {
+    if (this.eventMap[key]) {
+      this.eventMap[key].forEach(({ event, handler }) => {
         this.socket!.off(event, handler);
       });
-      delete this.eventMap[token];
+      delete this.eventMap[key];
     }
+  }
+
+  public emit(event: string, data?: any) {
+    this.connect();
+    this.socket!.emit(event, data);
   }
 
   public disconnect(): void {
-    for (const token in this.eventMap) {
-      this.offTokenEvents(token);
+    for (const key in this.eventMap) {
+      this.offByKey(key);
     }
     this.socket?.disconnect();
+    this.eventMap = {};
   }
 }
