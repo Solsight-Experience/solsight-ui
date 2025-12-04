@@ -17,6 +17,7 @@ export interface TokenTableFilters {
     sortOption: SortOption;
     sortDirection: SortDirection;
     favouriteIds: Set<string>;
+    filteredData?: any[]; // Store filtered results from API
 }
 
 export function useTokenTable() {
@@ -28,6 +29,7 @@ export function useTokenTable() {
         sortOption: 'volumes',
         sortDirection: 'none',
         favouriteIds: new Set(),
+        filteredData: undefined,
     });
 
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -117,6 +119,11 @@ export function useTokenTable() {
 
     // Process and filter data
     const data = useMemo(() => {
+        // If we have filtered data from API, use that instead of regular data
+        if (filters.filteredData && filters.filteredData.length > 0) {
+            return filters.filteredData;
+        }
+
         if (!apiData?.tokens) return [];
 
         let transformedData = transformTokenOverviews(apiData.tokens);
@@ -153,6 +160,23 @@ export function useTokenTable() {
 
         return transformedData;
     }, [apiData, filters]);
+
+    // Add function to apply filter results
+    const applyFilterResults = useCallback((filterResponse: any) => {
+        if ('tokens' in filterResponse) {
+            // Transform the filtered tokens to match our table format
+            const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
+            setFilters(prev => ({ ...prev, filteredData: transformedFilteredData }));
+        } else if ('pools' in filterResponse) {
+            // Handle pool filtering if needed
+            console.log('Pool filtering not yet implemented');
+        }
+    }, []);
+
+    // Add function to clear filters and return to normal data
+    const clearAppliedFilters = useCallback(() => {
+        setFilters(prev => ({ ...prev, filteredData: undefined }));
+    }, []);
 
     const table = useReactTable({
         data,
@@ -214,6 +238,7 @@ export function useTokenTable() {
             sortOption: 'volumes',
             sortDirection: 'none',
             favouriteIds: new Set(),
+            filteredData: undefined,
         });
     }, []);
 
@@ -227,6 +252,7 @@ export function useTokenTable() {
         toggleSort,
         toggleFavourite,
         resetFilters,
+        applyFilterResults,
         isLoading,
         error,
     };
