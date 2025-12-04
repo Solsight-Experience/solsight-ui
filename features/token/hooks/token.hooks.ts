@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tokenApi } from '../services/token.services';
-import type { SwapPreviewRequest } from '../types/token.types';
+import type { Holder, SwapPreviewRequest, TopTrader, Trade } from '../types/token.types';
+import { useHoldersStream, useTopTradersStream, useTradeStream } from './token.socket.hook';
+import { useEffect, useState } from 'react';
 
 // Query Keys
 export const tokenKeys = {
@@ -46,22 +48,55 @@ export function useTrades(
     type?: 'all' | 'buy' | 'sell';
   }
 ) {
-  return useQuery({
+  const initial = useQuery({
     queryKey: tokenKeys.trades(address, params),
     queryFn: () => tokenApi.getTrades(address, params),
     enabled: !!address,
-    staleTime: 5000, // 5 seconds for live trades
-    refetchInterval: 5000, // Auto-refetch every 5 seconds
+    staleTime: 5000,
+    // refetchInterval: 5000,
   });
+  const newTrade = useTradeStream(address, params);
+  const [data, setData] = useState<{ trades: Trade[] }>({ trades: [] });
+
+  useEffect(() => {
+    if (initial.data) setData(initial.data);
+  }, [initial.data]);
+
+  useEffect(() => {
+    if (!newTrade) return;
+
+    setData((prev) => {
+      if (prev.trades.some((t) => t.tx_hash === newTrade.tx_hash)) return prev;
+      return { trades: [newTrade, ...prev.trades].slice(0, 10) };
+    });
+  }, [newTrade]);
+
+  return { ...initial, data };
 }
 
 export function useTopTraders(address: string, timeFrame: '24h' | '7d' | '30d' | 'all' = '24h') {
-  return useQuery({
+  const initial = useQuery({
     queryKey: tokenKeys.topTraders(address, timeFrame),
     queryFn: () => tokenApi.getTopTraders(address, { time_frame: timeFrame, limit: 10 }),
     enabled: !!address,
     staleTime: 30000, // 30 seconds
   });
+  const newTrader = useTopTradersStream(address, timeFrame);
+  const [data, setData] = useState<{ traders: TopTrader[] }>({ traders: [] });
+
+  useEffect(() => {
+    if (initial.data) setData(initial.data);
+  }, [initial.data, timeFrame]);
+
+  useEffect(() => {
+    if (!newTrader) return;
+
+    setData((prev) => {
+      return { traders: [newTrader, ...prev.traders].slice(0, 10) };
+    });
+  }, [newTrader, timeFrame]);
+  console.log('data', data);
+  return { ...initial, data };
 }
 
 export function useHolders(
@@ -72,12 +107,27 @@ export function useHolders(
     offset?: number;
   }
 ) {
-  return useQuery({
+  const initial = useQuery({
     queryKey: tokenKeys.holders(address, params),
     queryFn: () => tokenApi.getHolders(address, params),
     enabled: !!address,
     staleTime: 30000, // 30 seconds
   });
+  const newHolder = useHoldersStream(address);
+  const [data, setData] = useState<{ holders: Holder[] }>({ holders: [] });
+
+  useEffect(() => {
+    if (initial.data) setData(initial.data);
+  }, [initial.data]);
+
+  useEffect(() => {
+    if (!newHolder) return;
+
+    setData((prev) => {
+      return { holders: [newHolder, ...prev.holders].slice(0, 10) };
+    });
+  }, [newHolder]);
+  return { ...initial, data };
 }
 
 // Mutations
