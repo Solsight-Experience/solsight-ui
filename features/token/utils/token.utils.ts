@@ -1,3 +1,5 @@
+import { currencyFormatter, percentFormatter, numberFormatter, PercentFormatter } from '@/lib/formatters';
+
 // Time formatting
 export const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp);
@@ -19,21 +21,19 @@ export const formatTimeAgo = (timestamp: number): string => {
 
 // Number formatting
 export const formatNumber = (num: number, decimals: number = 2): string => {
-  if (num >= 1000000000) return `$${(num / 1000000000).toFixed(2)}B`;
-  if (num >= 1000000) return `$${(num / 1000000).toFixed(2)}M`;
-  if (num >= 1000) return `$${(num / 1000).toFixed(2)}K`;
-  return `$${num.toFixed(decimals)}`;
+  return currencyFormatter.formatCompact(num);
 };
 
 export const formatTokenAmount = (amount: number, decimals: number = 2): string => {
-  return amount.toLocaleString('en-US', {
+  return numberFormatter.format(amount) || amount.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
 };
 
 export const formatPercent = (value: number, decimals: number = 2): string => {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+  const formatter = new PercentFormatter(decimals);
+  return formatter.format(value);
 };
 
 // Clipboard
