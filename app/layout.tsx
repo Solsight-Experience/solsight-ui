@@ -17,7 +17,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <QueryProvider>
-            {/* Bọc AuthProvider trước Header */}
             <AuthProvider>
               {showHeader && <Header />}
               <main>{children}</main>
