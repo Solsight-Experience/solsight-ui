@@ -64,6 +64,28 @@ export class SocketManager {
     }
   }
 
+  public offByKeyAndEvent(key: string, event: string, handler?: EventHandler) {
+    const records = this.eventMap[key];
+    if (!records) return;
+
+    if (!handler) {
+      records.filter((r) => r.event === event).forEach((r) => this.socket!.off(r.event, r.handler));
+
+      this.eventMap[key] = records.filter((r) => r.event !== event);
+      return;
+    }
+
+    const remaining: EventRecord[] = [];
+    for (const r of records) {
+      if (r.event === event && r.handler === handler) {
+        this.socket!.off(event, handler);
+      } else {
+        remaining.push(r);
+      }
+    }
+    this.eventMap[key] = remaining;
+  }
+
   public emit(event: string, data?: any) {
     this.connect();
     this.socket!.emit(event, data);

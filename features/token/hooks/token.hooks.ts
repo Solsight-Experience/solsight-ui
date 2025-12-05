@@ -1,8 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tokenApi } from '../services/token.services';
-import type { Holder, SwapPreviewRequest, TopTrader, Trade } from '../types/token.types';
-import { useHoldersStream, useTopTradersStream, useTradeStream } from './token.socket.hooks';
+import type {
+  ChartData,
+  ChartDataPoint,
+  Holder,
+  SwapPreviewRequest,
+  TokenDetail,
+  TopTrader,
+  Trade,
+} from '../types/token.types';
+import {
+  useChartDataStream,
+  useHoldersStream,
+  useTokenDetailStream,
+  useTopTradersStream,
+  useTradeStream,
+} from './token.socket.hooks';
 import { useEffect, useState } from 'react';
+import { ChartInterval } from '@/lib/constants';
 
 // Query Keys
 export const tokenKeys = {
@@ -19,16 +34,30 @@ export const tokenKeys = {
 
 // Hooks
 export function useTokenDetail(address: string) {
-  return useQuery({
+  const initial = useQuery({
     queryKey: tokenKeys.detail(address),
     queryFn: () => tokenApi.getTokenDetail(address),
     enabled: !!address,
     staleTime: 10000, // 10 seconds
   });
+  const newDetail = useTokenDetailStream(address);
+  const [data, setData] = useState<TokenDetail>();
+
+  useEffect(() => {
+    if (initial.data) setData(initial.data);
+  }, [initial.data]);
+
+  useEffect(() => {
+    if (!newDetail) return;
+    if (!initial.data) return;
+    setData((prev) => ({ ...prev, ...newDetail }));
+  }, [newDetail]);
+
+  return { ...initial, data };
 }
 
 export function useChartData(address: string, interval: string) {
-  return useQuery({
+  const initial = useQuery({
     queryKey: tokenKeys.chart(address, interval),
     queryFn: () =>
       tokenApi.getChartData(address, {
@@ -38,6 +67,23 @@ export function useChartData(address: string, interval: string) {
     enabled: !!address && !!interval,
     staleTime: interval === '1m' ? 5000 : 30000, // 5s for 1m, 30s for others
   });
+  const newChartPoint = useChartDataStream(address, interval as ChartInterval);
+  const [data, setData] = useState<ChartData>();
+
+  useEffect(() => {
+    if (initial.data) setData(initial.data);
+  }, [initial.data]);
+
+  useEffect(() => {
+    if (!newChartPoint) return;
+    setData((prev) => ({
+      ...prev,
+      interval: prev?.interval ?? interval,
+      points: prev?.points ? [...prev.points, newChartPoint] : [newChartPoint],
+    }));
+  }, [newChartPoint]);
+
+  return { ...initial, data };
 }
 
 export function useTrades(
