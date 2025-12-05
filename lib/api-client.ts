@@ -65,6 +65,18 @@ class ApiClient {
     const response: AxiosResponse<T> = await this.client.delete(url, config);
     return response.data;
   }
+
+  async getSolanaNonce(walletAddress: string): Promise<{ nonce: string }> {
+    return this.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+  }
+
+  async verifySolanaWallet(walletAddress: string, signature: string, userId?: string): Promise<{ accessToken: string; user: any }> {
+    return this.post<{ accessToken: string; user: any }>('/api/auth/solana/verify', {
+      walletAddress,
+      signature,
+      userId,
+    });
+  }
 }
 
 // Export singleton instance
