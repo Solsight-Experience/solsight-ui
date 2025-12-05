@@ -2,7 +2,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { CategoryOverview } from './types';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { currencyFormatter, percentFormatter } from '@/lib/formatters';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 /**
@@ -56,7 +56,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
                 <div className="flex items-center justify-end gap-1">
                     {ChangeIcon ? <ChangeIcon className={cn('size-4', accentColor)} /> : null}
                     <span className={cn('font-medium', accentColor)}>
-                        {formatPercent(change)}
+                        {percentFormatter.format(change)}
                     </span>
                 </div>
             );
@@ -80,7 +80,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
                 <div className="flex items-center justify-end gap-1">
                     {ChangeIcon ? <ChangeIcon className={cn('size-4', accentColor)} /> : null}
                     <span className={cn('font-medium', accentColor)}>
-                        {formatPercent(change)}
+                        {percentFormatter.format(Number(change))}
                     </span>
                 </div>
             );
@@ -104,7 +104,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
                 <div className="flex items-center justify-end gap-1">
                     {ChangeIcon ? <ChangeIcon className={cn('size-4', accentColor)} /> : null}
                     <span className={cn('font-medium', accentColor)}>
-                        {formatPercent(change)}
+                        {percentFormatter.format(Number(change))}
                     </span>
                 </div>
             );
@@ -115,7 +115,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
         header: () => <span className="block text-right">Market Cap</span>,
         cell: ({ row }) => (
             <span className="block text-right font-semibold">
-                {formatCurrency(row.original.market_cap, '$')}
+                {currencyFormatter.formatCompact(row.original.market_cap)}
             </span>
         ),
     },
@@ -124,7 +124,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
         header: () => <span className="block text-right">Volume</span>,
         cell: ({ row }) => (
             <span className="block text-right font-medium">
-                {formatCurrency(row.original.volume, '$')}
+                {currencyFormatter.formatCompact(row.original.volume)}
             </span>
         ),
     },

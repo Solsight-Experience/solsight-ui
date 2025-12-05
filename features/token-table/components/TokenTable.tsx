@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -20,6 +21,8 @@ import { CategorySearch } from './CategorySearch';
 import { EmptyState } from './EmptyState';
 import { CategoryTable } from './CategoryTable';
 import { useTokenTable } from '../hooks/useTokenTable';
+import { PoolFilterResponse, TokenFilterResponse } from '@/types/filter';
+import { queryKeys } from '@/lib/react-query-keys';
 
 /**
  * TokenTable Component
@@ -38,6 +41,7 @@ export default function TokenTable() {
         toggleSort,
         toggleFavourite,
         resetFilters,
+        applyFilterResults,
         isLoading,
         error,
     } = useTokenTable();
@@ -63,9 +67,14 @@ export default function TokenTable() {
                             }}
                             onSortChange={toggleSort}
                         />
-                        <FilterButton onReset={resetFilters} onApply={() => {
-                            console.log('Filters applied', filters);
-                        }} />
+                        <FilterButton 
+                            onReset={() => {
+                                resetFilters();
+                            }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }} 
+                        />
                         <QuickBuyInput
                             value={filters.quickBuyAmount}
                             onChange={setQuickBuyAmount}
@@ -84,9 +93,14 @@ export default function TokenTable() {
                             value={filters.categorySearch}
                             onChange={setCategorySearch}
                         />
-                        <FilterButton onReset={resetFilters} onApply={() => {
-                            console.log('Filters applied', filters);
-                        }} />
+                        <FilterButton 
+                            onReset={() => {
+                                resetFilters();
+                            }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }} 
+                        />
 
                     </RightPanelFilter>
                 );
@@ -100,9 +114,14 @@ export default function TokenTable() {
                             activeFilter={filters.timeFilter}
                             onFilterChange={setTimeFilter}
                         />
-                        <FilterButton onReset={resetFilters} onApply={() => {
-                            console.log('Filters applied', filters);
-                        }} />
+                        <FilterButton 
+                            onReset={() => {
+                                resetFilters();
+                            }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }} 
+                        />
                         <QuickBuyInput
                             value={filters.quickBuyAmount}
                             onChange={setQuickBuyAmount}
@@ -125,7 +144,9 @@ export default function TokenTable() {
                     />
                     {renderRightPanel()}
                 </div>
-                <CategoryTable searchQuery={filters.categorySearch} />
+                <CategoryTable 
+                    searchQuery={filters.categorySearch} 
+                />
             </>
         );
     }
