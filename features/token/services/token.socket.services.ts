@@ -27,6 +27,11 @@ export class TokenSocketManager extends SocketManager {
     this.offByKey(token);
   }
 
+  public offTokenEvent(token: string, event: string) {
+    this.socket!.emit('unsubscribe', { token });
+    this.offByKeyAndEvent(token, event);
+  }
+
   public emitTokenEvent(token: string, event: string, data: any) {
     this.connect();
     this.socket!.emit(event, { token, data });

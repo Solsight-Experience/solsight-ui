@@ -1,9 +1,20 @@
 import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
-import type { Trade, TopTrader, Holder, ChartDataPoint } from '../types/token.types';
-import type { ChartInterval, TradeTab } from '@/lib/constants';
+import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
+import type { ChartInterval } from '@/lib/constants';
 
 const tokenSocketManager = TokenSocketManager.getInstance();
+
+export function useTokenDetailStream(address: string) {
+  const [detail, setDetail] = useState<TokenDetail>();
+  useEffect(() => {
+    tokenSocketManager.onTokenEvent(address, 'stats', setDetail);
+    return () => {
+      tokenSocketManager.offByKeyAndEvent(address, 'stats');
+    };
+  }, []);
+  return detail;
+}
 
 export function useTradeStream(
   address: string,
@@ -15,7 +26,7 @@ export function useTradeStream(
   useEffect(() => {
     tokenSocketManager.onTokenEvent(address, 'trades', setTrade);
     return () => {
-      tokenSocketManager.offTokenEvents(address);
+      tokenSocketManager.offByKeyAndEvent(address, 'trades');
     };
   }, []);
   return trade;
@@ -29,7 +40,7 @@ export function useTopTradersStream(
   useEffect(() => {
     tokenSocketManager.onTokenEvent(address, 'top_traders', setTopTraders);
     return () => {
-      tokenSocketManager.offTokenEvents(address);
+      tokenSocketManager.offByKeyAndEvent(address, 'top_traders');
     };
   }, []);
   return topTraders;
@@ -40,7 +51,7 @@ export function useHoldersStream(address: string) {
   useEffect(() => {
     tokenSocketManager.onTokenEvent(address, 'holders', setHolders);
     return () => {
-      tokenSocketManager.offTokenEvents(address);
+      tokenSocketManager.offByKeyAndEvent(address, 'holders');
     };
   }, []);
   return holders;
@@ -59,7 +70,8 @@ export function useChartDataStream(address: string, interval: ChartInterval) {
     tokenSocketManager.onTokenEvent(address, 'price', handlePrice);
     tokenSocketManager.onTokenEvent(address, 'volume', handleVolume);
     return () => {
-      tokenSocketManager.offTokenEvents(address);
+      tokenSocketManager.offByKeyAndEvent(address, 'price');
+      tokenSocketManager.offByKeyAndEvent(address, 'volume');
     };
   }, []);
   return chart;
