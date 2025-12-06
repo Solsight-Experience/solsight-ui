@@ -1,18 +1,18 @@
 'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
-import { useAuth } from '@/contexts/AuthContext';
+import { loginApi } from '../../features/auth/authservice';
 
-interface SignInFormProps {
-    onToggle: () => void;
-}
-
-export default function SignInForm({ onToggle }: SignInFormProps) {
+export default function SignInForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get('redirect') || '/';
+
     const { login } = useAuth();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -24,15 +24,16 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
         setIsLoading(true);
         setError('');
 
-        // Giả lập API call
-        setTimeout(() => {
-            // Giả lập login thành công
-            login();
+        try {
+            const data = await loginApi({ email, password });
+            login(data.user);
+            router.push(redirectTo);
 
-            // Redirect về trang chủ sau khi login thành công
-            router.push('/');
+        } catch (err: any) {
+            setError(err.message || 'Login Failed');
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (
