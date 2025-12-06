@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import QueryProvider from '@/providers/query-provider';
 import Header from '@/components/layout/Header';
 import { usePathname } from 'next/navigation';
+import MockProvider from '@/providers/mock-provider';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
@@ -18,10 +19,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <QueryProvider>
             {/* Bọc AuthProvider trước Header */}
-            <AuthProvider>
-              {showHeader && <Header />}
-              <main>{children}</main>
-            </AuthProvider>
+            <MockProvider>
+              <AuthProvider>
+                {showHeader && <Header />}
+                <main>{children}</main>
+              </AuthProvider>
+            </MockProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

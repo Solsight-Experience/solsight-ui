@@ -20,7 +20,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'bg-transparent border border-neutral-500 text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-full p-[3px]',
+        'bg-transparent border border-gray-600 text-muted-foreground inline-flex h-11 w-fit items-center justify-center rounded-lg p-1 gap-1',
         className
       )}
       {...props}
@@ -33,7 +33,12 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        'data-[state=active]:bg-brand-200 dark:data-[state=active]:text-foreground data-[state=active]:text-black focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-brand-200 dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-full border border-transparent px-4 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
+        'inline-flex flex-1 items-center justify-center gap-2 px-6 py-2 text-base font-medium whitespace-nowrap transition-all',
+        'text-gray-400 hover:text-white rounded-md',
+        'data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500',
+        'disabled:pointer-events-none disabled:opacity-50',
+        '[&_svg]:pointer-events-none [&_svg]:shrink-0',
         className
       )}
       {...props}

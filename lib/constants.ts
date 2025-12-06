@@ -81,6 +81,7 @@ export const PORTFOLIO_ENDPOINTS = {
   WALLETS: '/api/users/me/wallets',
   WALLET_DETAIL: (address: string) => `/api/users/me/wallets/${address}`,
   SET_DEFAULT_WALLET: (address: string) => `/api/users/me/wallets/${address}/set-default`,
+  DELETE_WALLET: (address: string) => `/api/users/me/wallets/${address}`,
 
   // Portfolio Overview
   OVERVIEW: '/api/portfolio/overview',
