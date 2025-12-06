@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { apiClient } from '@/lib/api-client';
 interface SignUpFormProps {
     onToggle: () => void;
 }
@@ -32,21 +32,21 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
         }
 
         try {
-            const res = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+            const response = await apiClient.post<{ user: any; accessToken: string }>('/api/auth/signup', {
+                email,
+                password,
             });
 
-            if (!res.ok) throw new Error('Sign up failed');
+            const { user, accessToken } = response;
 
             // Cập nhật auth state
-            login();
+            login(accessToken, user);
 
             // Redirect về trang chủ sau khi sign up thành công
             router.push('/');
         } catch (err: any) {
-            setError(err.message || 'Sign up failed');
+            console.error('Signup failed:', err);
+            setError(err.response?.data?.message || 'Sign up failed');
         } finally {
             setIsLoading(false);
         }

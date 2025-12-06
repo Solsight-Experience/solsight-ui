@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import bs58 from 'bs58';
 import apiClient from '@/lib/api-client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 
 // Define Phantom types
 type PhantomEvent = "connect" | "disconnect" | "accountChanged";
@@ -69,8 +67,6 @@ export const useWalletAuth = () => {
     const [provider, setProvider] = useState<PhantomProvider | undefined>(undefined);
     const [walletKey, setWalletKey] = useState<string | null>(null);
     const [connected, setConnected] = useState(false);
-    const { login } = useAuth();
-    const router = useRouter();
 
     useEffect(() => {
         const provider = getProvider();
@@ -184,7 +180,7 @@ export const useWalletAuth = () => {
         }
     };
 
-    const handleWalletConnect = async (walletName: string) => {
+    const handleWalletConnect = async (walletName: string, userId?: string) => {
         if (walletName === 'Phantom') {
             try {
                 const pubKey = await connectPhantom();
@@ -192,7 +188,7 @@ export const useWalletAuth = () => {
                     const walletAddress = pubKey.toString();
                     
                     // 1. Get Nonce
-                    const { nonce } = await apiClient.getSolanaNonce(walletAddress);
+                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
                     
                     // 2. Sign Nonce
                     const messageBytes = new TextEncoder().encode(nonce);
@@ -201,32 +197,28 @@ export const useWalletAuth = () => {
                     const { signature } = await provider.signMessage(messageBytes);
                     const signatureStr = bs58.encode(signature);
                     
-                    // 3. Verify & Login
-                    const { accessToken, user } = await apiClient.verifySolanaWallet(walletAddress, signatureStr);
+                    // 3. Verify
+                    const response = await apiClient.post<{ success: boolean; message: string }>('/api/auth/solana/verify', {
+                        walletAddress,
+                        signature: signatureStr,
+                        walletIcon: 'phantom',
+                        userId
+                    });
                     
-                    // Map backend user to frontend user context
-                    const authUser = {
-                        email: user.email,
-                        name: user.username || user.firstName || 'User',
-                        avatar: user.avatar
-                    };
-
-                    // 4. Update Auth State
-                    login(accessToken, authUser);
-                    
-                    // 5. Redirect
-                    router.push('/');
+                    if (response.success) {
+                        alert(response.message);
+                    }
                 }
             } catch (error: any) {
                 console.error('Wallet connection/login error:', error);
-                alert('Login failed: ' + (error.response?.data?.message || error.message));
+                alert('Operation failed: ' + (error.response?.data?.message || error.message));
             }
         } else if (walletName === 'MetaMask') {
              try {
                 const walletAddress = await connectMetaMask();
                 if (walletAddress) {
                     // 1. Get Nonce
-                    const { nonce } = await apiClient.getSolanaNonce(walletAddress);
+                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
                     
                     // 2. Sign Nonce
                     const provider = getMetaMaskProvider();
@@ -249,31 +241,23 @@ export const useWalletAuth = () => {
                         },
                     });
                     
-                    // Signature from Snap is usually Base58 encoded string already?
-                    // Let's assume it returns the signature bytes or string.
-                    // Solflare Snap returns { signature: string (base58), publicKey: string }
                     
-                    const signatureStr = signature; // It is already base58 string from Snap
+                    const signatureStr = signature; 
 
                     // 3. Verify & Login
-                    const { accessToken, user } = await apiClient.verifySolanaWallet(walletAddress, signatureStr);
+                    const response = await apiClient.post<{ success: boolean; message: string }>('/api/auth/solana/verify', {
+                        walletAddress,
+                        signature: signatureStr,
+                        userId
+                    });
                     
-                    // Map backend user to frontend user context
-                    const authUser = {
-                        email: user.email,
-                        name: user.username || user.firstName || 'User',
-                        avatar: user.avatar
-                    };
-
-                    // 4. Update Auth State
-                    login(accessToken, authUser);
-                    
-                    // 5. Redirect
-                    router.push('/');
+                    if (response.success) {
+                        alert(response.message);
+                    }
                 }
             } catch (error: any) {
                 console.error('MetaMask connection/login error:', error);
-                alert('Login failed: ' + (error.response?.data?.message || error.message));
+                alert('Operation failed: ' + (error.response?.data?.message || error.message));
             }
         } else {
             alert(`Connect ${walletName} coming soon!`);

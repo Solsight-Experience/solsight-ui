@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWalletAuth } from './useWalletAuth';
 
 declare global {
     interface Window {
@@ -16,7 +15,6 @@ export default function SocialAuthButtons() {
     const { login } = useAuth();
     const googleButtonRef = useRef<HTMLDivElement>(null);
     const isInitialized = useRef(false);
-    const { handleWalletConnect } = useWalletAuth();
 
     const handleCredentialResponse = async (response: any) => {
         try {
@@ -122,24 +120,6 @@ export default function SocialAuthButtons() {
         };
     }, []);
 
-    const wallets = [
-        {
-            name: 'Phantom',
-            icon: '/wallet_logo/phantom.svg',
-            label: 'Connect Phantom'
-        },
-        {
-            name: 'MetaMask',
-            icon: '/wallet_logo/metamask.svg',
-            label: 'Connect MetaMask'
-        },
-        {
-            name: 'WalletConnect',
-            icon: '/wallet_logo/walletconnect.svg',
-            label: 'Connect WalletConnect'
-        }
-    ];
-
     return (
         <div className="space-y-3">
             {/* Google Sign-In Button - SDK sẽ render vào đây */}
@@ -149,21 +129,6 @@ export default function SocialAuthButtons() {
                 style={{ minHeight: '44px' }}
             />
 
-            {wallets.map((wallet) => (
-                <button
-                    key={wallet.name}
-                    type="button"
-                    onClick={() => handleWalletConnect(wallet.name)}
-                    className="relative w-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-slate-700"
-                >
-                    <img 
-                        src={wallet.icon} 
-                        alt={wallet.name} 
-                        className="absolute left-[20px] w-5 h-5 object-contain"
-                    />
-                    {wallet.label}
-                </button>
-            ))}
         </div>
     );
 }

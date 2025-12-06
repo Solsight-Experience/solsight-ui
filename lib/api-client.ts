@@ -22,7 +22,7 @@ class ApiClient {
     // Request interceptor - add auth token if available
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -37,7 +37,7 @@ class ApiClient {
       (error) => {
         // if (error.response?.status === 401) {
         //   // Handle unauthorized - redirect to login
-        //   localStorage.removeItem('auth_token');
+        //   localStorage.removeItem('authToken');
         //   window.location.href = '/auth/login';
         // }
         return Promise.reject(error);
@@ -66,17 +66,6 @@ class ApiClient {
     return response.data;
   }
 
-  async getSolanaNonce(walletAddress: string): Promise<{ nonce: string }> {
-    return this.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-  }
-
-  async verifySolanaWallet(walletAddress: string, signature: string, userId?: string): Promise<{ accessToken: string; user: any }> {
-    return this.post<{ accessToken: string; user: any }>('/api/auth/solana/verify', {
-      walletAddress,
-      signature,
-      userId,
-    });
-  }
 }
 
 // Export singleton instance

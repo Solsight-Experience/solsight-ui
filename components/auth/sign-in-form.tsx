@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient} from '@/lib/api-client';
 
 interface SignInFormProps {
     onToggle: () => void;
@@ -24,15 +25,21 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
         setIsLoading(true);
         setError('');
 
-        // Giả lập API call
-        setTimeout(() => {
-            // Giả lập login thành công
-            login();
+        try {
+            const response = await apiClient.post<{ user: any; accessToken: string }>('/api/auth/login', {
+                email,
+                password,
+            });
 
-            // Redirect về trang chủ sau khi login thành công
+            const { user, accessToken } = response;
+            login(accessToken, user);
             router.push('/');
+        } catch (err: any) {
+            console.error('Login failed:', err);
+            setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (
