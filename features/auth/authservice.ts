@@ -20,10 +20,10 @@ export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || 'Đăng nhập thất bại');
+        throw new Error(data.message || 'Login failed');
     }
 
-    return data; // ← QUAN TRỌNG: Phải có return
+    return data;
 }
 
 export async function logout(): Promise<boolean> {
