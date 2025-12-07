@@ -23,12 +23,11 @@ export default function Header() {
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
     const toggleAvatarMenu = () => setAvatarMenuOpen(!avatarMenuOpen);
 
-    const handleLogout = () => {
-        logout(); // xóa token + user
+    const handleLogout = async () => {
+        await logout();
+        setAvatarMenuOpen(false);
         setConfirmLogoutOpen(false);
-        router.push('/');
     };
-
     const handleShowConfirmLogout = () => setConfirmLogoutOpen(true);
     const handleCloseConfirmLogout = () => setConfirmLogoutOpen(false);
 
@@ -100,9 +99,6 @@ const HeaderIcon = memo(() => (
 const NAV_ITEMS = [
     { href: '/', label: 'Discover' },
     { href: '/portfolio', label: 'Portfolio' },
-    { href: '/tracker', label: 'Tracker' },
-    { href: '/perpetuals', label: 'Perpetuals' },
-    { href: '/stake', label: 'Stake' },
 ] as const;
 
 const NavLinks = memo(() => (
