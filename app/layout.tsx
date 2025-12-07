@@ -17,15 +17,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <MockProvider>
-            <QueryProvider>
-              {/* Bọc AuthProvider trước Header */}
+          <QueryProvider>
+            {/* Bọc AuthProvider trước Header */}
+            <MockProvider>
               <AuthProvider>
                 {showHeader && <Header />}
                 <main>{children}</main>
               </AuthProvider>
-            </QueryProvider>
-          </MockProvider>
+            </MockProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

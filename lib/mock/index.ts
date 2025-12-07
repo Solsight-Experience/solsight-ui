@@ -25,11 +25,11 @@ export function setupMockAdapter() {
 
   // Create mock adapter with delay to simulate network latency
   mockAdapter = new MockAdapter(apiClient.client, {
-    delayResponse: 500, // 500ms delay
+    delayResponse: 50, // 50ms delay
     onNoMatch: 'passthrough', // Pass through unmatched requests
   });
 
-  console.log('🟢 Mock adapter enabled with 500ms delay');
+  console.log('🟢 Mock adapter enabled with 50ms delay');
 
   // Setup all mock handlers
   setupPortfolioMocks(mockAdapter);
