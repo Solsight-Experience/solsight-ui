@@ -4,15 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
-import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/lib/api-client';
+import { signupApi } from '@/features/auth/authservice';
+
 interface SignUpFormProps {
     onToggle: () => void;
 }
 
 export default function SignUpForm({ onToggle }: SignUpFormProps) {
     const router = useRouter();
-    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,18 +31,10 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
         }
 
         try {
-            const response = await apiClient.post<{ user: any; accessToken: string }>('/api/auth/signup', {
-                email,
-                password,
-            });
+            await signupApi({ email, password });
 
-            const { user, accessToken } = response;
-
-            // Cập nhật auth state
-            login(accessToken, user);
-
-            // Redirect về trang chủ sau khi sign up thành công
-            router.push('/');
+            // Sau khi đăng ký thành công, toggle về login
+            onToggle();
         } catch (err: any) {
             console.error('Signup failed:', err);
             setError(err.response?.data?.message || 'Sign up failed');
@@ -54,6 +45,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
 
     return (
         <div className="relative z-10 w-full max-w-md backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-purple-500/20">
+            {/* form header */}
             <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
                     Create Account
@@ -61,13 +53,16 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                 <p className="text-slate-400 text-sm">Sign up to start using the app</p>
             </div>
 
+            {/* error */}
             {error && (
                 <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
                     {error}
                 </div>
             )}
 
+            {/* form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+                {/* email */}
                 <div>
                     <label htmlFor="email" className="block text-slate-300 text-sm font-medium mb-2">
                         Email Address
@@ -86,6 +81,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     </div>
                 </div>
 
+                {/* password */}
                 <div>
                     <label htmlFor="password" className="block text-slate-300 text-sm font-medium mb-2">
                         Password
@@ -111,6 +107,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     </div>
                 </div>
 
+                {/* confirm password */}
                 <div>
                     <label htmlFor="confirmPassword" className="block text-slate-300 text-sm font-medium mb-2">
                         Confirm Password

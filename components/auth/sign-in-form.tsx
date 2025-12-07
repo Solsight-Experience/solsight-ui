@@ -1,19 +1,18 @@
 'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
-import { useAuth } from '@/contexts/AuthContext';
-import { apiClient} from '@/lib/api-client';
+import { loginApi } from '../../features/auth/authservice';
 
-interface SignInFormProps {
-    onToggle: () => void;
-}
-
-export default function SignInForm({ onToggle }: SignInFormProps) {
+export default function SignInForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get('redirect') || '/';
+
     const { login } = useAuth();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -26,17 +25,12 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
         setError('');
 
         try {
-            const response = await apiClient.post<{ user: any; accessToken: string }>('/api/auth/login', {
-                email,
-                password,
-            });
+            const data = await loginApi({ email, password });
+            login(data.user);
+            router.push(redirectTo);
 
-            const { user, accessToken } = response;
-            login(accessToken, user);
-            router.push('/');
         } catch (err: any) {
-            console.error('Login failed:', err);
-            setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+            setError(err.message || 'Login Failed');
         } finally {
             setIsLoading(false);
         }

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { callOAuthLoginApi } from '@/features/auth/authservice';
 
 declare global {
     interface Window {
@@ -27,34 +28,9 @@ export default function SocialAuthButtons() {
             console.log("Google credential received:", response.credential);
 
             const token = response.credential;
-
-            // Decode JWT an toàn
-            const base64Url = token.split('.')[1];
-            if (!base64Url) {
-                console.error('Invalid token format', token);
-                return;
-            }
-
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const userData = JSON.parse(
-                decodeURIComponent(
-                    atob(base64)
-                        .split('')
-                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                        .join('')
-                )
-            );
-
-            console.log("User info:", userData);
-
-            // Lưu token và thông tin user vào localStorage
-            localStorage.setItem('authToken', token);
-            localStorage.setItem('userData', JSON.stringify(userData));
-
-            // Cập nhật state login
+            const { user } = await callOAuthLoginApi(token);
+            document.cookie = `auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; SameSite=Lax`;
             login();
-
-            // Redirect về home
             router.push('/');
         } catch (error) {
             console.error('Google login failed:', error);
@@ -63,7 +39,6 @@ export default function SocialAuthButtons() {
     };
 
     useEffect(() => {
-        // Tránh initialize nhiều lần
         if (isInitialized.current) return;
 
         const initializeGoogleSignIn = () => {
@@ -108,7 +83,7 @@ export default function SocialAuthButtons() {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-            // Đợi một chút để đảm bảo SDK loaded hoàn toàn
+            // Đảm bảo SDK đã tải xong
             setTimeout(initializeGoogleSignIn, 100);
         };
         document.body.appendChild(script);
@@ -122,7 +97,7 @@ export default function SocialAuthButtons() {
 
     return (
         <div className="space-y-3">
-            {/* Google Sign-In Button - SDK sẽ render vào đây */}
+            {/* Google Sign-In Button */}
             <div
                 ref={googleButtonRef}
                 className="w-full flex items-center justify-center"

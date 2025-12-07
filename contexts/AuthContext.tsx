@@ -1,66 +1,106 @@
+// contexts/AuthContext.tsx
 'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface User {
-    email: string;
+    id: string;
     name: string;
-    avatar?: string;
+    email: string;
 }
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    user?: User | null;
-    login: (token: string, user: User) => void;
-    logout: () => void;
+    isLoading: boolean;
+    user: User | null;
+    login: (user: User) => void;
+    logout: () => Promise<void>;
+    setUser: (user: User) => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
-    isAuthenticated: false,
-    user: null,
-    login: () => { },
-    logout: () => { },
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
-
+    const router = useRouter();
     useEffect(() => {
-        // Kiểm tra token khi load trang
-        const token = localStorage.getItem('authToken');
-        const userData = localStorage.getItem('userData');
-        if (token && userData && userData !== 'undefined') {
-            try {
-                setIsAuthenticated(true);
-                setUser(JSON.parse(userData));
-            } catch (error) {
-                console.error('Failed to parse userData:', error);
-                // Clear invalid data
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userData');
-            }
-        }
+        checkAuth();
     }, []);
 
-    const login = (token: string, user: User) => {
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('userData', JSON.stringify(user));
-        setIsAuthenticated(true);
-        setUser(user);
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/auth/verify', {
+                method: 'GET',
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setUser(data.user);
+                setIsAuthenticated(true);
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            setUser(null);
+            setIsAuthenticated(false);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const logout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        setIsAuthenticated(false);
+    const login = (user: User) => {
+        setUser(user);
+        setIsAuthenticated(true);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect') || '/';
+        router.push(redirectTo);
+    };
+
+    const logout = async () => {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include', // để gửi cookie lên BE
+            });
+        } catch (err) {
+            console.error("Logout API error:", err);
+        }
+
+        // FE xoá state
         setUser(null);
+        setIsAuthenticated(false);
+
+        // Điều hướng
+        router.push('/');
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+        <AuthContext.Provider
+            value={{
+                isAuthenticated,
+                isLoading,
+                user,
+                login,
+                logout,
+                setUser,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+}
