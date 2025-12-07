@@ -7,6 +7,7 @@ import QueryProvider from '@/providers/query-provider';
 import { SolanaWalletProvider } from '@/providers/wallet-provider';
 import Header from '@/components/layout/Header';
 import { usePathname } from 'next/navigation';
+import MockProvider from '@/providers/mock-provider';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
@@ -18,13 +19,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <QueryProvider>
-            <SolanaWalletProvider>
-              {/* Bọc AuthProvider trước Header */}
+            {/* Bọc AuthProvider trước Header */}
+            <MockProvider>
               <AuthProvider>
                 {showHeader && <Header />}
                 <main>{children}</main>
               </AuthProvider>
-            </SolanaWalletProvider>
+            </MockProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { useWallets } from '../hooks/portfolio.hooks';
+import AddWalletButton from './AddWalletButton';
+import WalletDropdownMenu from './WalletDropdownMenu';
 
 export const WalletList: React.FC = () => {
   const { data: walletsData, isLoading } = useWallets();
@@ -8,7 +10,10 @@ export const WalletList: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2">
-        <Label className="text-base">Wallets</Label>
+        <div className="flex justify-between items-center">
+          <Label className="text-base">Wallets</Label>
+          <AddWalletButton />
+        </div>
         {[1, 2, 3].map((i) => (
           <div
             key={i}
@@ -29,15 +34,23 @@ export const WalletList: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Label className="text-base">Wallets</Label>
+      <div className="flex justify-between items-center">
+        <Label className="text-base">Wallets</Label>
+        <AddWalletButton />
+      </div>
       {walletsData.wallets.map((wallet) => (
         <div
           key={wallet.address}
-          className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors cursor-pointer"
+          className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"
         >
           <img src={wallet.icon} className="rounded-lg h-8 w-8 object-contain" alt={wallet.name} />
           <div className="flex flex-col flex-1">
-            <div className="text-sm font-medium">{wallet.name}</div>
+            <div className="text-sm font-medium">
+              {wallet.name}
+              {wallet.is_default && (
+                <span className="ml-2 text-sx text-purple-300 font-normal">(Default)</span>
+              )}
+            </div>
             <div className="flex gap-2 items-end">
               <div className="text-base font-semibold">{wallet.balance_sol.toFixed(4)} SOL</div>
               <div className="text-sm text-gray-400">
@@ -45,6 +58,7 @@ export const WalletList: React.FC = () => {
               </div>
             </div>
           </div>
+          <WalletDropdownMenu walletAddress={wallet.address} isDefault={wallet.is_default} />
         </div>
       ))}
     </div>
