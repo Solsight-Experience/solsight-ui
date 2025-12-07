@@ -15,7 +15,7 @@ export default function PortfolioPage() {
   const { currentTab, setCurrentTab } = usePortfolioUIStore();
 
   return (
-    <div className="grid grid-cols-[1fr_4fr] min-h-screen">
+    <div className="grid grid-cols-[320px_1fr] min-h-screen">
       {/* Left Sidebar */}
       <PortfolioSidebar />
 

@@ -15,6 +15,32 @@ export const portfolioApi = {
     return response;
   },
 
+  setDefaultWallet: async (address: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.patch<{ success: boolean }>(
+      PORTFOLIO_ENDPOINTS.SET_DEFAULT_WALLET(address)
+    );
+    return response;
+  },
+
+  deleteWallet: async (address: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.delete<{ success: boolean }>(
+      PORTFOLIO_ENDPOINTS.DELETE_WALLET(address)
+    );
+    return response;
+  },
+
+  addWallet: async (data: {
+    address: string;
+    name?: string;
+    icon: string;
+  }): Promise<{ success: boolean; wallet: Wallet }> => {
+    const response = await apiClient.post<{ success: boolean; wallet: Wallet }>(
+      PORTFOLIO_ENDPOINTS.WALLETS,
+      data
+    );
+    return response;
+  },
+
   // Portfolio Overview
   getOverview: async (params?: {
     wallet_addresses?: string[];

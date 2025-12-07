@@ -102,6 +102,7 @@ export interface Activity {
   from?: string;
   to?: string;
   wallet: string;
+  wallet_icon?: string;
   tags: string[];
   fee_sol: number;
   fee_usd: number;

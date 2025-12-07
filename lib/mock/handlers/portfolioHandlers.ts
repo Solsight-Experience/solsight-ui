@@ -1,17 +1,27 @@
 import type MockAdapter from 'axios-mock-adapter';
 import { PORTFOLIO_ENDPOINTS } from '@/lib/constants';
-import { mockWallets, mockActivities, mockPnlChartData } from '../data/portfolioData';
+import { mockWallets, mockActivities, mockPnlChartData, mockPhantomWallet } from '../data/portfolioData';
 
 export function setupPortfolioMocks(mock: MockAdapter) {
-  const totalBalanceSol = mockWallets.reduce((sum, w) => sum + w.balance_sol, 0);
-  const totalBalanceUsd = mockWallets.reduce((sum, w) => sum + w.balance_usd, 0);
+  let wallets = [...mockWallets]; // Use mutable copy for testing
+
+  const getTotalBalances = () => ({
+    totalBalanceSol: wallets.reduce((sum, w) => sum + w.balance_sol, 0),
+    totalBalanceUsd: wallets.reduce((sum, w) => sum + w.balance_usd, 0),
+  });
 
   // GET: Wallets
-  mock.onGet(PORTFOLIO_ENDPOINTS.WALLETS).reply(200, {
-    wallets: mockWallets,
-    total_wallets: mockWallets.length,
-    total_balance_sol: totalBalanceSol,
-    total_balance_usd: totalBalanceUsd,
+  mock.onGet(PORTFOLIO_ENDPOINTS.WALLETS).reply(() => {
+    const { totalBalanceSol, totalBalanceUsd } = getTotalBalances();
+    return [
+      200,
+      {
+        wallets,
+        total_wallets: wallets.length,
+        total_balance_sol: totalBalanceSol,
+        total_balance_usd: totalBalanceUsd,
+      },
+    ];
   });
 
   // GET: Overview
@@ -107,5 +117,78 @@ export function setupPortfolioMocks(mock: MockAdapter) {
   // GET: PNL Chart
   mock.onGet(PORTFOLIO_ENDPOINTS.PNL_CHART).reply(200, {
     chart_data: mockPnlChartData,
+  });
+
+  // PATCH: Set Default Wallet
+  mock.onPatch(new RegExp('/api/users/me/wallets/.*/set-default')).reply((config) => {
+    const address = config.url?.split('/').slice(-2, -1)[0];
+    if (!address) return [400, { error: 'Invalid wallet address' }];
+
+    const walletIndex = wallets.findIndex((w) => w.address === address);
+    if (walletIndex === -1) return [404, { error: 'Wallet not found' }];
+
+    // Remove default from all wallets
+    wallets = wallets.map((w) => ({ ...w, is_default: false }));
+    // Set new default
+    wallets[walletIndex] = { ...wallets[walletIndex], is_default: true };
+
+    return [200, { success: true }];
+  });
+
+  // DELETE: Delete Wallet
+  mock.onDelete(new RegExp('/api/users/me/wallets/.*')).reply((config) => {
+    const address = config.url?.split('/').pop();
+    if (!address) return [400, { error: 'Invalid wallet address' }];
+
+    const walletIndex = wallets.findIndex((w) => w.address === address);
+    if (walletIndex === -1) return [404, { error: 'Wallet not found' }];
+
+    // Cannot delete if it's the only wallet
+    if (wallets.length === 1) {
+      return [400, { error: 'Cannot delete the last wallet' }];
+    }
+
+    const wasDefault = wallets[walletIndex].is_default;
+
+    // Remove wallet
+    wallets = wallets.filter((w) => w.address !== address);
+
+    // If deleted wallet was default, make first wallet default
+    if (wasDefault && wallets.length > 0) {
+      wallets[0] = { ...wallets[0], is_default: true };
+    }
+
+    return [200, { success: true }];
+  });
+
+  // POST: Add Wallet (Connect Phantom)
+  mock.onPost(PORTFOLIO_ENDPOINTS.WALLETS).reply((config) => {
+    const data = JSON.parse(config.data || '{}');
+
+    // For mock, we'll just add the Phantom wallet
+    if (wallets.find((w) => w.address === mockPhantomWallet.address)) {
+      return [400, { error: 'Wallet already exists' }];
+    }
+
+    const newWallet = {
+      ...mockPhantomWallet,
+      added_at: new Date().toISOString(),
+    };
+
+    wallets.push(newWallet);
+
+    return [
+      200,
+      {
+        success: true,
+        wallet: {
+          address: newWallet.address,
+          name: newWallet.name,
+          icon: newWallet.icon,
+          is_default: newWallet.is_default,
+          added_at: newWallet.added_at,
+        },
+      },
+    ];
   });
 }

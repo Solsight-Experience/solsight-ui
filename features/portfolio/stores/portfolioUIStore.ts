@@ -2,20 +2,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface PortfolioFilters {
-  timeFrom: { hour: string; minute: string; period: 'AM' | 'PM' };
-  timeTo: { hour: string; minute: string; period: 'AM' | 'PM' };
-  dateFrom: string;
-  dateTo: string;
+  timeFrom: string; // ISO string, ví dụ: "2025-04-05T08:30:00.000Z" hoặc ""
+  timeTo: string; // ISO string hoặc ""
   hideFailedTxns: boolean;
   hideSpam: boolean;
 }
 
 interface PortfolioUIState {
-  // Tab state
+  // Tab
   currentTab: 'position' | 'activity';
   setCurrentTab: (tab: 'position' | 'activity') => void;
 
-  // Wallet collapse state
+  // Wallet collapse
   collapsedWallets: Record<string, boolean>;
   toggleWalletCollapse: (walletAddress: string) => void;
   setWalletCollapse: (walletAddress: string, collapsed: boolean) => void;
@@ -25,17 +23,15 @@ interface PortfolioUIState {
   setFilters: (filters: Partial<PortfolioFilters>) => void;
   resetFilters: () => void;
 
-  // Selected wallets for viewing
+  // Selected wallets
   selectedWallets: string[];
   setSelectedWallets: (wallets: string[]) => void;
   toggleWalletSelection: (walletAddress: string) => void;
 }
 
 const defaultFilters: PortfolioFilters = {
-  timeFrom: { hour: '', minute: '', period: 'AM' },
-  timeTo: { hour: '', minute: '', period: 'AM' },
-  dateFrom: '',
-  dateTo: '',
+  timeFrom: '',
+  timeTo: '',
   hideFailedTxns: false,
   hideSpam: false,
 };
@@ -43,11 +39,9 @@ const defaultFilters: PortfolioFilters = {
 export const usePortfolioUIStore = create<PortfolioUIState>()(
   persist(
     (set) => ({
-      // Tab state
-      currentTab: 'position',
+      currentTab: 'position' as const,
       setCurrentTab: (tab) => set({ currentTab: tab }),
 
-      // Wallet collapse state
       collapsedWallets: {},
       toggleWalletCollapse: (walletAddress) =>
         set((state) => ({
@@ -64,21 +58,19 @@ export const usePortfolioUIStore = create<PortfolioUIState>()(
           },
         })),
 
-      // Filters
       filters: defaultFilters,
-      setFilters: (filters) =>
+      setFilters: (newFilters) =>
         set((state) => ({
-          filters: { ...state.filters, ...filters },
+          filters: { ...state.filters, ...newFilters },
         })),
       resetFilters: () => set({ filters: defaultFilters }),
 
-      // Selected wallets
       selectedWallets: [],
       setSelectedWallets: (wallets) => set({ selectedWallets: wallets }),
       toggleWalletSelection: (walletAddress) =>
         set((state) => ({
           selectedWallets: state.selectedWallets.includes(walletAddress)
-            ? state.selectedWallets.filter((addr) => addr !== walletAddress)
+            ? state.selectedWallets.filter((a) => a !== walletAddress)
             : [...state.selectedWallets, walletAddress],
         })),
     }),

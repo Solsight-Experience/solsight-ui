@@ -21,6 +21,40 @@ export function useWallets() {
   });
 }
 
+export function useSetDefaultWallet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (address: string) => portfolioApi.setDefaultWallet(address),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+    },
+  });
+}
+
+export function useDeleteWallet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (address: string) => portfolioApi.deleteWallet(address),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+    },
+  });
+}
+
+export function useAddWallet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { address: string; name?: string; icon: string }) =>
+      portfolioApi.addWallet(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+    },
+  });
+}
+
 export function usePortfolioOverview(params?: {
   wallet_addresses?: string[];
   time_frame?: '24h' | '7d' | '30d' | '90d' | '1y';

@@ -5,60 +5,96 @@ import { Button } from '@/components/ui/button';
 import { TimePicker } from '@/components/ui/TimePicker';
 import Toggle from '@/components/ui/Toggle';
 import { usePortfolioUIStore } from '../stores/portfolioUIStore';
+import { DateTimePicker24h } from './DateTimePicker';
 
 export const PortfolioFilters: React.FC = () => {
   const { currentTab, filters, setFilters } = usePortfolioUIStore();
 
   if (currentTab === 'position') {
     return (
-      <div className="flex flex-col gap-2">
-        <Label className="text-base">Filters</Label>
+      <div className="flex flex-col gap-4">
+        <Label className="text-base font-medium">Filters</Label>
 
-        <Label className="text-base mt-2">Time range</Label>
-        <div className="flex flex-col gap-2">
-          <TimePicker
-            label="From"
-            value={filters.timeFrom}
-            onChange={(value) => setFilters({ timeFrom: value })}
-          />
-          <TimePicker
-            label="To"
-            value={filters.timeTo}
-            onChange={(value) => setFilters({ timeTo: value })}
-          />
-        </div>
+        <div className="space-y-4">
+          <Label className="text-base">Time range</Label>
 
-        <Label className="text-base mt-2">Date range</Label>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5">
-            <Label className="text-sm w-10">From</Label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => setFilters({ dateFrom: e.target.value })}
-              className="flex-1 h-8 bg-transparent border-2 border-gray-600 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-sm w-10">To</Label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => setFilters({ dateTo: e.target.value })}
-              className="flex-1 h-8 bg-transparent border-2 border-gray-600 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+          <div className="grid grid-cols-1 gap-4">
+            {/* FROM */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm ">From</Label>
+              <DateTimePicker24h
+                date={filters.timeFrom ? new Date(filters.timeFrom) : undefined}
+                maxDate={filters.timeTo ? new Date(filters.timeTo) : undefined}
+                setDate={(date) => {
+                  setFilters({
+                    timeFrom: date ? date.toISOString() : '',
+                  });
+                }}
+              />
+            </div>
+
+            {/* TO */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm ">To</Label>
+              <DateTimePicker24h
+                date={filters.timeTo ? new Date(filters.timeTo) : undefined}
+                minDate={filters.timeFrom ? new Date(filters.timeFrom) : undefined}
+                setDate={(date) => {
+                  setFilters({
+                    timeTo: date ? date.toISOString() : '',
+                  });
+                }}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Bạn có thể bỏ hẳn phần Date range riêng nữa vì DateTimePicker đã có ngày rồi */}
+        {/* Nếu vẫn muốn giữ lại để hiển thị rõ thì để lại, còn không thì xóa đoạn dưới đây cũng được */}
       </div>
     );
   }
 
   if (currentTab === 'activity') {
     return (
-      <div className="flex flex-col gap-2">
-        <Label className="text-base">Filters</Label>
+      <div className="flex flex-col gap-4">
+        <Label className="text-base font-medium">Filters</Label>
 
-        <div className="flex justify-between items-center mt-2">
+        <div className="space-y-4">
+          <Label className="text-base">Time range</Label>
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* FROM */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm">From</Label>
+              <DateTimePicker24h
+                date={filters.timeFrom ? new Date(filters.timeFrom) : undefined}
+                maxDate={filters.timeTo ? new Date(filters.timeTo) : undefined}
+                setDate={(date) => {
+                  setFilters({
+                    timeFrom: date ? date.toISOString() : '',
+                  });
+                }}
+              />
+            </div>
+
+            {/* TO */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm">To</Label>
+              <DateTimePicker24h
+                date={filters.timeTo ? new Date(filters.timeTo) : undefined}
+                minDate={filters.timeFrom ? new Date(filters.timeFrom) : undefined}
+                setDate={(date) => {
+                  setFilters({
+                    timeTo: date ? date.toISOString() : '',
+                  });
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* <div className="flex justify-between items-center mt-2">
           <div>Hide failed</div>
           <Toggle size="sm" onChange={(checked) => setFilters({ hideFailedTxns: checked })} />
         </div>
@@ -66,11 +102,11 @@ export const PortfolioFilters: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>Hide spam</div>
           <Toggle size="sm" onChange={(checked) => setFilters({ hideSpam: checked })} />
-        </div>
+        </div> */}
 
-        <Button className="w-fit mt-2">
-          <div>Export</div>
-          <Download className="size-4 ml-2" />
+        <Button className="w-full mt-2">
+          <Download className="size-4" />
+          Export
         </Button>
       </div>
     );
