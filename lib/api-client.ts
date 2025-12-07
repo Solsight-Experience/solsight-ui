@@ -10,9 +10,10 @@ class ApiClient {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      withCredentials: true,
+      // headers: {
+      //   'Content-Type': 'application/json',
+      // },
     });
 
     this.setupInterceptors();

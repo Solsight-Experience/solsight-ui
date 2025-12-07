@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Calendar1, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,7 @@ export function DateTimePicker24h({ date, setDate, minDate, maxDate } : DateTime
             )}
           >
             <Calendar1 className="mr-2 h-4 w-4" />
-            {date ? format(date, "dd/MM/yyyy HH:mm") : <span>dd/MM/yyyy HH:mm</span>}
+            {date && isValid(date) ? format(date, "dd/MM/yyyy HH:mm") : <span>dd/MM/yyyy HH:mm</span>}
           </Button>
         </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
