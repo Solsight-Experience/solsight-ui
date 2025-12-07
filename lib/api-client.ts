@@ -10,9 +10,10 @@ class ApiClient {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      withCredentials: true,
+      // headers: {
+      //   'Content-Type': 'application/json',
+      // },
     });
 
     this.setupInterceptors();
@@ -22,7 +23,7 @@ class ApiClient {
     // Request interceptor - add auth token if available
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -37,7 +38,7 @@ class ApiClient {
       (error) => {
         // if (error.response?.status === 401) {
         //   // Handle unauthorized - redirect to login
-        //   localStorage.removeItem('auth_token');
+        //   localStorage.removeItem('authToken');
         //   window.location.href = '/auth/login';
         // }
         return Promise.reject(error);

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import QueryProvider from '@/providers/query-provider';
+import { SolanaWalletProvider } from '@/providers/wallet-provider';
 import Header from '@/components/layout/Header';
 import { usePathname } from 'next/navigation';
 import MockProvider from '@/providers/mock-provider';
