@@ -5,7 +5,7 @@ import TokenCell from '../components/TokenCell';
 import { TokenCategory, TokenTableData } from './types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatCompact, formatCurrency, formatPercent } from '@/lib/formatters';
+import { compactFormatter, currencyFormatter, percentFormatter } from '@/lib/formatters';
 
 const categoryStyles: Record<TokenCategory, string> = {
     MEME: 'bg-fuchsia-500/20 text-fuchsia-400',
@@ -91,11 +91,11 @@ export const createColumns = (
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
                     <span className="font-semibold">
-                        {formatCurrency(Number(marketCap.value), marketCap.currencySymbol)}
+                        {currencyFormatter.formatCompact(Number(marketCap.value))}
                     </span>
                     <div className="flex items-center gap-1 text-xs font-medium">
                         {ChangeIcon ? <ChangeIcon className={cn('size-4', accentColor)} /> : null}
-                        <span className={accentColor}>{formatPercent(marketCap.changePercent24h)}</span>
+                        <span className={accentColor}>{percentFormatter.format(marketCap.changePercent24h)}</span>
                     </div>
                 </div>
             );
@@ -109,7 +109,7 @@ export const createColumns = (
 
             return (
                 <span className="block text-right font-medium">
-                    {formatCurrency(Number(row.original.liquidity), symbol)}
+                    {currencyFormatter.formatCompact(Number(row.original.liquidity))}
                 </span>
             );
         },
@@ -124,12 +124,12 @@ export const createColumns = (
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
                     <span className="font-medium">
-                        {formatCurrency(Number(row.original.volume24h), symbol)}
+                        {currencyFormatter.formatCompact(Number(row.original.volume24h))}
                     </span>
                     <div className="flex items-center gap-1 text-xs font-medium">
-                        <span className="text-emerald-400">{formatCompact(buyVolumn)}</span>
+                        <span className="text-emerald-400">{compactFormatter.format(buyVolumn)}</span>
                         <span className="text-muted-foreground">/</span>
-                        <span className="text-rose-400">{formatCompact(sellVolumn)}</span>
+                        <span className="text-rose-400">{compactFormatter.format(sellVolumn)}</span>
                     </div>
                 </div>
             );
@@ -145,11 +145,11 @@ export const createColumns = (
 
             return (
                 <div className="flex flex-col items-end gap-1 text-right">
-                    <span className="font-medium">{formatCompact(total)}</span>
+                    <span className="font-medium">{compactFormatter.format(total)}</span>
                     <div className="flex items-center gap-1 text-xs font-medium">
-                        <span className="text-emerald-400">{formatCompact(buyCount)}</span>
+                        <span className="text-emerald-400">{compactFormatter.format(buyCount)}</span>
                         <span className="text-muted-foreground">/</span>
-                        <span className="text-rose-400">{formatCompact(sellCount)}</span>
+                        <span className="text-rose-400">{compactFormatter.format(sellCount)}</span>
                     </div>
                 </div>
             );
