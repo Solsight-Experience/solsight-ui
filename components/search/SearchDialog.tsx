@@ -23,6 +23,7 @@ import type {
   TokenFilterResponse,
   PoolFilterResponse,
 } from '@/types/filter';
+import { formatCompact, formatCurrency, formatPercent } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
 
 type SearchDialogProps = {
@@ -282,47 +283,101 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 function TokenResults({
   tokens,
 }: {
-  tokens: Array<{
-    address: string;
-    symbol: string;
-    name: string;
-    logo_uri?: string;
-    price?: number;
-    price_change_24h?: number;
-  }>;
+  tokens: TokenOverview[];
 }) {
   const router = useRouter();
   if (!tokens?.length) return <div className="text-muted-foreground">No tokens found.</div>;
+
+  const formatAge = (seconds: number) => {
+    const days = Math.floor(seconds / 86400);
+    if (days > 0) return `${days}d`;
+    const hours = Math.floor(seconds / 3600);
+    if (hours > 0) return `${hours}h`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m`;
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const formatPrice = (value: number) => {
+    if (value >= 1) {
+      return formatCurrency(value);
+    } else {
+      return `$${value.toFixed(2)}`;
+    }
+  };
+
   return (
-    <ul className="divide-y divide-border">
+    <div className="space-y-3">
       {tokens.map((t) => (
-        <a href={`/token/${t.address}`} key={t.address}>
-          <li key={t.address} className="flex items-center justify-between gap-3 py-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-6 rounded-full bg-muted" aria-hidden>
-                {t.logo_uri ? (
-                  <img src={t.logo_uri} alt={t.symbol} className="size-6 rounded-full" />
-                ) : (
-                  <div className="size-6 rounded-full bg-muted" aria-hidden />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="font-medium truncate">{t.symbol || t.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{t.name}</div>
+        <div
+          key={t.address}
+          className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+          onClick={() => router.push(`/token/${t.address}`)}
+        >
+          {/* Token Info - Left Side */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="size-12 rounded-full bg-muted flex-shrink-0 overflow-hidden">
+              {t.logo_uri ? (
+                <img src={t.logo_uri} alt={t.symbol} className="size-12 object-cover" />
+              ) : (
+                <div className="size-12 bg-muted" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-lg truncate">{t.symbol}</div>
+              <div className="text-sm text-muted-foreground truncate">{t.name}</div>
+              <div className="text-xs text-muted-foreground font-mono">{formatAddress(t.address)}</div>
+            </div>
+          </div>
+
+          {/* Data Metrics - Right Side */}
+          <div className="flex gap-10 flex-shrink-0">
+            {/* Market Cap */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Market Cap</div>
+              <div className="text-sm font-medium">{formatCurrency(Number(t.market_cap))}</div>
+            </div>
+
+            {/* Transactions */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">TXN (24h)</div>
+              <div className="text-sm font-medium">{formatCompact(Number(t.txns_24h.total))}</div>
+            </div>
+
+            {/* Holders */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Holders</div>
+              <div className="text-sm font-medium">{formatCompact(Number(t.holders.count))}</div>
+            </div>
+
+            {/* Volume */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Volume</div>
+              <div className="text-sm font-medium">{formatCurrency(Number(t.volume_24h))}</div>
+            </div>
+
+            {/* Age */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Age</div>
+              <div className="text-sm font-medium">{formatAge(Number(t.age_seconds))}</div>
+            </div>
+
+            {/* Price Change */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Price Change</div>
+              <div className="text-sm font-medium">
+                {formatPrice(Number(t.price))} / <span className={`${Number(t.price_change_24h) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {formatPercent(Number(t.price_change_24h))}
+                </span>
               </div>
             </div>
-            <div className="text-right text-sm">
-              {typeof t.price === 'string' ? <div>${(+t.price).toFixed(4)}</div> : null}
-              {typeof t.price_change_24h === 'string' ? (
-                <div className={t.price_change_24h >= 0 ? 'text-emerald-500' : 'text-red-500'}>
-                  {(+t.price_change_24h).toFixed(2)}%
-                </div>
-              ) : null}
-            </div>
-          </li>
-        </a>
+          </div>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
