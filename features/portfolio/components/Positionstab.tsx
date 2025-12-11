@@ -1,12 +1,12 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, Copy, Check, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, Check, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useWallets } from '../hooks/portfolio.hooks';
 import { usePortfolioUIStore } from '../stores/portfolioUIStore';
 import { useState } from 'react';
 import Link from 'next/link';
 
 export const PositionsTab: React.FC = () => {
-  const { data: walletsData, isLoading } = useWallets();
+  const { data: walletsData, isLoading, error } = useWallets();
   const { collapsedWallets, toggleWalletCollapse } = usePortfolioUIStore();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
@@ -36,6 +36,21 @@ export const PositionsTab: React.FC = () => {
     return `${balance.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${symbol}`;
   };
 
+  // Error state
+  if (error) {
+    return (
+      <div className="border border-purple-600 bg-purple-950/20 p-8 rounded-lg">
+        <div className="flex flex-col items-center justify-center text-center gap-3">
+          <AlertTriangle className="size-8 text-purple-500" />
+          <div className="text-purple-500 text-lg font-medium">Error Loading Positions</div>
+          <div className="text-gray-400 text-sm">
+            {error instanceof Error ? error.message : 'Network error. Please try again.'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2">
@@ -50,6 +65,20 @@ export const PositionsTab: React.FC = () => {
   }
 
   if (!walletsData?.wallets) return null;
+
+  // Empty state - no wallets
+  if (walletsData.wallets.length === 0) {
+    return (
+      <div className="border border-gray-600 p-12 rounded-lg">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="text-gray-400 mb-4">
+            <div className="text-xl mb-2">No wallets connected</div>
+            <div className="text-sm">Add a wallet to start tracking your positions</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -102,23 +131,28 @@ export const PositionsTab: React.FC = () => {
 
             {!isCollapsed && (
               <div className="overflow-x-auto">
-                <table className="w-full table-fixed">
-                  <colgroup>
-                    <col className="w-[35%]" />
-                    <col className="w-[20%]" />
-                    <col className="w-[25%]" />
-                    <col className="w-[20%]" />
-                  </colgroup>
-                  <thead className="text-base text-gray-400 border-b border-gray-600">
-                    <tr>
-                      <th className="pb-3 text-start font-medium">Asset</th>
-                      <th className="pb-3 text-start font-medium">Balance</th>
-                      <th className="pb-3 text-start font-medium">Price/24h Change</th>
-                      <th className="pb-3 text-start font-medium">Value (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {wallet.positions.map((position) => (
+                {wallet.positions.length === 0 ? (
+                  <div className="py-8 text-center text-gray-400">
+                    <div className="text-base">No positions in this wallet</div>
+                  </div>
+                ) : (
+                  <table className="w-full table-fixed">
+                    <colgroup>
+                      <col className="w-[35%]" />
+                      <col className="w-[20%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[20%]" />
+                    </colgroup>
+                    <thead className="text-base text-gray-400 border-b border-gray-600">
+                      <tr>
+                        <th className="pb-3 text-start font-medium">Asset</th>
+                        <th className="pb-3 text-start font-medium">Balance</th>
+                        <th className="pb-3 text-start font-medium">Price/24h Change</th>
+                        <th className="pb-3 text-start font-medium">Value (USD)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {wallet.positions.map((position) => (
                       <tr key={position.token.address} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors group">
                         <td className="py-3">
                           <Link
@@ -173,10 +207,11 @@ export const PositionsTab: React.FC = () => {
                             {position.total_pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>
