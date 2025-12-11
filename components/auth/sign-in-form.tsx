@@ -10,7 +10,6 @@ export default function SignInForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirect') || '/';
-
     const { login } = useAuth();
 
     const [email, setEmail] = useState('');
@@ -26,7 +25,13 @@ export default function SignInForm() {
 
         try {
             const data = await loginApi({ email, password });
-            login(data.user);
+
+            // Lưu user vào AuthContext và localStorage
+            if (data.user) {
+                login(data.user);
+            }
+
+            // Redirect về trang chủ
             router.push(redirectTo);
 
         } catch (err: any) {
