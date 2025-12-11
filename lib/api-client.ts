@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import Cookies from 'js-cookie';
 
 // API client configuration for NestJS backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -13,6 +14,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // Enable sending cookies
     });
 
     this.setupInterceptors();
@@ -22,7 +24,7 @@ class ApiClient {
     // Request interceptor - add auth token if available
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = Cookies.get('auth_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
