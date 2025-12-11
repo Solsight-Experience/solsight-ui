@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { UserResponseDto } from '@/types/dto';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/lib/constants';
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   user: UserResponseDto | null;
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check for existing auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    const token = Cookies.get('auth_token');
     if (token) {
       // Verify token and get user profile
       fetchUserProfile();
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response);
     } catch (error) {
       // Token is invalid, remove it
-      localStorage.removeItem('auth_token');
+      Cookies.remove('auth_token');
     } finally {
       setIsLoading(false);
     }
@@ -51,8 +52,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
       });
-      
-      localStorage.setItem('auth_token', response.accessToken);
+
+      Cookies.set('auth_token', response.accessToken, {
+        expires: 7, // 7 days
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+      });
       setUser(response.user);
     } catch (error) {
       throw error;
@@ -66,8 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         publicKey,
       });
-      
-      localStorage.setItem('auth_token', response.accessToken);
+
+      Cookies.set('auth_token', response.accessToken, {
+        expires: 7, // 7 days
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+      });
       setUser(response.user);
     } catch (error) {
       throw error;
@@ -75,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    Cookies.remove('auth_token');
     setUser(null);
     // Optionally call backend logout endpoint
     apiClient.post(API_ENDPOINTS.AUTH.LOGOUT).catch(() => {
