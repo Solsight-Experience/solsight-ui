@@ -38,52 +38,58 @@ export default function Header() {
     };
 
     return (
-        <header className="p-2 border-[1.25] border-purple-500 border-t-0 rounded-full">
-            <div className="container mx-auto flex justify-between items-center">
-                <div className="flex gap-5 items-center">
-                    <HeaderIcon />
-                    <NavLinks />
-                </div>
+      <header className="p-2 border-[1.25] border-purple-500 border-t-0 rounded-full">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex gap-5 items-center">
+            <HeaderIcon />
+            <NavLinks />
+          </div>
 
-                <div className="flex items-center gap-4">
-                    <SearchBox onActivate={handleOpen} />
+          <div className="flex items-center gap-4">
+            <SearchBox onActivate={handleOpen} />
 
-                    {!isAuthenticated ? (
-                        <SignInButton />
-                    ) : (
-                        <div className="relative">
-                            <button onClick={toggleAvatarMenu} className="flex items-center gap-2">
-                                <Avatar size={32} src="/user.png" alt="User Avatar" />
-                                <span className="text-white font-medium">Hi, {user?.name || 'User'}</span>
-                            </button>
+            {!isAuthenticated ? (
+              <SignInButton />
+            ) : (
+              <div className="relative">
+                <button onClick={toggleAvatarMenu} className="flex items-center gap-2">
+                  <Avatar size={32} src="/user.png" alt="User Avatar" />
+                  <span className="text-white font-medium">Hi, {user?.email || 'User'}</span>
+                </button>
 
-                            {avatarMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-xl shadow-lg border border-purple-500/30 py-2 z-50">
-                                    <Link href="/profile" className="block px-4 py-2 hover:bg-purple-500/20">Profile</Link>
-                                    <Link href="/notifications" className="block px-4 py-2 hover:bg-purple-500/20">Notifications</Link>
-                                    <Link href="/settings" className="block px-4 py-2 hover:bg-purple-500/20">Settings</Link>
-                                    <button
-                                        onClick={handleShowConfirmLogout}
-                                        className="block w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
-                                    >
-                                        Logout
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
+                {avatarMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-xl shadow-lg border border-purple-500/30 py-2 z-50">
+                    <Link href="/profile" className="block px-4 py-2 hover:bg-purple-500/20">
+                      Profile
+                    </Link>
+                    <Link href="/notifications" className="block px-4 py-2 hover:bg-purple-500/20">
+                      Notifications
+                    </Link>
+                    <Link href="/settings" className="block px-4 py-2 hover:bg-purple-500/20">
+                      Settings
+                    </Link>
+                    <button
+                      onClick={handleShowConfirmLogout}
+                      className="block w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-            <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+        <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
 
-            <LogoutConfirmDialog
-                isOpen={confirmLogoutOpen}
-                onClose={handleCloseConfirmLogout}
-                onLogout={handleLogout}
-                onDisconnectWallets={handleDisconnectAllWallets}
-            />
-        </header>
+        <LogoutConfirmDialog
+          isOpen={confirmLogoutOpen}
+          onClose={handleCloseConfirmLogout}
+          onLogout={handleLogout}
+          onDisconnectWallets={handleDisconnectAllWallets}
+        />
+      </header>
     );
 }
 
