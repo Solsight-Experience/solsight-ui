@@ -1,14 +1,40 @@
 import React from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, AlertTriangle } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import { usePortfolioOverview, usePnlChart } from '../hooks/portfolio.hooks';
 
 export const PortfolioDashboard: React.FC = () => {
-  const { data: overview, isLoading: overviewLoading } = usePortfolioOverview();
-  const { data: pnlData, isLoading: pnlLoading } = usePnlChart({
+  const { data: overview, isLoading: overviewLoading, error: overviewError } = usePortfolioOverview();
+  const { data: pnlData, isLoading: pnlLoading, error: pnlError } = usePnlChart({
     time_frame: '30d',
     interval: '1d',
   });
+
+  // Error state
+  if (overviewError || pnlError) {
+    return (
+      <div className="grid grid-cols-[1fr_2fr] gap-4">
+        <div className="rounded-2xl border border-purple-600 bg-purple-950/20 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="size-4 text-purple-500" />
+            <div className="text-purple-500 text-base font-medium">Error Loading Data</div>
+          </div>
+          <div className="text-gray-400 text-sm">
+            {overviewError instanceof Error ? overviewError.message : 'Network error. Please try again.'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-purple-600 bg-purple-950/20 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="size-4 text-purple-500" />
+            <div className="text-purple-500 text-base font-medium">Error Loading Data</div>
+          </div>
+          <div className="text-gray-400 text-sm">
+            {pnlError instanceof Error ? pnlError.message : 'Network error. Please try again.'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (overviewLoading || pnlLoading) {
     return (
@@ -26,6 +52,41 @@ export const PortfolioDashboard: React.FC = () => {
   if (!overview || !pnlData) return null;
 
   const { allocation, total_balance_usd, pnl, transactions } = overview;
+
+  // Empty state - no data
+  if (!allocation || allocation.length === 0) {
+    return (
+      <div className="grid grid-cols-[1fr_2fr] gap-4">
+        {/* Balance Card - Empty State */}
+        <div className="rounded-2xl border border-gray-600 p-4">
+          <div className="flex items-center gap-2 mb-6">
+            <Activity className="size-4" />
+            <div className="text-white text-base font-medium">Balance</div>
+          </div>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-gray-400 text-center">
+              <div className="text-xl mb-2">No assets yet</div>
+              <div className="text-sm">Connect a wallet to get started</div>
+            </div>
+          </div>
+        </div>
+
+        {/* PNL Card - Empty State */}
+        <div className="flex-1 rounded-2xl border border-gray-600 p-4">
+          <div className="flex items-center gap-2 mb-6">
+            <Activity className="size-4" />
+            <div className="text-white text-base font-medium">PNL</div>
+          </div>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-gray-400 text-center">
+              <div className="text-xl mb-2">No trading history</div>
+              <div className="text-sm">Your profit and loss will appear here</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Main asset for center display (largest allocation)
   const mainAsset = allocation[0];
