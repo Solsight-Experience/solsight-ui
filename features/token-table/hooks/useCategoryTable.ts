@@ -26,9 +26,9 @@ export function useCategoryTable({ searchQuery = '' }: UseCategoryTableOptions =
         if (!searchQuery) return apiData.categories;
 
         return apiData.categories.filter((category) =>
-            category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            category.description.toLowerCase().includes(searchQuery.toLowerCase())
+            category.name.toLowerCase().includes(searchQuery.toLowerCase()) // ||
+            //category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            //category.description.toLowerCase().includes(searchQuery.toLowerCase())
         ); // Limit to top 20 results
     }, [apiData, searchQuery]);
 
