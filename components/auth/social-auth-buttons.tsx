@@ -28,9 +28,14 @@ export default function SocialAuthButtons() {
             console.log("Google credential received:", response.credential);
 
             const token = response.credential;
-            const { user } = await callOAuthLoginApi(token);
-            document.cookie = `auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; SameSite=Lax`;
-            login();
+            const data = await callOAuthLoginApi(token);
+
+            // Lưu user vào AuthContext và localStorage
+            if (data.user) {
+                login(data.user);
+            }
+
+            // Redirect về trang chủ
             router.push('/');
         } catch (error) {
             console.error('Google login failed:', error);

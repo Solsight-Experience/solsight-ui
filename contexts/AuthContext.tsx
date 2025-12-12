@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
     id: string;
@@ -26,41 +26,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
+
+    // Load user từ localStorage khi component mount
     useEffect(() => {
-        checkAuth();
-    }, []);
-
-    const checkAuth = async () => {
-        try {
-            const response = await fetch('/api/auth/verify', {
-                method: 'GET',
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data.user);
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            try {
+                const parsedUser = JSON.parse(savedUser);
+                setUser(parsedUser);
                 setIsAuthenticated(true);
-            } else {
-                setUser(null);
-                setIsAuthenticated(false);
+            } catch (error) {
+                console.error('Failed to parse saved user:', error);
+                localStorage.removeItem('user');
             }
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            setUser(null);
-            setIsAuthenticated(false);
-        } finally {
-            setIsLoading(false);
         }
-    };
+        setIsLoading(false);
+    }, []);
 
     const login = (user: User) => {
         setUser(user);
         setIsAuthenticated(true);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get('redirect') || '/';
-        router.push(redirectTo);
+        // Lưu user vào localStorage
+        localStorage.setItem('user', JSON.stringify(user));
     };
 
     const logout = async () => {
@@ -73,9 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Logout API error:", err);
         }
 
-        // FE xoá state
+        // Xóa state và localStorage
         setUser(null);
         setIsAuthenticated(false);
+        localStorage.removeItem('user');
 
         // Điều hướng
         router.push('/');
