@@ -1,11 +1,35 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
+import { AlertTriangle } from 'lucide-react';
 import { useWallets } from '../hooks/portfolio.hooks';
 import AddWalletButton from './AddWalletButton';
 import WalletDropdownMenu from './WalletDropdownMenu';
 
 export const WalletList: React.FC = () => {
-  const { data: walletsData, isLoading } = useWallets();
+  const { data: walletsData, isLoading, error } = useWallets();
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center">
+          <Label className="text-base">Wallets</Label>
+          <AddWalletButton />
+        </div>
+        <div className="border border-purple-600 bg-purple-950/20 p-6 rounded-lg">
+          <div className="flex items-center gap-3 text-purple-500">
+            <AlertTriangle className="size-5" />
+            <div>
+              <div className="font-medium">Error Loading Wallets</div>
+              <div className="text-sm text-gray-400 mt-1">
+                {error instanceof Error ? error.message : 'Network error. Please try again.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -38,29 +62,38 @@ export const WalletList: React.FC = () => {
         <Label className="text-base">Wallets</Label>
         <AddWalletButton />
       </div>
-      {walletsData.wallets.map((wallet) => (
-        <div
-          key={wallet.address}
-          className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"
-        >
-          <img src={wallet.icon} className="rounded-lg h-8 w-8 object-contain" alt={wallet.name} />
-          <div className="flex flex-col flex-1">
-            <div className="text-sm font-medium">
-              {wallet.name}
-              {wallet.is_default && (
-                <span className="ml-2 text-sx text-purple-300 font-normal">(Default)</span>
-              )}
-            </div>
-            <div className="flex gap-2 items-end">
-              <div className="text-base font-semibold">{wallet.balance_sol.toFixed(4)} SOL</div>
-              <div className="text-sm text-gray-400">
-                ${wallet.balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+      {walletsData.wallets.length === 0 ? (
+        <div className="border border-gray-600 p-8 rounded-lg">
+          <div className="text-center text-gray-400">
+            <div className="text-base mb-2">No wallets added</div>
+            <div className="text-sm">Click the + button to add your first wallet</div>
+          </div>
+        </div>
+      ) : (
+        walletsData.wallets.map((wallet) => (
+          <div
+            key={wallet.address}
+            className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"
+          >
+            <img src={wallet.icon} className="rounded-lg h-8 w-8 object-contain" alt={wallet.name} />
+            <div className="flex flex-col flex-1">
+              <div className="text-sm font-medium">
+                {wallet.name}
+                {wallet.is_default && (
+                  <span className="ml-2 text-sx text-purple-300 font-normal">(Default)</span>
+                )}
+              </div>
+              <div className="flex gap-2 items-end">
+                <div className="text-base font-semibold">{wallet.balance_sol.toFixed(4)} SOL</div>
+                <div className="text-sm text-gray-400">
+                  ${wallet.balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </div>
               </div>
             </div>
+            <WalletDropdownMenu walletAddress={wallet.address} isDefault={wallet.is_default} />
           </div>
-          <WalletDropdownMenu walletAddress={wallet.address} isDefault={wallet.is_default} />
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 };
