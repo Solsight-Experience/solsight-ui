@@ -36,7 +36,8 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
             // Sau khi đăng ký thành công, toggle về login
             onToggle();
         } catch (err: any) {
-            setError(err.message || 'Sign up failed');
+            console.error('Signup failed:', err);
+            setError(err.response?.data?.message || 'Sign up failed');
         } finally {
             setIsLoading(false);
         }
