@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ExternalLink, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useActivities } from '../hooks/portfolio.hooks';
 import type { Activity } from '../types/portfolio.types';
 import { Input } from '@/components/ui/input';
@@ -162,10 +162,25 @@ export const ActivityTab: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const { data: activitiesData, isLoading } = useActivities({
+  const { data: activitiesData, isLoading, error } = useActivities({
     limit: 50,
     type: 'all',
   });
+
+  // Error state
+  if (error) {
+    return (
+      <div className="border border-purple-600 bg-purple-950/20 p-8 rounded-lg">
+        <div className="flex flex-col items-center justify-center text-center gap-3">
+          <AlertTriangle className="size-8 text-purple-500" />
+          <div className="text-purple-500 text-lg font-medium">Error Loading Activities</div>
+          <div className="text-gray-400 text-sm">
+            {error instanceof Error ? error.message : 'Network error. Please try again.'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -181,6 +196,20 @@ export const ActivityTab: React.FC = () => {
   }
 
   if (!activitiesData?.activities) return null;
+
+  // Empty state - no activities at all
+  if (activitiesData.activities.length === 0) {
+    return (
+      <div className="border border-gray-600 p-12 rounded-lg">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="text-gray-400">
+            <div className="text-xl mb-2">No activities yet</div>
+            <div className="text-sm">Your transaction history will appear here</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Filter activities by search query (address search)
   const filteredActivities = activitiesData.activities.filter((activity) => {

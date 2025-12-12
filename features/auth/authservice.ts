@@ -57,6 +57,7 @@ export async function signupApi(payload: SignUpPayload): Promise<SignUpResponse>
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ token, provider: 'google' }),
         });
 
