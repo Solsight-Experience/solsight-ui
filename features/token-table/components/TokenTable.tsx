@@ -46,6 +46,15 @@ export default function TokenTable() {
         error,
     } = useTokenTable();
 
+    // Debug log for favorites
+    useEffect(() => {
+        if (filters.activeTab === 'FAVOURITES') {
+            console.log('Favorites Tab Active');
+            console.log('Favorite IDs:', Array.from(filters.favouriteIds));
+            console.log('Table rows:', table.getRowModel().rows.length);
+        }
+    }, [filters.activeTab, filters.favouriteIds, table]);
+
     const handleRowClick = (tokenAddress: string) => {
         router.push(`/token/${tokenAddress}`);
     };
@@ -166,6 +175,8 @@ export default function TokenTable() {
                     <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : 'Unknown error'}`} />
                 ) : isLoading ? (
                     <EmptyState message="Loading tokens..." emptyStateForLoading={true} />
+                ) : !hasData && filters.activeTab === 'FAVOURITES' ? (
+                    <EmptyState message="No favorite tokens yet. Click the star icon on any token to add it to your favorites!" />
                 ) : hasData ? (
                     <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
                         <Table className="px-4">

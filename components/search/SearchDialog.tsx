@@ -243,7 +243,12 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
               onApply={handleFilterApply}
               onReset={() => {
                 setFilterFormData(null);
-                setResults({ tokens: [], pools: [], total: 0 });
+                // Re-run search with query only (without filters)
+                if (searchQuery.trim().length >= 2) {
+                  performSearch();
+                } else {
+                  setResults({ tokens: [], pools: [], total: 0 });
+                }
               }}
             />
           </div>
