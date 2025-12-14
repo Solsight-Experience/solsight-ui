@@ -93,10 +93,10 @@ export const PORTFOLIO_ENDPOINTS = {
 
 // User API Endpoints
 export const USER_ENDPOINTS = {
-  ME: '/api/users/me',
-  STATS: '/api/users/me/stats',
-  FAVORITES: '/api/users/me/favorites',
-  FAVORITE_DETAIL: (tokenAddress: string) => `/api/users/me/favorites/${tokenAddress}`,
+  ME: '/api/account/me',
+  STATS: '/api/account/me/stats',
+  FAVORITES: '/api/account/me/favorites',
+  FAVORITE_DETAIL: (tokenAddress: string) => `/api/account/me/favorites/${tokenAddress}`,
 } as const;
 
 // Token API Endpoints
@@ -110,8 +110,8 @@ export const TOKEN_ENDPOINTS = {
 
   // Token Actions
   SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
-  ADD_FAVORITE: (address: string) => `/api/users/me/favorites`,
-  REMOVE_FAVORITE: (address: string) => `/api/users/me/favorites/${address}`,
+  ADD_FAVORITE: (address: string) => `/api/account/me/favorites`,
+  REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
 } as const;
 
 // Chart intervals

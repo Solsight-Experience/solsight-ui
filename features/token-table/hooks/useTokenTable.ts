@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from '@tanstack/react-table';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TimeFilterValue } from '../components/TimeFilters';
 import { TokenTableTabOption } from '../components/TokenTabs';
 import { SortOption, SortDirection } from '../components/SortPanel';
@@ -8,6 +8,8 @@ import { createColumns } from '../config/columns';
 import { TokenDiscoveryService, SortBy, TimeFrame } from '../services/token-discovery.service';
 import { transformTokenOverviews } from '../utils/transform';
 import { queryKeys } from '@/lib/react-query-keys';
+import { apiClient } from '@/lib/api-client';
+import { USER_ENDPOINTS } from '@/lib/constants';
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -21,6 +23,7 @@ export interface TokenTableFilters {
 }
 
 export function useTokenTable() {
+    const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
         timeFilter: '1m',
         activeTab: 'TRENDING',
@@ -34,17 +37,76 @@ export function useTokenTable() {
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    const toggleFavourite = useCallback((tokenId: string) => {
-        setFilters((prev) => {
-            const newFavourites = new Set(prev.favouriteIds);
-            if (newFavourites.has(tokenId)) {
-                newFavourites.delete(tokenId);
-            } else {
-                newFavourites.add(tokenId);
+    // Fetch favorites from backend
+    const { data: favoritesData } = useQuery({
+        queryKey: queryKeys.user.favorites(),
+        queryFn: async () => {
+            try {
+                const response = await apiClient.get<Array<{ token_address: string }>>(USER_ENDPOINTS.FAVORITES);
+                return response;
+            } catch (error) {
+                console.error('Failed to fetch favorites:', error);
+                return [];
             }
-            return { ...prev, favouriteIds: newFavourites };
-        });
-    }, []);
+        },
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
+    // Update local favorites when backend data changes
+    useEffect(() => {
+        if (favoritesData && Array.isArray(favoritesData)) {
+            const favoriteIds = new Set(favoritesData.map((fav) => fav.token_address));
+            setFilters((prev) => ({ ...prev, favouriteIds: favoriteIds }));
+        }
+    }, [favoritesData]);
+
+    // Mutation for toggling favorites
+    const toggleFavoriteMutation = useMutation({
+        mutationFn: async ({ tokenId, isFavorite }: { tokenId: string; isFavorite: boolean }) => {
+            if (isFavorite) {
+                // Remove from favorites
+                return apiClient.delete(`${USER_ENDPOINTS.FAVORITES}/${tokenId}`);
+            } else {
+                // Add to favorites
+                return apiClient.post(USER_ENDPOINTS.FAVORITES, { token_address: tokenId });
+            }
+        },
+        onMutate: async ({ tokenId, isFavorite }) => {
+            // Optimistic update
+            await queryClient.cancelQueries({ queryKey: queryKeys.user.favorites() });
+            
+            const previousFavorites = queryClient.getQueryData(queryKeys.user.favorites());
+            
+            // Update local state immediately
+            setFilters((prev) => {
+                const newFavourites = new Set(prev.favouriteIds);
+                if (isFavorite) {
+                    newFavourites.delete(tokenId);
+                } else {
+                    newFavourites.add(tokenId);
+                }
+                return { ...prev, favouriteIds: newFavourites };
+            });
+            
+            return { previousFavorites };
+        },
+        onError: (err, variables, context) => {
+            // Revert on error
+            if (context?.previousFavorites) {
+                queryClient.setQueryData(queryKeys.user.favorites(), context.previousFavorites);
+            }
+            console.error('Failed to toggle favorite:', err);
+        },
+        onSettled: () => {
+            // Refetch to ensure sync with backend
+            queryClient.invalidateQueries({ queryKey: queryKeys.user.favorites() });
+        },
+    });
+
+    const toggleFavourite = useCallback((tokenId: string) => {
+        const isFavorite = filters.favouriteIds.has(tokenId);
+        toggleFavoriteMutation.mutate({ tokenId, isFavorite });
+    }, [filters.favouriteIds, toggleFavoriteMutation]);
 
     // Memoize columns
     const columns = useMemo(
@@ -130,7 +192,16 @@ export function useTokenTable() {
 
         // Filter by favourites
         if (filters.activeTab === 'FAVOURITES') {
-            transformedData = transformedData.filter((token) => filters.favouriteIds.has(token.id));
+            console.log('Filtering favorites - Total tokens:', transformedData.length);
+            console.log('Favorite IDs:', Array.from(filters.favouriteIds));
+            transformedData = transformedData.filter((token) => {
+                const isFavorite = filters.favouriteIds.has(token.id);
+                if (isFavorite) {
+                    console.log('Found favorite token:', token.id, token.token.symbol);
+                }
+                return isFavorite;
+            });
+            console.log('Filtered favorites count:', transformedData.length);
         }
 
         // Filter by category search
