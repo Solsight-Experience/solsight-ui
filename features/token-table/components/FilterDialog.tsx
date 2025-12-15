@@ -81,6 +81,17 @@ export default function FilterDialog({
   );
 }
 
+function ensurePair(min: number | undefined, max: number | undefined): [number, number] {
+  if (!min && !max) return [min!, max!]; // Return undef if either is undefined so don't send to backend
+  if (min) {
+    if (!max) return [min, min];
+    return [min, max];
+  }
+  else {
+    return [max!, max!];
+  }
+}
+
 export function getFilterRequestBody(
   formData: FilterFormData,
   filterType: 'token' | 'pool'
@@ -90,16 +101,51 @@ export function getFilterRequestBody(
 
     // Metrics
     const metrics: TokenFilterRequest['metrics'] = {};
-    if (formData.age_min_minutes) metrics.age_min_minutes = Number(formData.age_min_minutes);
-    if (formData.age_max_minutes) metrics.age_max_minutes = Number(formData.age_max_minutes);
-    if (formData.liquidity_min) metrics.liquidity_min = Number(formData.liquidity_min);
-    if (formData.liquidity_max) metrics.liquidity_max = Number(formData.liquidity_max);
-    if (formData.market_cap_min) metrics.market_cap_min = Number(formData.market_cap_min);
-    if (formData.market_cap_max) metrics.market_cap_max = Number(formData.market_cap_max);
-    if (formData.volume_24h_min) metrics.volume_24h_min = Number(formData.volume_24h_min);
-    if (formData.volume_24h_max) metrics.volume_24h_max = Number(formData.volume_24h_max);
-    if (formData.txns_24h_min) metrics.txns_24h_min = Number(formData.txns_24h_min);
-    if (formData.txns_24h_max) metrics.txns_24h_max = Number(formData.txns_24h_max);
+    console.log("Form Data in getFilterRequestBody:", formData);
+    if (formData.volume_24h_min || formData.volume_24h_max) {
+      const [min, max] = ensurePair(
+        formData.volume_24h_min,
+        formData.volume_24h_max
+      );
+      [metrics.volume_24h_min, metrics.volume_24h_max] = [min, max];
+      [formData.volume_24h_min, formData.volume_24h_max] = [min, max]; // Update formData to update UI
+    }
+
+    if (formData.txns_24h_min || formData.txns_24h_max) {
+      const [min, max] = ensurePair(
+        formData.txns_24h_min,
+        formData.txns_24h_max
+      );
+      [metrics.txns_24h_min, metrics.txns_24h_max] = [min, max];
+      [formData.txns_24h_min, formData.txns_24h_max] = [min, max]; // Update formData to update UI
+    }
+
+    if (formData.liquidity_min || formData.liquidity_max) {
+      const [min, max] = ensurePair(
+        formData.liquidity_min,
+        formData.liquidity_max
+      );
+      [metrics.liquidity_min, metrics.liquidity_max] = [min, max];
+      [formData.liquidity_min, formData.liquidity_max] = [min, max]; // Update formData to update UI
+    }
+
+    if (formData.market_cap_min || formData.market_cap_max) {
+      const [min, max] = ensurePair(
+        formData.market_cap_min,
+        formData.market_cap_max
+      );
+      [metrics.market_cap_min, metrics.market_cap_max] = [min, max];
+      [formData.market_cap_min, formData.market_cap_max] = [min, max]; // Update formData to update UI
+    }
+
+    if (formData.age_min_minutes || formData.age_max_minutes) {
+      const [min, max] = ensurePair(
+        formData.age_min_minutes,
+        formData.age_max_minutes
+      );
+      [metrics.age_min_minutes, metrics.age_max_minutes] = [min, max];
+      [formData.age_min_minutes, formData.age_max_minutes] = [min, max]; // Update formData to update UI
+    }
 
     if (Object.keys(metrics).length > 0) {
       tokenRequest.metrics = metrics;
@@ -147,7 +193,7 @@ function MetricsFilterList({
   formData: FilterFormData;
   onFormChange: (data: Partial<FilterFormData>) => void;
 }) {
-  const handleFieldChange = (field: keyof FilterFormData, value: string) => {
+  const handleFieldChange = (field: keyof FilterFormData, value: any) => {
     onFormChange({ [field]: value });
   };
 
@@ -330,12 +376,12 @@ function FilterField({
   onMaxChange,
   inputFormatter,
 }: FilterFieldProps) {
-  const input = (value: number, onChange: (value: string) => void) => (
+  const input = (value: number, onChange: (value: any) => void) => (
     <NumbericInput
       value={value}
       onChange={(val) => {
-        if (val) {
-          onChange(val.toString());
+        if (val !== null && !isNaN(val)) {
+          onChange(val);
         }
       }}
       formatter={inputFormatter}
