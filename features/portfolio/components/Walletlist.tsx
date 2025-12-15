@@ -8,6 +8,16 @@ import WalletDropdownMenu from './WalletDropdownMenu';
 export const WalletList: React.FC = () => {
   const { data: walletsData, isLoading, error } = useWallets();
 
+  // mapping url
+  for (const wallet of walletsData?.wallets || []) {
+    switch (wallet.icon) {
+      case 'phantom':
+        wallet.icon =
+          'https://cdn.prod.website-files.com/66e480f0e9eccea9c231ce92/688cfdedc848baa5dcb46202_685aaee76364cd101625876d_Phantom-logo.png';
+        break;
+    }
+  }
+
   // Error state
   if (error) {
     return (
@@ -75,7 +85,11 @@ export const WalletList: React.FC = () => {
             key={wallet.address}
             className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"
           >
-            <img src={wallet.icon} className="rounded-lg h-8 w-8 object-contain" alt={wallet.name} />
+            <img
+              src={wallet.icon}
+              className="rounded-lg h-8 w-8 object-contain"
+              alt={wallet.name}
+            />
             <div className="flex flex-col flex-1">
               <div className="text-sm font-medium">
                 {wallet.name}

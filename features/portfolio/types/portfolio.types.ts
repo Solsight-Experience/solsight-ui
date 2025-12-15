@@ -83,7 +83,7 @@ export interface TopToken {
 export interface AllocationItem {
   symbol: string;
   value_usd: number;
-  percent: number;
+  percentage: number;
 }
 
 // Activity Types

@@ -6,7 +6,7 @@ import { usePortfolioOverview, usePnlChart } from '../hooks/portfolio.hooks';
 export const PortfolioDashboard: React.FC = () => {
   const { data: overview, isLoading: overviewLoading, error: overviewError } = usePortfolioOverview();
   const { data: pnlData, isLoading: pnlLoading, error: pnlError } = usePnlChart({
-    time_frame: '30d',
+    time_frame: '7d',
     interval: '1d',
   });
 
@@ -52,6 +52,7 @@ export const PortfolioDashboard: React.FC = () => {
   if (!overview || !pnlData) return null;
 
   const { allocation, total_balance_usd, pnl, transactions } = overview;
+  console.log(overview);
 
   // Empty state - no data
   if (!allocation || allocation.length === 0) {
@@ -94,9 +95,15 @@ export const PortfolioDashboard: React.FC = () => {
   // Calculate donut segments
   const circumference = 2 * Math.PI * 45; // radius = 45
 
+  const formatDateLabel = (timestamp?: number) =>
+    timestamp
+      ? new Date(timestamp).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+      : '--/--';
+  const chartLabels = pnlData.chart_data.map((point) => formatDateLabel(point.timestamp));
+  const dateMarkers = chartLabels.slice(-7);
   // PNL Chart Data
   const pnlChartData = {
-    labels: pnlData.chart_data.map(() => ''),
+    labels: chartLabels,
     datasets: [
       {
         label: 'PNL',
@@ -135,14 +142,23 @@ export const PortfolioDashboard: React.FC = () => {
         displayColors: false,
         callbacks: {
           label: (context: any) => `$${context.parsed.y.toLocaleString()}`,
+          title: (items: any[]) => items?.[0]?.label || '',
         },
       },
     },
     scales: {
       x: {
-        display: false,
+        display: true,
         grid: {
           display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          maxTicksLimit: 7,
+          color: '#71717a',
+          font: {
+            size: 10,
+          },
         },
       },
       y: {
@@ -177,9 +193,9 @@ export const PortfolioDashboard: React.FC = () => {
               {allocation.map((item, index) => {
                 const startPercentage = allocation
                   .slice(0, index)
-                  .reduce((sum, a) => sum + a.percent, 0);
+                  .reduce((sum, a) => sum + a.percentage, 0);
                 const offset = (circumference * startPercentage) / 100;
-                const dashArray = `${(circumference * item.percent) / 100} ${circumference}`;
+                const dashArray = `${(circumference * item.percentage) / 100} ${circumference}`;
 
                 return (
                   <circle
@@ -200,7 +216,9 @@ export const PortfolioDashboard: React.FC = () => {
 
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-2xl font-bold text-white">{mainAsset.percent.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-white">
+                {mainAsset.percentage.toFixed(1)}%
+              </div>
               <div className="text-sm text-zinc-400 mt-1">{mainAsset.symbol}</div>
             </div>
           </div>
@@ -220,7 +238,7 @@ export const PortfolioDashboard: React.FC = () => {
                 <div className="text-white font-medium">{item.symbol}</div>
                 <div className="flex gap-2 items-center text-sm text-gray-400">
                   <div>${item.value_usd.toFixed(2)}</div>
-                  <div>({item.percent.toFixed(1)}%)</div>
+                  <div>({item.percentage.toFixed(1)}%)</div>
                 </div>
               </div>
             ))}
@@ -236,7 +254,7 @@ export const PortfolioDashboard: React.FC = () => {
         </div>
 
         {/* Chart */}
-        <div className="h-32 mb-6">
+        <div className="h-32 mb-4">
           <Line data={pnlChartData} options={pnlChartOptions} />
         </div>
 
