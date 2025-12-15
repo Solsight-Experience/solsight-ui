@@ -193,9 +193,9 @@ export const PortfolioDashboard: React.FC = () => {
               {allocation.map((item, index) => {
                 const startPercentage = allocation
                   .slice(0, index)
-                  .reduce((sum, a) => sum + a.percentage, 0);
+                  .reduce((sum, a) => sum + a.percent, 0);
                 const offset = (circumference * startPercentage) / 100;
-                const dashArray = `${(circumference * item.percentage) / 100} ${circumference}`;
+                const dashArray = `${(circumference * item.percent) / 100} ${circumference}`;
 
                 return (
                   <circle
@@ -216,9 +216,7 @@ export const PortfolioDashboard: React.FC = () => {
 
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-2xl font-bold text-white">
-                {mainAsset.percentage.toFixed(1)}%
-              </div>
+              <div className="text-2xl font-bold text-white">{mainAsset.percent.toFixed(1)}%</div>
               <div className="text-sm text-zinc-400 mt-1">{mainAsset.symbol}</div>
             </div>
           </div>
@@ -238,7 +236,7 @@ export const PortfolioDashboard: React.FC = () => {
                 <div className="text-white font-medium">{item.symbol}</div>
                 <div className="flex gap-2 items-center text-sm text-gray-400">
                   <div>${item.value_usd.toFixed(2)}</div>
-                  <div>({item.percentage.toFixed(1)}%)</div>
+                  <div>({item.percent.toFixed(1)}%)</div>
                 </div>
               </div>
             ))}
