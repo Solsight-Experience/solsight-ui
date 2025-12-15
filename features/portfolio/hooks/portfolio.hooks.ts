@@ -27,7 +27,7 @@ export function useSetDefaultWallet() {
   return useMutation({
     mutationFn: (address: string) => portfolioApi.setDefaultWallet(address),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
 }
@@ -38,7 +38,7 @@ export function useDeleteWallet() {
   return useMutation({
     mutationFn: (address: string) => portfolioApi.deleteWallet(address),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
 }
@@ -50,7 +50,7 @@ export function useAddWallet() {
     mutationFn: (data: { address: string; name?: string; icon: string }) =>
       portfolioApi.addWallet(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.wallets() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
 }

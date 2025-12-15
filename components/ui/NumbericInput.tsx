@@ -32,7 +32,6 @@ export const NumbericInput = ({
     const raw = e.target.value;
     const validPattern = /^[0-9.,]*$/;
     if (!validPattern.test(raw)) return;
-
     setDisplay(raw);
 
     const num = formatter.convertBack(raw) || 0;
@@ -40,6 +39,7 @@ export const NumbericInput = ({
   }
 
   const handleBlur = () => {
+    isFocused.current = false;
     setDisplay(formatter.format(value));
   }
 
