@@ -6,7 +6,7 @@ import { usePortfolioOverview, usePnlChart } from '../hooks/portfolio.hooks';
 export const PortfolioDashboard: React.FC = () => {
   const { data: overview, isLoading: overviewLoading, error: overviewError } = usePortfolioOverview();
   const { data: pnlData, isLoading: pnlLoading, error: pnlError } = usePnlChart({
-    time_frame: '30d',
+    time_frame: '7d',
     interval: '1d',
   });
 
@@ -95,9 +95,15 @@ export const PortfolioDashboard: React.FC = () => {
   // Calculate donut segments
   const circumference = 2 * Math.PI * 45; // radius = 45
 
+  const formatDateLabel = (timestamp?: number) =>
+    timestamp
+      ? new Date(timestamp).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+      : '--/--';
+  const chartLabels = pnlData.chart_data.map((point) => formatDateLabel(point.timestamp));
+  const dateMarkers = chartLabels.slice(-7);
   // PNL Chart Data
   const pnlChartData = {
-    labels: pnlData.chart_data.map(() => ''),
+    labels: chartLabels,
     datasets: [
       {
         label: 'PNL',
@@ -136,14 +142,23 @@ export const PortfolioDashboard: React.FC = () => {
         displayColors: false,
         callbacks: {
           label: (context: any) => `$${context.parsed.y.toLocaleString()}`,
+          title: (items: any[]) => items?.[0]?.label || '',
         },
       },
     },
     scales: {
       x: {
-        display: false,
+        display: true,
         grid: {
           display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          maxTicksLimit: 7,
+          color: '#71717a',
+          font: {
+            size: 10,
+          },
         },
       },
       y: {
@@ -239,7 +254,7 @@ export const PortfolioDashboard: React.FC = () => {
         </div>
 
         {/* Chart */}
-        <div className="h-32 mb-6">
+        <div className="h-32 mb-4">
           <Line data={pnlChartData} options={pnlChartOptions} />
         </div>
 
