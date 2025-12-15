@@ -1,9 +1,111 @@
 import React from 'react';
 import { ChevronDown, ChevronUp, Copy, Check, ExternalLink, AlertTriangle } from 'lucide-react';
-import { useWallets } from '../hooks/portfolio.hooks';
+import { useWallets, usePositions } from '../hooks/portfolio.hooks';
 import { usePortfolioUIStore } from '../stores/portfolioUIStore';
 import { useState } from 'react';
 import Link from 'next/link';
+
+// Wallet Positions Component
+const WalletPositions: React.FC<{ walletAddress: string; walletName: string }> = ({ walletAddress, walletName }) => {
+  const { data: positionsData, isLoading, error } = usePositions(walletAddress, { sort_by: 'value' });
+
+  const formatPrice = (price: number): string => {
+    if (price >= 1) {
+      return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (price >= 0.01) {
+      return price.toFixed(4);
+    }
+    return price.toFixed(6);
+  };
+
+  const formatBalance = (balance: number, symbol: string): string => {
+    if (balance >= 1000) {
+      return `${balance.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${symbol}`;
+    }
+    if (balance >= 1) {
+      return `${balance.toFixed(4)} ${symbol}`;
+    }
+    return `${balance.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${symbol}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-8 text-center">
+        <div className="animate-pulse text-gray-400">Loading positions...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center text-red-400">
+        <div className="text-sm">Failed to load positions</div>
+      </div>
+    );
+  }
+
+  if (!positionsData?.positions || positionsData.positions.length === 0) {
+    return (
+      <div className="py-8 text-center text-gray-400">
+        <div className="text-base">No positions in this wallet</div>
+      </div>
+    );
+  }
+
+  return (
+    <table className="w-full table-fixed">
+      <colgroup>
+        <col className="w-[35%]" />
+        <col className="w-[20%]" />
+        <col className="w-[25%]" />
+        <col className="w-[20%]" />
+      </colgroup>
+      <thead className="text-base text-gray-400 border-b border-gray-600">
+        <tr>
+          <th className="pb-3 text-start font-medium">Asset</th>
+          <th className="pb-3 text-start font-medium">Balance</th>
+          <th className="pb-3 text-start font-medium">Price/24h Change</th>
+          <th className="pb-3 text-start font-medium">Value (USD)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {positionsData.positions.map((position) => (
+          <tr key={position.token.address} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors group">
+            <td className="py-3">
+              <Link
+                href={`/token/${position.token.address}`}
+                target="_blank"
+                className="flex items-center gap-2 hover:text-purple-400 transition-colors"
+              >
+                <img
+                  src={position.token.logo_uri}
+                  alt={position.token.symbol}
+                  className="w-8 h-8 rounded-full"
+                />
+                <div>
+                  <div className="font-medium">{position.token.symbol}</div>
+                  <div className="text-xs text-gray-400">{position.token.name}</div>
+                </div>
+                <ExternalLink className="size-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            </td>
+            <td className="py-3 font-mono">
+              {formatBalance(position.balance, position.token.symbol)}
+            </td>
+            <td className="py-3">
+              <div className="font-mono">${formatPrice(position.current_price)}</div>
+              <div className={`text-xs ${position.price_change_24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {position.price_change_24h >= 0 ? '+' : ''}{position.price_change_24h.toFixed(2)}%
+              </div>
+            </td>
+            <td className="py-3 font-mono">${position.value_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
 
 export const PositionsTab: React.FC = () => {
   const { data: walletsData, isLoading, error } = useWallets();
@@ -131,87 +233,7 @@ export const PositionsTab: React.FC = () => {
 
             {!isCollapsed && (
               <div className="overflow-x-auto">
-                {wallet.positions.length === 0 ? (
-                  <div className="py-8 text-center text-gray-400">
-                    <div className="text-base">No positions in this wallet</div>
-                  </div>
-                ) : (
-                  <table className="w-full table-fixed">
-                    <colgroup>
-                      <col className="w-[35%]" />
-                      <col className="w-[20%]" />
-                      <col className="w-[25%]" />
-                      <col className="w-[20%]" />
-                    </colgroup>
-                    <thead className="text-base text-gray-400 border-b border-gray-600">
-                      <tr>
-                        <th className="pb-3 text-start font-medium">Asset</th>
-                        <th className="pb-3 text-start font-medium">Balance</th>
-                        <th className="pb-3 text-start font-medium">Price/24h Change</th>
-                        <th className="pb-3 text-start font-medium">Value (USD)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {wallet.positions.map((position) => (
-                      <tr key={position.token.address} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors group">
-                        <td className="py-3">
-                          <Link
-                            href={`/token/${position.token.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex gap-3 items-center hover:text-purple-400 transition-colors"
-                          >
-                            <img
-                              src={position.token.logo_uri}
-                              className="h-10 w-10 rounded-lg flex-shrink-0"
-                              alt={position.token.symbol}
-                            />
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <div className="font-semibold text-base truncate flex items-center gap-1.5">
-                                {position.token.symbol}
-                                <ExternalLink className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                              <div className="text-sm text-gray-400 truncate">{position.token.name}</div>
-                            </div>
-                          </Link>
-                        </td>
-                        <td className="py-3">
-                          <div className="text-base">
-                            {formatBalance(position.balance, position.token.symbol)}
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex flex-col gap-0.5">
-                            <div className="text-base">${formatPrice(position.current_price)}</div>
-                            {position.price_change_24h > 0 ? (
-                              <div className="text-green-500 text-sm">
-                                +{position.price_change_24h.toFixed(2)}%
-                              </div>
-                            ) : (
-                              <div className="text-red-500 text-sm">
-                                {position.price_change_24h.toFixed(2)}%
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="text-base">
-                            ${position.value_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                          <div
-                            className={`text-sm ${
-                              position.total_pnl >= 0 ? 'text-green-500' : 'text-red-500'
-                            }`}
-                          >
-                            PNL: {position.total_pnl >= 0 ? '+' : ''}$
-                            {position.total_pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <WalletPositions walletAddress={wallet.address} walletName={wallet.name} />
               </div>
             )}
           </div>
