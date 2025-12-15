@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import bs58 from 'bs58';
 import apiClient from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { portfolioKeys } from './portfolio.hooks';
 
 // Define Phantom types
 type PhantomEvent = "connect" | "disconnect" | "accountChanged";
@@ -64,6 +66,7 @@ const getMetaMaskProvider = (): EthereumProvider | undefined => {
 const SOLANA_SNAP_ID = 'npm:@solflare-wallet/solana-snap';
 
 export const useWalletAuth = () => {
+    const queryClient = useQueryClient();
     const [provider, setProvider] = useState<PhantomProvider | undefined>(undefined);
     const [walletKey, setWalletKey] = useState<string | null>(null);
     const [connected, setConnected] = useState(false);
@@ -206,6 +209,16 @@ export const useWalletAuth = () => {
                     });
                     
                     if (response.success) {
+                        // Wait a bit for backend to process the wallet addition
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Invalidate and refetch all portfolio queries
+                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+                        await queryClient.refetchQueries({ 
+                            queryKey: portfolioKeys.all,
+                            type: 'active' 
+                        });
+                        
                         alert(response.message);
                     }
                 }
@@ -252,6 +265,16 @@ export const useWalletAuth = () => {
                     });
                     
                     if (response.success) {
+                        // Wait a bit for backend to process the wallet addition
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Invalidate and refetch all portfolio queries
+                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+                        await queryClient.refetchQueries({ 
+                            queryKey: portfolioKeys.all,
+                            type: 'active' 
+                        });
+                        
                         alert(response.message);
                     }
                 }
