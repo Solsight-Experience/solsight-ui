@@ -2,6 +2,7 @@ import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
 import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
+import { da } from 'date-fns/locale';
 
 const socket = TokenSocketManager.getInstance();
 
@@ -62,7 +63,9 @@ export function useTopTradersStream(
       interval: '5s',
     };
 
-    socket.onDomainEvent(dto, setTopTraders);
+    socket.onDomainEvent(dto, (data: any) => {
+      setTopTraders(data.data);
+    });
 
     return () => {
       socket.unsubscribe(dto);
@@ -80,7 +83,9 @@ export function useHoldersStream(address: string) {
       interval: '5s',
     };
 
-    socket.onDomainEvent(dto, setHolders);
+    socket.onDomainEvent(dto, (data: any) => {
+      setHolders(data.data);
+    });
 
     return () => {
       socket.unsubscribe(dto);
