@@ -3,16 +3,26 @@ import { useEffect, useState } from 'react';
 import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
 
-const tokenSocketManager = TokenSocketManager.getInstance();
+const socket = TokenSocketManager.getInstance();
 
 export function useTokenDetailStream(address: string) {
   const [detail, setDetail] = useState<TokenDetail>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'stats', setDetail);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'stats');
+    const dto = {
+      domain: 'stats',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, (data: TokenDetail) => {
+      console.log('data', data);
+      setDetail(data);
+    });
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return detail;
 }
 
@@ -24,11 +34,19 @@ export function useTradeStream(
 ) {
   const [trade, setTrade] = useState<Trade>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'trades', setTrade);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'trades');
+    const dto = {
+      domain: 'trades',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, setTrade);
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
+
   return trade;
 }
 
@@ -38,41 +56,76 @@ export function useTopTradersStream(
 ) {
   const [topTraders, setTopTraders] = useState<TopTrader>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'top_traders', setTopTraders);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'top_traders');
+    const dto = {
+      domain: 'top_traders',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, setTopTraders);
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return topTraders;
 }
 
 export function useHoldersStream(address: string) {
   const [holders, setHolders] = useState<Holder>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'holders', setHolders);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'holders');
+    const dto = {
+      domain: 'holders',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, setHolders);
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return holders;
 }
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
   const [chart, setChart] = useState<ChartDataPoint>();
+
   useEffect(() => {
-    const handlePrice = ({ price, timestamp }: any) => {
-      setChart((prev) => ({ volume: prev?.volume || 0, price, timestamp }));
-    };
-    const handleVolume = ({ volume, timestamp }: any) => {
-      setChart((prev) => ({ price: prev?.price || 0, volume, timestamp }));
+    const priceDto = {
+      domain: 'price',
+      resource: address,
+      interval: '5s',
     };
 
-    tokenSocketManager.onTokenEvent(address, 'price', handlePrice);
-    tokenSocketManager.onTokenEvent(address, 'volume', handleVolume);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'price');
-      tokenSocketManager.offByKeyAndEvent(address, 'volume');
+    const volumeDto = {
+      domain: 'volume',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(priceDto, ({ price, timestamp }) => {
+      setChart((prev) => ({
+        volume: prev?.volume || 0,
+        price,
+        timestamp,
+      }));
+    });
+
+    socket.onDomainEvent(volumeDto, ({ volume, timestamp }) => {
+      setChart((prev) => ({
+        price: prev?.price || 0,
+        volume,
+        timestamp,
+      }));
+    });
+
+    return () => {
+      socket.unsubscribe(priceDto);
+      socket.unsubscribe(volumeDto);
+    };
+  }, [address, interval]);
+
   return chart;
 }
