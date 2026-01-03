@@ -79,17 +79,22 @@ export const generateChartData = (points: number, seed: number = 12345) => {
 
 export const generateCandleData = (points = 200): CandlestickData[] => {
   const data: CandlestickData[] = [];
-  const now = Math.floor(Date.now() / 1000);
 
-  let lastClose = 0.0412;
+  const interval = 10; // 1 candle = 10s (10s)
+  const now = Math.floor(Date.now() / 1000 / interval) * interval;
+
+  let lastClose = 140;
 
   for (let i = points; i >= 0; i--) {
-    const time = (now - i * 100) as UTCTimestamp;
+    const time = (now - i * interval) as UTCTimestamp;
 
     const open = lastClose;
-    const high = open + Math.random() * 0.002;
-    const low = open - Math.random() * 0.002;
-    const close = low + Math.random() * (high - low);
+
+    const delta = (Math.random() - 0.5) * 0.8; // biên độ ±0.4
+    const close = open + delta;
+
+    const high = Math.max(open, close) + Math.random() * 0.3;
+    const low = Math.min(open, close) - Math.random() * 0.3;
 
     lastClose = close;
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
 import { da } from 'date-fns/locale';
+import { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 
 const socket = TokenSocketManager.getInstance();
 
@@ -95,40 +96,27 @@ export function useHoldersStream(address: string) {
 }
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
-  const [chart, setChart] = useState<ChartDataPoint>();
+  const [chart, setChart] = useState<CandlestickData>();
 
   useEffect(() => {
     const priceDto = {
-      domain: 'price',
+      domain: 'priceOHLC',
       resource: address,
-      interval: '5s',
+      interval: '10s',
     };
 
-    const volumeDto = {
-      domain: 'volume',
-      resource: address,
-      interval: '5s',
-    };
-
-    socket.onDomainEvent(priceDto, ({ price, timestamp }) => {
+    socket.onDomainEvent(priceDto, ({ priceOHLC, time }) => {
       setChart((prev) => ({
-        volume: prev?.volume || 0,
-        price,
-        timestamp,
-      }));
-    });
-
-    socket.onDomainEvent(volumeDto, ({ volume, timestamp }) => {
-      setChart((prev) => ({
-        price: prev?.price || 0,
-        volume,
-        timestamp,
+        open: priceOHLC.open,
+        high: priceOHLC.high,
+        low: priceOHLC.low,
+        close: priceOHLC.close,
+        time: time as UTCTimestamp,
       }));
     });
 
     return () => {
       socket.unsubscribe(priceDto);
-      socket.unsubscribe(volumeDto);
     };
   }, [address, interval]);
 
