@@ -31,6 +31,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
   const chartRef = useRef<any>(null);
   const seriesRef = useRef<any>(null);
   const isInitRef = useRef(false);
+  const dataRef = useRef<any[]>([]);
 
   const [type, setType] = useState<'candles' | 'line' | 'area' | 'bars' | 'baseline' | 'histogram'>(
     'candles'
@@ -59,6 +60,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
       chartRef.current = null;
       seriesRef.current = null;
       isInitRef.current = false;
+      dataRef.current = [];
     };
   }, []);
 
@@ -83,11 +85,9 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
           wickDownColor: '#ef4444',
         });
         break;
-
       case 'line':
         seriesRef.current = chart.addSeries(LineSeries, { color: '#3b82f6' });
         break;
-
       case 'area':
         seriesRef.current = chart.addSeries(AreaSeries, {
           lineColor: '#3b82f6',
@@ -95,14 +95,12 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
           bottomColor: 'rgba(59,130,246,0.05)',
         });
         break;
-
       case 'bars':
         seriesRef.current = chart.addSeries(BarSeries, {
           upColor: '#22c55e',
           downColor: '#ef4444',
         });
         break;
-
       case 'baseline':
         seriesRef.current = chart.addSeries(BaselineSeries, {
           baseValue: { type: 'price', price: 50 },
@@ -114,38 +112,63 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
           bottomFillColor2: 'rgba(239,68,68,0.4)',
         });
         break;
-
       case 'histogram':
         seriesRef.current = chart.addSeries(HistogramSeries, {
           priceFormat: { type: 'volume' },
         });
         break;
     }
+
+    if (dataRef.current.length) {
+      switch (type) {
+        case 'candles':
+          seriesRef.current.setData(dataRef.current);
+          break;
+        case 'line':
+          seriesRef.current.setData(toLineData(dataRef.current));
+          break;
+        case 'area':
+          seriesRef.current.setData(toAreaData(dataRef.current));
+          break;
+        case 'bars':
+          seriesRef.current.setData(toBarData(dataRef.current));
+          break;
+        case 'baseline':
+          seriesRef.current.setData(toBaselineData(dataRef.current));
+          break;
+        case 'histogram':
+          seriesRef.current.setData(toHistogramData(dataRef.current));
+          break;
+      }
+      isInitRef.current = true;
+    }
   }, [type]);
 
   useEffect(() => {
     if (!seriesRef.current) return;
     if (!initPoints?.length) return;
-    if (isInitRef.current) return;
+    if (dataRef.current.length) return;
+
+    dataRef.current = [...initPoints];
 
     switch (type) {
       case 'candles':
-        seriesRef.current.setData(initPoints);
+        seriesRef.current.setData(dataRef.current);
         break;
       case 'line':
-        seriesRef.current.setData(toLineData(initPoints));
+        seriesRef.current.setData(toLineData(dataRef.current));
         break;
       case 'area':
-        seriesRef.current.setData(toAreaData(initPoints));
+        seriesRef.current.setData(toAreaData(dataRef.current));
         break;
       case 'bars':
-        seriesRef.current.setData(toBarData(initPoints));
+        seriesRef.current.setData(toBarData(dataRef.current));
         break;
       case 'baseline':
-        seriesRef.current.setData(toBaselineData(initPoints));
+        seriesRef.current.setData(toBaselineData(dataRef.current));
         break;
       case 'histogram':
-        seriesRef.current.setData(toHistogramData(initPoints));
+        seriesRef.current.setData(toHistogramData(dataRef.current));
         break;
     }
 
@@ -157,6 +180,14 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
     if (!seriesRef.current) return;
     if (!newPoint) return;
     if (!isInitRef.current) return;
+
+    const last = dataRef.current[dataRef.current.length - 1];
+
+    if (last && last.time === newPoint.time) {
+      dataRef.current[dataRef.current.length - 1] = newPoint;
+    } else {
+      dataRef.current.push(newPoint);
+    }
 
     switch (type) {
       case 'candles':
