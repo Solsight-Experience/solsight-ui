@@ -1,46 +1,75 @@
 import { SocketManager, EventHandler } from '@/lib/socket-client';
+
+export interface TokenSubscribeDto {
+  domain: string;
+  resource: string;
+  interval: string;
+}
+export interface TokenUnsubscribeDto {
+  domain: string;
+  resource: string;
+  interval: string;
+}
+
 export class TokenSocketManager extends SocketManager {
-  private static _instance: TokenSocketManager;
+  private static instance: TokenSocketManager;
+
   private constructor() {
     super();
   }
 
-  public static getInstance(): TokenSocketManager {
-    if (!TokenSocketManager._instance) {
-      TokenSocketManager._instance = new TokenSocketManager();
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new TokenSocketManager();
     }
-    return TokenSocketManager._instance;
+    return this.instance;
   }
-  public onTokenEvent(token: string, event: string, handler: EventHandler) {
-    this.connect();
-    this.socket!.emit('subscribe', { token });
 
-    const wrappedHandler = (payload: { token: string; data: any }) => {
-      if (payload.token === token) handler(payload.data);
+  subscribe(dto: TokenSubscribeDto) {
+    this.connect();
+    console.log('Subscribing:', dto);
+    this.socket.emit('token:subscribe', dto);
+  }
+
+  unsubscribe(dto: TokenUnsubscribeDto) {
+    this.socket.emit('token:unsubscribe', dto);
+    this.offKey(this.buildKey(dto));
+  }
+
+  onDomainEvent(dto: TokenSubscribeDto, handler: EventHandler) {
+    const key = this.buildKey(dto);
+    this.subscribe(dto);
+
+    const wrapped = (payload: { room: string; data: any }) => {
+      if (payload.room === key) {
+        handler(payload.data);
+      }
     };
 
-    this.on(event, wrappedHandler, token);
+    this.on(dto.domain, wrapped, key);
   }
 
-  public offTokenEvents(token: string): void {
-    this.socket!.emit('unsubscribe', { token });
-    this.offByKey(token);
+  emitDomainEvent(dto: TokenSubscribeDto, data: any) {
+    this.emit(dto.domain, {
+      room: this.buildKey(dto),
+      data,
+    });
   }
 
-  public offTokenEvent(token: string, event: string) {
-    this.socket!.emit('unsubscribe', { token });
-    this.offByKeyAndEvent(token, event);
-  }
-
-  public emitTokenEvent(token: string, event: string, data: any) {
-    this.connect();
-    this.socket!.emit(event, { token, data });
-  }
-
-  public disconnect(): void {
-    for (const token in this.eventMap) {
-      this.socket!.emit('unsubscribe', { token });
-    }
+  override disconnect() {
+    this.events.forEach((_, key) => {
+      const [domain, resource, interval] = key.split(':');
+      this.socket.emit('token:unsubscribe', {
+        domain,
+        resource,
+        interval,
+      });
+    });
     super.disconnect();
+  }
+
+  /** FE & BE dùng CHUNG logic room */
+  private buildKey(dto: TokenSubscribeDto) {
+    return `${dto.domain}:${dto.resource}:${dto.interval}`;
   }
 }
