@@ -16,8 +16,9 @@ import {
   useTopTradersStream,
   useTradeStream,
 } from './token.socket.hooks';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChartInterval } from '@/lib/constants';
+import { generateCandleData } from '../utils/token.utils';
 
 // Query Keys
 export const tokenKeys = {
@@ -65,25 +66,24 @@ export function useChartData(address: string, interval: string) {
         limit: 500,
       }),
     enabled: !!address && !!interval,
-    staleTime: interval === '1m' ? 5000 : 30000, // 5s for 1m, 30s for others
+    staleTime: interval === '1m' ? 5000 : 30000,
   });
-  const newChartPoint = useChartDataStream(address, interval as ChartInterval);
-  const [data, setData] = useState<ChartData>();
 
-  useEffect(() => {
-    if (initial.data) setData(initial.data);
-  }, [initial.data]);
+  const newPoint = useChartDataStream(address, interval as ChartInterval);
 
-  useEffect(() => {
-    if (!newChartPoint) return;
-    setData((prev) => ({
-      ...prev,
-      interval: prev?.interval ?? interval,
-      points: prev?.points ? [...prev.points, newChartPoint] : [newChartPoint],
-    }));
-  }, [newChartPoint]);
+  // init data (batch / mock)
+  const initPoints = useMemo(() => {
+    if (initial.isError) {
+      return generateCandleData(80);
+    }
+    return initial.data?.points;
+  }, [initial.data, initial.isError]);
 
-  return { ...initial, data };
+  return {
+    ...initial,
+    initPoints, // Candle[]
+    newPoint, // Candle | undefined
+  };
 }
 
 export function useTrades(

@@ -2,17 +2,29 @@ import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
 import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
+import { da } from 'date-fns/locale';
+import { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 
-const tokenSocketManager = TokenSocketManager.getInstance();
+const socket = TokenSocketManager.getInstance();
 
 export function useTokenDetailStream(address: string) {
   const [detail, setDetail] = useState<TokenDetail>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'stats', setDetail);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'stats');
+    const dto = {
+      domain: 'stats',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, (data: TokenDetail) => {
+      console.log('data', data);
+      setDetail(data);
+    });
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return detail;
 }
 
@@ -24,11 +36,19 @@ export function useTradeStream(
 ) {
   const [trade, setTrade] = useState<Trade>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'trades', setTrade);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'trades');
+    const dto = {
+      domain: 'trades',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, setTrade);
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
+
   return trade;
 }
 
@@ -38,41 +58,67 @@ export function useTopTradersStream(
 ) {
   const [topTraders, setTopTraders] = useState<TopTrader>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'top_traders', setTopTraders);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'top_traders');
+    const dto = {
+      domain: 'top_traders',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, (data: any) => {
+      setTopTraders(data.data);
+    });
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return topTraders;
 }
 
 export function useHoldersStream(address: string) {
   const [holders, setHolders] = useState<Holder>();
   useEffect(() => {
-    tokenSocketManager.onTokenEvent(address, 'holders', setHolders);
-    return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'holders');
+    const dto = {
+      domain: 'holders',
+      resource: address,
+      interval: '5s',
     };
-  }, []);
+
+    socket.onDomainEvent(dto, (data: any) => {
+      setHolders(data.data);
+    });
+
+    return () => {
+      socket.unsubscribe(dto);
+    };
+  }, [address]);
   return holders;
 }
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
-  const [chart, setChart] = useState<ChartDataPoint>();
+  const [chart, setChart] = useState<CandlestickData>();
+
   useEffect(() => {
-    const handlePrice = ({ price, timestamp }: any) => {
-      setChart((prev) => ({ volume: prev?.volume || 0, price, timestamp }));
-    };
-    const handleVolume = ({ volume, timestamp }: any) => {
-      setChart((prev) => ({ price: prev?.price || 0, volume, timestamp }));
+    const priceDto = {
+      domain: 'priceOHLC',
+      resource: address,
+      interval: '10s',
     };
 
-    tokenSocketManager.onTokenEvent(address, 'price', handlePrice);
-    tokenSocketManager.onTokenEvent(address, 'volume', handleVolume);
+    socket.onDomainEvent(priceDto, ({ priceOHLC, time }) => {
+      setChart((prev) => ({
+        open: priceOHLC.open,
+        high: priceOHLC.high,
+        low: priceOHLC.low,
+        close: priceOHLC.close,
+        time: time as UTCTimestamp,
+      }));
+    });
+
     return () => {
-      tokenSocketManager.offByKeyAndEvent(address, 'price');
-      tokenSocketManager.offByKeyAndEvent(address, 'volume');
+      socket.unsubscribe(priceDto);
     };
-  }, []);
+  }, [address, interval]);
+
   return chart;
 }
