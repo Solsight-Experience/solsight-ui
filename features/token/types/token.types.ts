@@ -1,3 +1,5 @@
+import { CandlestickData } from 'lightweight-charts';
+
 // Token Detail Types
 export interface TokenDetail {
   address: string;
@@ -74,7 +76,7 @@ export interface ChartDataPoint {
 
 export interface ChartData {
   interval: string;
-  points: ChartDataPoint[];
+  points: CandlestickData[];
 }
 
 // Trade Types

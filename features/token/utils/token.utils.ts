@@ -1,5 +1,5 @@
 import { currencyFormatter, percentFormatter, numberFormatter, PercentFormatter } from '@/lib/formatters';
-
+import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 // Time formatting
 export const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp);
@@ -75,3 +75,32 @@ export const generateChartData = (points: number, seed: number = 12345) => {
 
   return data;
 };
+
+
+export const generateCandleData = (points = 200): CandlestickData[] => {
+  const data: CandlestickData[] = [];
+
+  const interval = 10; // 1 candle = 10s (10s)
+  const now = Math.floor(Date.now() / 1000 / interval) * interval;
+
+  let lastClose = 140;
+
+  for (let i = points; i >= 0; i--) {
+    const time = (now - i * interval) as UTCTimestamp;
+
+    const open = lastClose;
+
+    const delta = (Math.random() - 0.5) * 0.8; // biên độ ±0.4
+    const close = open + delta;
+
+    const high = Math.max(open, close) + Math.random() * 0.3;
+    const low = Math.min(open, close) - Math.random() * 0.3;
+
+    lastClose = close;
+
+    data.push({ time, open, high, low, close });
+  }
+
+  return data;
+};
+
