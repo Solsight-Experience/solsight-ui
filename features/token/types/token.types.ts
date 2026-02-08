@@ -81,6 +81,7 @@ export interface ChartData {
 
 // Trade Types
 export interface Trade {
+  token?: string;
   tx_hash: string;
   timestamp: number;
   type: 'BUY' | 'SELL';
@@ -96,6 +97,11 @@ export interface Trade {
 export interface TradesResponse {
   trades: Trade[];
   total: number;
+}
+
+export interface TradeStreamResponse {
+  token: string;
+  trades: Trade[];
 }
 
 // Top Trader Types

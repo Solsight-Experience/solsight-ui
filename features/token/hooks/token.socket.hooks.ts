@@ -1,6 +1,6 @@
 import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
-import type { Trade, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
+import type { Trade, TradeStreamResponse, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
 import { da } from 'date-fns/locale';
 import { CandlestickData, UTCTimestamp } from 'lightweight-charts';
@@ -34,7 +34,7 @@ export function useTradeStream(
     type?: 'all' | 'buy' | 'sell';
   }
 ) {
-  const [trade, setTrade] = useState<Trade>();
+  const [trades, setTrades] = useState<Trade[]>();
   useEffect(() => {
     const dto = {
       domain: 'trades',
@@ -42,14 +42,16 @@ export function useTradeStream(
       interval: '5s',
     };
 
-    socket.onDomainEvent(dto, setTrade);
+    socket.onDomainEvent(dto, (data: TradeStreamResponse) => {
+      setTrades(data.trades);
+    });
 
     return () => {
       socket.unsubscribe(dto);
     };
   }, [address]);
 
-  return trade;
+  return trades;
 }
 
 export function useTopTradersStream(

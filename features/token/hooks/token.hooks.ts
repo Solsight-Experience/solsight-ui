@@ -101,7 +101,7 @@ export function useTrades(
     staleTime: 5000,
     // refetchInterval: 5000,
   });
-  const newTrade = useTradeStream(address, params);
+  const newTrades = useTradeStream(address, params);
   const [data, setData] = useState<{ trades: Trade[] }>({ trades: [] });
 
   useEffect(() => {
@@ -109,13 +109,15 @@ export function useTrades(
   }, [initial.data]);
 
   useEffect(() => {
-    if (!newTrade) return;
+    if (!newTrades || newTrades.length === 0) return;
 
     setData((prev) => {
-      if (prev.trades.some((t) => t.tx_hash === newTrade.tx_hash)) return prev;
-      return { trades: [newTrade, ...prev.trades].slice(0, 10) };
+      const existingHashes = new Set(prev.trades.map((t) => t.tx_hash));
+      const uniqueNew = newTrades.filter((t) => !existingHashes.has(t.tx_hash));
+      if (uniqueNew.length === 0) return prev;
+      return { trades: [...uniqueNew, ...prev.trades] };
     });
-  }, [newTrade]);
+  }, [newTrades]);
 
   return { ...initial, data };
 }
