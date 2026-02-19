@@ -1,8 +1,14 @@
 import { TokenSocketManager } from '../services/token.socket.services';
 import { useEffect, useState } from 'react';
-import type { Trade, TradeStreamResponse, TopTrader, Holder, ChartDataPoint, TokenDetail } from '../types/token.types';
+import type {
+  Trade,
+  TradeStreamResponse,
+  TopTrader,
+  Holder,
+  ChartDataPoint,
+  TokenDetail,
+} from '../types/token.types';
 import type { ChartInterval } from '@/lib/constants';
-import { da } from 'date-fns/locale';
 import { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 
 const socket = TokenSocketManager.getInstance();
