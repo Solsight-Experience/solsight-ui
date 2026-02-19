@@ -115,7 +115,8 @@ export function useTrades(
       const existingHashes = new Set(prev.trades.map((t) => t.tx_hash));
       const uniqueNew = newTrades.filter((t) => !existingHashes.has(t.tx_hash));
       if (uniqueNew.length === 0) return prev;
-      return { trades: [...uniqueNew, ...prev.trades] };
+      const sortedNew = uniqueNew.sort((a, b) => b.timestamp - a.timestamp);
+      return { trades: [...sortedNew, ...prev.trades] };
     });
   }, [newTrades]);
 
