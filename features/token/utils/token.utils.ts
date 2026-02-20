@@ -11,7 +11,7 @@ export const formatTime = (timestamp: number): string => {
 };
 
 export const formatTimeAgo = (timestamp: number): string => {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  const seconds = Math.floor((Date.now() - timestamp * 1000) / 1000);
 
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
