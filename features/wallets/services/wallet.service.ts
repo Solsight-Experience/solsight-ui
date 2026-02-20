@@ -1,16 +1,20 @@
 import apiClient from '@/lib/api-client';
-import { API_ENDPOINTS } from '@/lib/constants';
+import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '@/lib/constants';
 import { WalletResponseDto, CreateWalletDto } from '@/types/dto';
 import { ApiResponse } from '@/types/api';
 
 export class WalletService {
   // Connect wallet - sends public key to backend for registration
   static async connectWallet(publicKey: string, walletType: string): Promise<WalletResponseDto> {
-    const response = await apiClient.post<ApiResponse<WalletResponseDto>>(
-      API_ENDPOINTS.WALLETS.CONNECT,
-      { publicKey, walletType }
+    const response = await apiClient.post<{ success: boolean; wallet: WalletResponseDto }>(
+      PORTFOLIO_ENDPOINTS.WALLETS,
+      {
+        address: publicKey,
+        name: walletType === 'phantom' ? 'Phantom' : walletType,
+        icon: walletType,
+      }
     );
-    return response.data;
+    return response.wallet;
   }
 
   // Get wallet balance from backend
@@ -31,6 +35,6 @@ export class WalletService {
 
   // Disconnect wallet
   static async disconnectWallet(publicKey: string): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.WALLETS.DISCONNECT, { publicKey });
+    await apiClient.delete(PORTFOLIO_ENDPOINTS.DELETE_WALLET(publicKey));
   }
 }
