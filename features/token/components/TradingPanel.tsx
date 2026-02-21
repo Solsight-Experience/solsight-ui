@@ -87,7 +87,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       : 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
   const payBalance = tradeMode === 'buy' ? '2.45' : '0.00';
-  const receiveBalance = tradeMode === 'buy' ? '0.00' : '2.45';
+  // const receiveBalance = tradeMode === 'buy' ? '0.00' : '2.45';
 
   useEffect(() => {
     resetTradingPanel();
@@ -444,7 +444,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
               <span className="font-semibold">{payToken}</span>
             </div>
-            <span className="text-xs text-gray-400">Balance: {payBalance}</span>
+            {/* <span className="text-xs text-gray-400">Balance: {payBalance}</span> */}
           </div>
           <input
             type="text"
@@ -472,7 +472,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
               <span className="font-semibold">{receiveToken}</span>
             </div>
-            <span className="text-xs text-gray-400">Balance: {receiveBalance}</span>
+            {/* <span className="text-xs text-gray-400">Balance: {receiveBalance}</span> */}
           </div>
           <input
             type="text"
