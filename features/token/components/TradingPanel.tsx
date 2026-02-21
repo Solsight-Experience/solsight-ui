@@ -106,8 +106,25 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     setSwapState({ loading: false, error: null, signature: null });
   }, [token.address, resetTradingPanel]);
 
-  const payDecimals = tradeMode === 'buy' ? COMMON_TOKENS.SOL.decimals : token.decimals ?? 9;
-  const receiveDecimals = tradeMode === 'buy' ? token.decimals ?? 9 : COMMON_TOKENS.SOL.decimals;
+  // code: fix tạm - fetch decimals từ Jupiter token list vì backend chưa trả về field decimals
+  const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
+  useEffect(() => {
+    if (token.decimals != null) return;
+    fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
+      .then(r => r.json())
+      .then((data: Array<{ id: string; decimals: number }>) => {
+        const found = Array.isArray(data) ? data.find(t => t.id === token.address) : null;
+        if (found && typeof found.decimals === 'number') setFetchedDecimals(found.decimals);
+      })
+      .catch(() => {});
+  }, [token.address, token.decimals]);
+  const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
+  // end code
+
+  // const payDecimals = tradeMode === 'buy' ? COMMON_TOKENS.SOL.decimals : token.decimals ?? 9;
+  // const receiveDecimals = tradeMode === 'buy' ? token.decimals ?? 9 : COMMON_TOKENS.SOL.decimals;
+  const payDecimals = tradeMode === 'buy' ? COMMON_TOKENS.SOL.decimals : resolvedTokenDecimals;
+  const receiveDecimals = tradeMode === 'buy' ? resolvedTokenDecimals : COMMON_TOKENS.SOL.decimals;
 
   const payMint = tradeMode === 'buy' ? COMMON_TOKENS.SOL.mint : token.address;
   const receiveMint = tradeMode === 'buy' ? token.address : COMMON_TOKENS.SOL.mint;
@@ -252,7 +269,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               .filter(Boolean)
               .map((label: string) => label.trim())
           : [];
-        const uniqueRouteDetails = Array.from(new Set(routeDetails));
+        const uniqueRouteDetails = [...new Set(routeDetails)];
         const routeCount = Array.isArray(data.routePlan) ? data.routePlan.length : 0;
         const routePathTokens = buildRoutePathTokens(
           data.routePlan,
