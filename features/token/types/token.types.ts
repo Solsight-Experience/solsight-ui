@@ -6,6 +6,7 @@ export interface TokenDetail {
   symbol: string;
   name: string;
   logo_uri: string;
+  decimals?: number;
   network: 'solana';
   description: string;
   website: string;
