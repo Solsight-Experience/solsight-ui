@@ -25,6 +25,9 @@ interface TokenUIState {
   receiveAmount: string;
   setReceiveAmount: (amount: string) => void;
 
+  slippageBps: number;
+  setSlippageBps: (bps: number) => void;
+
   limitPrice: string;
   setLimitPrice: (price: string) => void;
 
@@ -53,26 +56,29 @@ export const useTokenUIStore = create<TokenUIState>()(
       setTradeMode: (mode) =>
         set({
           tradeMode: mode,
-          payAmount: '0.00',
-          receiveAmount: '0.00',
+          payAmount: '',
+          receiveAmount: '',
         }),
 
       orderType: 'market',
       setOrderType: (type) => set({ orderType: type }),
 
-      payAmount: '0.00',
+      payAmount: '',
       setPayAmount: (amount) => set({ payAmount: amount }),
 
-      receiveAmount: '0.00',
+      receiveAmount: '',
       setReceiveAmount: (amount) => set({ receiveAmount: amount }),
+
+      slippageBps: 50,
+      setSlippageBps: (bps) => set({ slippageBps: bps }),
 
       limitPrice: '0.00',
       setLimitPrice: (price) => set({ limitPrice: price }),
 
       resetTradingPanel: () =>
         set({
-          payAmount: '0.00',
-          receiveAmount: '0.00',
+          payAmount: '',
+          receiveAmount: '',
           limitPrice: '0.00',
         }),
 

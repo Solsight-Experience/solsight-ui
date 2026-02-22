@@ -50,8 +50,8 @@ const TradeRow: React.FC<Trade> = ({
 export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
   const { data: tradesData, isLoading } = useTrades(tokenAddress, { limit: 50 });
 
-  console.log('Trades');
-  console.log(tradesData);
+  // console.log('Trades');
+  // console.log(tradesData);
 
   if (isLoading) {
     return (
