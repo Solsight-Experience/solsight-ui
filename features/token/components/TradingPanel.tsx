@@ -17,7 +17,7 @@ import { copyToClipboard } from '../utils/token.utils';
 import { Check, Copy, Loader2 } from 'lucide-react';
 import { useWallet } from '@/features/wallets/hooks/useWallet';
 import { toast } from 'sonner';
-import { Connection, VersionedTransaction, clusterApiUrl } from '@solana/web3.js';
+import { Connection, SendTransactionError, VersionedTransaction, clusterApiUrl } from '@solana/web3.js';
 
 interface TradingPanelProps {
   token: TokenDetail;
@@ -263,13 +263,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           setReceiveAmount(nextReceive);
         }
 
-        const routeDetails = Array.isArray(data.routePlan)
+        const routeDetails: string[] = Array.isArray(data.routePlan)
           ? data.routePlan
-              .map((item: any) => item?.swapInfo?.label || item?.swapInfo?.ammKey || item?.swapInfo?.programId)
-              .filter(Boolean)
+              .map(
+                (item: { swapInfo?: { label?: string; ammKey?: string; programId?: string } }) =>
+                  item?.swapInfo?.label || item?.swapInfo?.ammKey || item?.swapInfo?.programId
+              )
+              .filter((label: unknown): label is string => typeof label === 'string' && label.trim().length > 0)
               .map((label: string) => label.trim())
           : [];
-        const uniqueRouteDetails = [...new Set(routeDetails)];
+        const uniqueRouteDetails: string[] = [...new Set(routeDetails)];
         const routeCount = Array.isArray(data.routePlan) ? data.routePlan.length : 0;
         const routePathTokens = buildRoutePathTokens(
           data.routePlan,
@@ -318,6 +321,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     quoteApiKey,
     setPayAmount,
     setReceiveAmount,
+    payToken,
+    receiveToken,
   ]);
 
   const handleSwap = async () => {
@@ -346,6 +351,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
     setSwapState({ loading: true, error: null, signature: null });
 
+    const preferredRpcUrl = getSolanaRpcUrl(swapBaseUrl, quoteBaseUrl);
+    const rpcCandidates = getRpcCandidates(preferredRpcUrl);
+
+    let lastTriedConnection: Connection | null = null;
+
     try {
       const response = await fetch(swapBaseUrl, {
         method: 'POST',
@@ -370,20 +380,51 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         throw new Error('Missing swap transaction.');
       }
 
-      const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
       const tx = VersionedTransaction.deserialize(base64ToBytes(swapTx));
       const signed = await provider.signTransaction(tx);
-      const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        maxRetries: 3,
-      });
+      const serializedTx = signed.serialize();
 
-      await connection.confirmTransaction(signature, 'confirmed');
+      let signature: string | null = null;
+      let sendError: unknown = null;
+      for (const rpcUrl of rpcCandidates) {
+        const connection = new Connection(rpcUrl, 'confirmed');
+        lastTriedConnection = connection;
+        try {
+          signature = await connection.sendRawTransaction(serializedTx, {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
+          await connection.confirmTransaction(signature, 'confirmed');
+          break;
+        } catch (error) {
+          sendError = error;
+          if (!isAccessForbiddenError(error)) {
+            throw error;
+          }
+        }
+      }
+
+      if (!signature) {
+        throw sendError ?? new Error('Swap failed');
+      }
 
       setSwapState({ loading: false, error: null, signature });
       toast.success('Swap submitted!');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Swap failed';
+      let message = error instanceof Error ? error.message : 'Swap failed';
+      if (error instanceof SendTransactionError) {
+        try {
+          if (lastTriedConnection) {
+            const logs = await error.getLogs(lastTriedConnection);
+            if (logs?.length) {
+              message = `${message}\n${logs.slice(-6).join('\n')}`;
+            }
+          }
+        } catch {
+          // Ignore log fetch failures and keep the original message.
+        }
+      }
+      message = mapSwapError(message, swapBaseUrl, quoteBaseUrl);
       setSwapState({ loading: false, error: message, signature: null });
       toast.error(message);
     }
@@ -732,11 +773,52 @@ function mapQuoteError(payload: any): string {
   return 'Quote failed. Please try again.';
 }
 
-function getSolanaRpcUrl(): string {
+function getSolanaRpcUrl(swapUrl: string, quoteUrl: string): string {
+  const explicitRpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim();
+  if (explicitRpc) return explicitRpc;
+
+  // Jupiter public APIs are mainnet-only; forcing mainnet RPC avoids ALT-not-found errors
+  // when app network env is set to devnet/testnet.
+  if (isPublicJupiterApi(swapUrl) || isPublicJupiterApi(quoteUrl)) {
+    return clusterApiUrl('mainnet-beta');
+  }
+
   const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'mainnet').toLowerCase();
   if (network.includes('devnet')) return clusterApiUrl('devnet');
   if (network.includes('testnet')) return clusterApiUrl('testnet');
   return clusterApiUrl('mainnet-beta');
+}
+
+function isPublicJupiterApi(url: string): boolean {
+  return url.toLowerCase().includes('jup.ag');
+}
+
+function getRpcCandidates(preferredRpcUrl: string): string[] {
+  const configuredFallbacks =
+    process.env.NEXT_PUBLIC_SOLANA_RPC_FALLBACK_URLS
+      ?.split(',')
+      .map((url) => url.trim())
+      .filter(Boolean) ?? [];
+  const defaultFallbacks = ['https://rpc.ankr.com/solana', 'https://solana-rpc.publicnode.com'];
+
+  return [...new Set([preferredRpcUrl, ...configuredFallbacks, ...defaultFallbacks])];
+}
+
+function isAccessForbiddenError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes('access forbidden') || message.includes('"code": 403') || message.includes('code: 403');
+}
+
+function mapSwapError(message: string, swapUrl: string, quoteUrl: string): string {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('access forbidden') || normalized.includes('"code": 403') || normalized.includes('code: 403')) {
+    return 'Swap failed: RPC endpoint rejected the request (403). Set NEXT_PUBLIC_SOLANA_RPC_URL to a valid mainnet RPC endpoint (with API key if required).';
+  }
+  if (normalized.includes("address table account that doesn't exist")) {
+    const endpoint = isPublicJupiterApi(swapUrl) || isPublicJupiterApi(quoteUrl) ? 'Jupiter mainnet API' : 'current swap API';
+    return `Swap failed: RPC network mismatch for ${endpoint}. Please use Solana mainnet RPC (or set NEXT_PUBLIC_SOLANA_RPC_URL to a mainnet endpoint).`;
+  }
+  return message;
 }
 
 function base64ToBytes(base64: string): Uint8Array {
