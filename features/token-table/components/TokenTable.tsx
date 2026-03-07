@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     Table,
     TableBody,
@@ -22,7 +22,8 @@ import { EmptyState } from './EmptyState';
 import { CategoryTable } from './CategoryTable';
 import { useTokenTable } from '../hooks/useTokenTable';
 import { PoolFilterResponse, TokenFilterResponse } from '@/types/filter';
-import { queryKeys } from '@/lib/react-query-keys';
+import type { TokenTableData } from '../config/types';
+import { QuickBuyReviewModal } from './QuickBuyReviewModal';
 
 /**
  * TokenTable Component
@@ -31,6 +32,12 @@ import { queryKeys } from '@/lib/react-query-keys';
  */
 export default function TokenTable() {
     const router = useRouter();
+    const [quickBuyToken, setQuickBuyToken] = useState<TokenTableData | null>(null);
+    const [quickBuyModalOpen, setQuickBuyModalOpen] = useState(false);
+    const handleQuickBuy = useCallback((token: TokenTableData) => {
+        setQuickBuyToken(token);
+        setQuickBuyModalOpen(true);
+    }, []);
     const {
         table,
         filters,
@@ -39,12 +46,11 @@ export default function TokenTable() {
         setQuickBuyAmount,
         setCategorySearch,
         toggleSort,
-        toggleFavourite,
         resetFilters,
         applyFilterResults,
         isLoading,
         error,
-    } = useTokenTable();
+    } = useTokenTable(handleQuickBuy);
 
     // Debug log for favorites
     const handleRowClick = (tokenAddress: string) => {
@@ -203,6 +209,12 @@ export default function TokenTable() {
                     <EmptyState message="Oops, it's empty!" />
                 )}
             </div>
+            <QuickBuyReviewModal
+                open={quickBuyModalOpen}
+                onOpenChange={setQuickBuyModalOpen}
+                token={quickBuyToken}
+                amountSol={filters.quickBuyAmount}
+            />
         </>
     );
 }

@@ -22,6 +22,7 @@ export const createColumns = (
     toggleFavourite?: (tokenId: string) => void,
     favouriteIds?: Set<string>,
     quickBuyAmount?: string,
+    onQuickBuy?: (token: TokenTableData) => void,
 ): ColumnDef<TokenTableData>[] => [
     {
         id: 'favourite',
@@ -206,12 +207,15 @@ export const createColumns = (
         id: 'action',
         header: '',
         enableHiding: false,
-        cell: () => (
+        cell: ({ row }) => (
             <div className="flex justify-end">
                 <Button 
                     size="sm" 
                     className="bg-primary text-white rounded-full hover:bg-fuchsia-500/90"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickBuy?.(row.original);
+                    }}
                 >
                     Buy {quickBuyAmount} SOL
                 </Button>
