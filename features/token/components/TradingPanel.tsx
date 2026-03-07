@@ -422,9 +422,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         <Label className="text-sm text-gray-400 mb-2 font-semibold">
           {tradeMode === 'buy' ? 'From' : 'Sell'}
         </Label>
-        <div className={`border-l-4 rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all ${
-          tradeMode === 'buy' ? 'border-l-green-500' : 'border-l-red-500'
-        } border border-gray-700`}>
+        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
@@ -450,9 +448,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
       <div className="mb-4">
         <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
-        <div className={`border-l-4 rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all ${
-          tradeMode === 'buy' ? 'border-l-green-500' : 'border-l-red-500'
-        } border border-gray-700`}>
+        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
