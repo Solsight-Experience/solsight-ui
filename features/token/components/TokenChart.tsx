@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   createChart,
   ColorType,
+  CandlestickSeries,
+  LineSeries,
+  AreaSeries,
+  BarSeries,
+  BaselineSeries,
+  HistogramSeries,
 } from 'lightweight-charts';
 import {
   toLineData,
@@ -245,9 +251,20 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
       isInitRef.current = false;
     }
     const chart = chartRef.current;
+
+    const addSeriesCompat = (legacyMethod: string, seriesDef: any, options: Record<string, unknown>) => {
+      if (typeof chart.addSeries === 'function') {
+        return chart.addSeries(seriesDef, options);
+      }
+      if (typeof chart[legacyMethod] === 'function') {
+        return chart[legacyMethod](options);
+      }
+      throw new Error(`Unsupported lightweight-charts API: ${legacyMethod}`);
+    };
+
     switch (type) {
       case 'candles':
-        seriesRef.current = chart.addCandlestickSeries({
+        seriesRef.current = addSeriesCompat('addCandlestickSeries', CandlestickSeries, {
           upColor: '#22c55e',
           downColor: '#ef4444',
           borderVisible: false,
@@ -256,32 +273,32 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
         });
         break;
       case 'line':
-        seriesRef.current = chart.addLineSeries({
+        seriesRef.current = addSeriesCompat('addLineSeries', LineSeries, {
           color: '#3b82f6',
         });
         break;
       case 'area':
-        seriesRef.current = chart.addAreaSeries({
+        seriesRef.current = addSeriesCompat('addAreaSeries', AreaSeries, {
           lineColor: '#3b82f6',
           topColor: 'rgba(59,130,246,0.4)',
           bottomColor: 'rgba(59,130,246,0.05)',
         });
         break;
       case 'bars':
-        seriesRef.current = chart.addBarSeries({
+        seriesRef.current = addSeriesCompat('addBarSeries', BarSeries, {
           upColor: '#22c55e',
           downColor: '#ef4444'
         });
         break;
       case 'baseline':
-       seriesRef.current = chart.addBaselineSeries({
+       seriesRef.current = addSeriesCompat('addBaselineSeries', BaselineSeries, {
           baseValue: { type: 'price', price: 50 },
           topLineColor: '#22c55e',
           bottomLineColor: '#ef4444',
         });
         break;
       case 'histogram':
-       seriesRef.current = chart.addHistogramSeries({
+       seriesRef.current = addSeriesCompat('addHistogramSeries', HistogramSeries, {
           priceFormat: { type: 'volume' },
         });
         break;
