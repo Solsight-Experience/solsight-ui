@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 
 const formatRelativeTime = (timestamp: number) => {
   const now = Date.now();
-  const diff = now - timestamp;
+  const diff = now - timestamp * 1000;
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -31,8 +31,11 @@ const formatRelativeTime = (timestamp: number) => {
   return `${years} years ago`;
 };
 
+const truncateWallet = (address: string) =>
+  address.length > 8 ? `${address.slice(0, 4)}...${address.slice(-4)}` : address;
+
 const formatDate = (timestamp: number) => {
-  const date = new Date(timestamp);
+  const date = new Date(timestamp * 1000);
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -60,85 +63,73 @@ interface ActivityRowProps extends Activity {
 
 const ActivityRow: React.FC<ActivityRowProps> = ({
   timestamp,
-  app,
+  tx_hash,
   token_in,
   token_out,
   token,
+  from,
+  to,
   wallet,
-  wallet_icon,
+  fee_sol,
+  fee_usd,
   tags,
   tx_url,
 }) => {
+  const isReceived = token && to === wallet;
+  const isSent = token && from === wallet;
+
   return (
     <tr className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
-      <td className="py-4 px-2 text-base">{formatRelativeTime(timestamp)}</td>
-      <td className="py-4 px-2">
-        <div className="flex items-center gap-2">
-          <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-lg" />
-          <div className="flex flex-col">
-            <span className="font-semibold text-base">{app.name}</span>
-            <span className="text-sm text-gray-400">{app.type}</span>
-          </div>
-        </div>
+      <td className="py-4 px-3 text-sm text-gray-300">{formatRelativeTime(timestamp)}</td>
+      <td className="py-4 px-3">
+        <span className="text-sm font-mono text-gray-200" title={tx_hash}>{truncateWallet(tx_hash)}</span>
       </td>
-      <td className="py-4 px-2">
-        {token_out && (
-          <div className="flex items-center gap-1 text-green-500 text-base">
-            <span>
-              {token_out.amount > 0 ? '+' : ''}
-              {token_out.amount.toFixed(token_out.amount < 0.001 ? 10 : 4)} {token_out.symbol}
+      <td className="py-4 px-3">
+        <div className="flex flex-col gap-0.5">
+          {token_out && (
+            <span className="text-sm font-medium text-green-400">
+              +{token_out.amount.toFixed(token_out.amount < 0.001 ? 10 : 4)} {token_out.symbol}
             </span>
-          </div>
-        )}
-        {token && token.amount > 0 && (
-          <div className="flex items-center gap-1 text-green-500 text-base">
-            <span>
-              +{token.amount.toFixed(4)} {token.symbol}
-            </span>
-          </div>
-        )}
-      </td>
-      <td className="py-4 px-2">
-        {token_in && (
-          <div className="flex items-center gap-1 text-red-500 text-base">
-            <span>
-              {token_in.amount.toFixed(4)} {token_in.symbol}
-            </span>
-          </div>
-        )}
-        {token && token.amount < 0 && (
-          <div className="flex items-center gap-1 text-red-500 text-base">
-            <span>
-              {token.amount.toFixed(2)} {token.symbol}
-            </span>
-          </div>
-        )}
-      </td>
-      <td className="py-4 px-2">
-        <div className="flex items-center gap-2">
-          {wallet_icon ? (
-            <img src={wallet_icon} alt={wallet} className="w-8 h-8 rounded-full object-contain" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-              <span className="text-white text-sm font-medium">{wallet[0].toUpperCase()}</span>
-            </div>
           )}
-          <span className="text-base">{wallet}</span>
+          {token_in && (
+            <span className="text-sm font-medium text-red-400">
+              -{token_in.amount.toFixed(4)} {token_in.symbol}
+            </span>
+          )}
+          {isReceived && (
+            <span className="text-sm font-medium text-green-400">
+              +{token!.amount.toFixed(4)} {token!.symbol}
+            </span>
+          )}
+          {isSent && (
+            <span className="text-sm font-medium text-red-400">
+              -{token!.amount.toFixed(4)} {token!.symbol}
+            </span>
+          )}
         </div>
       </td>
-      <td className="py-4 px-2">
-        <div className="flex flex-wrap gap-1 max-w-full">
-          {tags.slice(0, 2).map((tag, index) => (
+      <td className="py-4 px-3">
+        <span className="text-sm font-mono text-gray-200" title={wallet}>{truncateWallet(wallet)}</span>
+      </td>
+      <td className="py-4 px-3">
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-200">{fee_sol.toFixed(6)} SOL</span>
+          <span className="text-xs text-gray-500">${fee_usd.toFixed(4)}</span>
+        </div>
+      </td>
+      <td className="py-4 px-3">
+        <div className="flex items-center gap-1 flex-wrap">
+          {tags.slice(0, 1).map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-0.5 rounded-full border border-blue-500 text-blue-500 text-xs whitespace-nowrap"
+              className="px-2 py-0.5 rounded-full border border-blue-500/60 text-blue-400 text-xs whitespace-nowrap"
             >
               {tag}
             </span>
           ))}
-          {tags.length > 2 && (
-            <span className="px-2 py-0.5 rounded-full border border-gray-500 text-gray-400 text-xs">
-              +{tags.length - 2}
+          {tags.length > 1 && (
+            <span className="px-2 py-0.5 rounded-full border border-gray-600 text-gray-400 text-xs">
+              +{tags.length - 1}
             </span>
           )}
         </div>
@@ -278,28 +269,28 @@ export const ActivityTab: React.FC = () => {
             <div className="border border-gray-600 rounded-lg overflow-hidden">
               <table className="w-full table-fixed">
                 <colgroup>
-                  <col className="w-[12%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[18%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[16%]" />
                   <col className="w-[20%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[12%]" />
+                  <col className="w-[22%]" />
                   <col className="w-[5%]" />
                 </colgroup>
                 <thead className="bg-gray-900/50">
                   <tr className="border-b border-gray-700">
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Time</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">App</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Receive</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Sent</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Wallet</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Tags</th>
-                    <th className="py-3 px-2 text-left text-base font-medium text-gray-400">Link</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Time</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Signature</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Amount</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Wallet</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Fee</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Tags</th>
+                    <th className="py-3 px-3 text-left text-sm font-medium text-gray-400">Link</th>
                   </tr>
                 </thead>
                 <tbody>
                   {activities.map((activity) => (
-                    <ActivityRow key={activity.tx_hash} {...activity} />
+                    <ActivityRow key={`${activity.tx_hash}-${activity.wallet}`} {...activity} />
                   ))}
                 </tbody>
               </table>
