@@ -54,7 +54,7 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
             {message.content}
           </div>
         ) : (
-          <div className="bg-muted text-foreground border border-border/50 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed shadow-sm w-full">
+          <div className="bg-card text-card-foreground border border-border px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed shadow-sm w-full">
             {message.content && (
               <div className="whitespace-pre-wrap mb-2 last:mb-0 break-words">
                 {message.content}

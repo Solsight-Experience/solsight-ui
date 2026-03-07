@@ -92,7 +92,7 @@ export const ChatWindow: React.FC = () => {
           
           {isLoading && (
             <div className="flex justify-start mb-2 animate-in fade-in zoom-in duration-300">
-              <div className="bg-muted text-foreground px-4 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border px-4 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
                 <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
