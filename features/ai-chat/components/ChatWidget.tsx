@@ -1,8 +1,9 @@
-"use client"
-import React, { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
-import { ChatWindow } from "./ChatWindow";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import React, { useState } from 'react';
+import { MessageCircle, X } from 'lucide-react';
+import { ChatWindow } from './ChatWindow';
+import { Button } from '@/components/ui/button';
 
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +20,10 @@ export const ChatWidget: React.FC = () => {
           <MessageCircle size={24} />
         </Button>
       ) : (
-        <div className="w-96 h-[560px] bg-background border rounded-xl shadow-xl flex flex-col overflow-hidden" data-testid="chat-widget-panel">
+        <div
+          className="w-96 h-[560px] bg-card text-card-foreground border border-border rounded-xl shadow-lg flex flex-col overflow-hidden"
+          data-testid="chat-widget-panel"
+        >
           <div className="flex items-center justify-between px-4 py-2 border-b">
             <div className="font-semibold">AI Assistant</div>
             <Button size="icon" onClick={() => setIsOpen(false)} data-testid="chat-widget-close">

@@ -8,7 +8,7 @@ export class SocketManager {
 
   protected constructor() {
     this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: false,
     });
   }

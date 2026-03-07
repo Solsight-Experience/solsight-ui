@@ -7,7 +7,9 @@ import { PortfolioSummaryCard } from './cards/PortfolioSummaryCard';
 import { NavigationCard } from './cards/NavigationCard';
 import { TradeConfirmDialog } from './cards/TradeConfirmDialog';
 
-export const ResponseRenderer: React.FC<{ response: ChatResponseDto }> = ({ response }) => {
+export type ResponseRenderable = Pick<ChatResponseDto, 'type' | 'content' | 'data'>;
+
+export const ResponseRenderer: React.FC<{ response: ResponseRenderable }> = ({ response }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {

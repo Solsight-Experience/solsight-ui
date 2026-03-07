@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   createChart,
   ColorType,
+  CandlestickData,
   LineSeries,
   AreaSeries,
   BarSeries,
@@ -31,7 +32,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress }) => {
   const chartRef = useRef<any>(null);
   const seriesRef = useRef<any>(null);
   const isInitRef = useRef(false);
-  const dataRef = useRef<any[]>([]);
+  const dataRef = useRef<CandlestickData[]>([]);
 
   const [type, setType] = useState<'candles' | 'line' | 'area' | 'bars' | 'baseline' | 'histogram'>(
     'candles'

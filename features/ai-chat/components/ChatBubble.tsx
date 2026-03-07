@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { ChatMessageDto } from '@/types/dto';
@@ -15,10 +15,16 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
     );
   }
 
+  const response = {
+    type: message.type ?? 'text',
+    content: message.content,
+    data: message.data,
+  };
+
   return (
     <div className="flex justify-start mb-4">
-      <div className="bg-gray-100 px-4 py-2 rounded-lg max-w-[80%] break-words">
-        <ResponseRenderer response={message as any} />
+      <div className="bg-card text-card-foreground border border-border px-4 py-2 rounded-lg max-w-[80%] break-words">
+        <ResponseRenderer response={response} />
       </div>
     </div>
   );

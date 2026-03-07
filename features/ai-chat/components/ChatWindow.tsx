@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 
 import { useChat } from '../hooks/useChat';
 import { ChatBubble } from './ChatBubble';
+import { ChatMessageDto } from '@/types/dto';
 
 export const ChatWindow: React.FC = () => {
   const { messages, isLoading, error, sendMessage } = useChat();
@@ -29,8 +30,8 @@ export const ChatWindow: React.FC = () => {
   return (
     <div data-testid="chat-window" className="flex flex-col h-full">
       <ScrollArea className="flex-1 p-4">
-        {messages.map((msg, idx) => (
-          <ChatBubble key={(msg as any).timestamp ?? idx} message={msg} />
+        {messages.map((msg: ChatMessageDto, idx) => (
+          <ChatBubble key={msg.timestamp ?? idx} message={msg} />
         ))}
         <div ref={messagesEndRef} />
       </ScrollArea>
