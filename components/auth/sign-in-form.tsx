@@ -1,15 +1,24 @@
 'use client';
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import SocialAuthButtons from './social-auth-buttons';
 import { loginApi } from '../../features/auth/authservice';
 
-export default function SignInForm() {
+interface SignInFormProps {
+    onToggle?: () => void;
+}
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+    if (err instanceof Error && err.message) {
+        return err.message;
+    }
+    return fallback;
+};
+
+export default function SignInForm(_: SignInFormProps) {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirectTo = searchParams.get('redirect') || '/';
     const { login } = useAuth();
 
     const [email, setEmail] = useState('');
@@ -25,6 +34,10 @@ export default function SignInForm() {
 
         try {
             const data = await loginApi({ email, password });
+            const redirectTo =
+                typeof window !== 'undefined'
+                    ? new URLSearchParams(window.location.search).get('redirect') || '/'
+                    : '/';
 
             // Lưu user vào AuthContext và localStorage
             if (data.user) {
@@ -34,8 +47,8 @@ export default function SignInForm() {
             // Redirect về trang chủ
             router.push(redirectTo);
 
-        } catch (err: any) {
-            setError(err.message || 'Login Failed');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Login failed'));
         } finally {
             setIsLoading(false);
         }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Avatar } from '../ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { SearchDialog } from '@/components/search/SearchDialog';
 import { SearchIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,7 +53,10 @@ export default function Header() {
             ) : (
               <div className="relative">
                 <button onClick={toggleAvatarMenu} className="flex items-center gap-2">
-                  <Avatar size={32} src="/user.png" alt="User Avatar" />
+                  <Avatar>
+                    <AvatarImage src="/user.png" alt="User Avatar" />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
                   <span className="text-white font-medium">Hi, {user?.email || 'User'}</span>
                 </button>
 
