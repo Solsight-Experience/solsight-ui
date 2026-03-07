@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import QueryProvider from '@/providers/query-provider';
 import { SolanaWalletProvider } from '@/providers/wallet-provider';
 import Header from '@/components/layout/Header';
+import ChatWidget from '@/features/ai-chat/components/ChatWidget';
 import { usePathname } from 'next/navigation';
 import MockProvider from '@/providers/mock-provider';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 {showHeader && <Header />}
                 <main>{children}</main>
+                <ChatWidget />
               </AuthProvider>
             </MockProvider>
           </QueryProvider>

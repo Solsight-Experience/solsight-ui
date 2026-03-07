@@ -79,3 +79,25 @@ export interface AuthResponseDto {
   accessToken: string;
   refreshToken: string;
 }
+
+// Chat DTOs
+export interface ChatMessageDto {
+  role: 'user' | 'assistant';
+  content: string;
+  type?: 'text' | 'token_brief' | 'portfolio_summary' | 'navigation' | 'trade_intent';
+  data?: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface SendChatMessageDto {
+  message: string;
+  sessionId: string;
+  walletAddress?: string;
+}
+
+export interface ChatResponseDto {
+  sessionId: string;
+  type: 'text' | 'token_brief' | 'portfolio_summary' | 'navigation' | 'trade_intent';
+  content?: string;
+  data?: Record<string, unknown>;
+}
