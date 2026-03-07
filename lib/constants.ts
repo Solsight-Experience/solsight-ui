@@ -131,6 +131,7 @@ export const CHAT_ENDPOINTS = {
 export const CHAT_SOCKET_EVENTS = {
   SEND: 'chat:message',
   RESPONSE: 'chat:response',
+  STREAM: 'chat:stream',
   COMPLETE: 'chat:complete',
   ERROR: 'chat:error',
 } as const;

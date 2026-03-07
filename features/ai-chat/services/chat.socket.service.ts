@@ -2,6 +2,11 @@ import { CHAT_SOCKET_EVENTS } from '@/lib/constants';
 import { SocketManager, EventHandler } from '@/lib/socket-client';
 import { ChatResponseDto, SendChatMessageDto } from '@/types/dto';
 
+export interface ChatStreamChunk {
+  sessionId: string;
+  chunk: string;
+}
+
 export class ChatSocketManager extends SocketManager {
   private static instance: ChatSocketManager;
 
@@ -24,6 +29,10 @@ export class ChatSocketManager extends SocketManager {
     this.on(CHAT_SOCKET_EVENTS.RESPONSE, handler, `response:${sessionId}`);
   }
 
+  onStream(sessionId: string, handler: (chunk: ChatStreamChunk) => void): void {
+    this.on(CHAT_SOCKET_EVENTS.STREAM, handler, `stream:${sessionId}`);
+  }
+
   onComplete(sessionId: string, handler: () => void): void {
     this.on(CHAT_SOCKET_EVENTS.COMPLETE, handler, `complete:${sessionId}`);
   }
@@ -34,6 +43,7 @@ export class ChatSocketManager extends SocketManager {
 
   offSession(sessionId: string): void {
     this.offKey(`response:${sessionId}`);
+    this.offKey(`stream:${sessionId}`);
     this.offKey(`complete:${sessionId}`);
     this.offKey(`error:${sessionId}`);
   }
