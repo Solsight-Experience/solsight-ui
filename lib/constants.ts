@@ -112,6 +112,9 @@ export const TOKEN_ENDPOINTS = {
   SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
   ADD_FAVORITE: (address: string) => `/api/account/me/favorites`,
   REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
+
+  // AI Summary
+  AI_SUMMARY: '/api/tokens/summarize',
 } as const;
 
 // Chart intervals

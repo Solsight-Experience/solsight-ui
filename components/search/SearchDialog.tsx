@@ -196,37 +196,32 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent showCloseButton={false} className="min-w-250">
+      <DialogContent showCloseButton={false} className="min-w-250 bg-slate-950 border border-slate-700">
         <DialogTitle className="sr-only">Search Dialog</DialogTitle>
         <DialogDescription className="sr-only">
           Search dialog: find token and pool.
         </DialogDescription>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <InputGroup>
             <InputGroupInput
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search token address, symbol, pool..."
+              placeholder="Search token symbol, address, or pool..."
+              className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
               autoFocus
             />
             <InputGroupAddon align={'inline-end'}>
-              <Search />
+              <Search className="text-slate-500" />
             </InputGroupAddon>
           </InputGroup>
           <DialogClose asChild>
-            <Button variant={'outline'}>Cancel</Button>
+            <Button variant={'outline'} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600">Cancel</Button>
           </DialogClose>
         </div>
         <div className="grid grid-cols-[1fr_2fr] items-center gap-2">
-          {/* <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1">
-            <TabsList className="w-full">
-              <TabsTrigger value="token">Token</TabsTrigger>
-              <TabsTrigger value="pool">Pool</TabsTrigger>
-            </TabsList>
-          </Tabs> */}
-          <div></div>
+          <div className="text-xs text-slate-500 font-medium">Sort by:</div>
           <div className="flex items-center justify-end">
-            <div className="px-8 py-4 flex gap-4 justify-end">
+            <div className="px-0 py-2 flex gap-2 justify-end">
               {currentSorts.map((item) => (
                 <div key={item.id} onClick={() => handleSortClick(item.id)}>
                   <SortButton label={item.label} type={sortBy === item.id ? sortOrder : 'none'} />
@@ -255,31 +250,40 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
         </div>
 
         {/* Results Area */}
-        {/* <div className="mt-2 min-h-56 max-h-96 overflow-auto rounded-lg border border-border p-2">
+        <div className="mt-4 min-h-56 max-h-96 overflow-auto rounded-lg border border-slate-700 bg-slate-900/50 p-3">
           {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <RotateCw className="animate-spin" />
-              <span>Searching…</span>
+            <div className="flex items-center justify-center gap-3 text-slate-400 py-8">
+              <RotateCw className="animate-spin w-5 h-5" />
+              <span className="font-medium text-sm">Searching…</span>
             </div>
           )}
 
           {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
-            <div className="text-muted-foreground">
-              Type at least 2 characters to search or apply filters.
+            <div className="flex items-center justify-center py-8 text-center">
+              <div>
+                <Search className="w-8 h-8 text-slate-600 mx-auto mb-3 opacity-60" />
+                <p className="text-slate-300 text-sm font-medium">Start searching</p>
+                <p className="text-slate-500 text-xs mt-2">Type at least 2 characters to find tokens</p>
+              </div>
             </div>
           )}
 
-          {!isLoading && results.total > 0 && ( */}
-        <div className="mt-2 min-h-56 max-h-96 overflow-auto rounded-lg border border-border p-2">
-          {activeTab === 'token' && <TokenResults tokens={results.tokens} />}
-          {activeTab === 'pool' && <PoolResults pools={results.pools} />}
-        </div>
-        {/* )} */}
+          {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
+            <div className="flex items-center justify-center py-8 text-center">
+              <div>
+                <p className="text-slate-300 text-sm font-medium">No results</p>
+                <p className="text-slate-500 text-xs mt-2">Try different keywords</p>
+              </div>
+            </div>
+          )}
 
-        {/* {!isLoading &&
-            (searchQuery.trim().length >= 2 || filterFormData) &&
-            results.total === 0 && <div className="text-muted-foreground">No results found.</div>}
-        </div> */}
+          {!isLoading && results.total > 0 && (
+            <>
+              {activeTab === 'token' && <TokenResults tokens={results.tokens} onClose={onClose} />}
+              {activeTab === 'pool' && <PoolResults pools={results.pools} />}
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -287,11 +291,13 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
 function TokenResults({
   tokens,
+  onClose,
 }: {
   tokens: TokenOverview[];
+  onClose: (open: boolean) => void;
 }) {
   const router = useRouter();
-  if (!tokens?.length) return <div className="text-muted-foreground">No tokens found.</div>;
+  if (!tokens?.length) return <div className="text-slate-400 text-sm">No tokens found</div>;
 
   const formatAge = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
@@ -314,67 +320,74 @@ function TokenResults({
     }
   };
 
+  const handleTokenClick = (address: string) => {
+    onClose(false);
+    router.push(`/token/${address}`);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {tokens.map((t) => (
         <div
           key={t.address}
-          className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
-          onClick={() => router.push(`/token/${t.address}`)}
+          className="flex items-center gap-4 p-3 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 cursor-pointer transition-all duration-200"
+          onClick={() => handleTokenClick(t.address)}
         >
           {/* Token Info - Left Side */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="size-12 rounded-full bg-muted flex-shrink-0 overflow-hidden">
+            <div className="size-10 rounded-full bg-slate-800 flex-shrink-0 overflow-hidden border border-slate-700">
               {t.logo_uri ? (
-                <img src={t.logo_uri} alt={t.symbol} className="size-12 object-cover" />
+                <img src={t.logo_uri} alt={t.symbol} className="size-10 object-cover" />
               ) : (
-                <div className="size-12 bg-muted" />
+                <div className="size-10 bg-slate-700" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-lg truncate">{t.symbol}</div>
-              <div className="text-sm text-muted-foreground truncate">{t.name}</div>
-              <div className="text-xs text-muted-foreground font-mono">{formatAddress(t.address)}</div>
+              <div className="font-semibold text-slate-200 truncate">{t.symbol}</div>
+              <div className="text-xs text-slate-400 truncate">{t.name}</div>
+              <div className="text-xs text-slate-500 font-mono">{formatAddress(t.address)}</div>
             </div>
           </div>
 
           {/* Data Metrics - Right Side */}
-          <div className="flex gap-10 flex-shrink-0">
+          <div className="flex gap-8 flex-shrink-0">
             {/* Market Cap */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Market Cap</div>
-              <div className="text-sm font-medium">{formatCurrency(Number(t.market_cap))}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">MCAP</div>
+              <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.market_cap))}</div>
             </div>
 
             {/* Transactions */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">TXN (24h)</div>
-              <div className="text-sm font-medium">{formatCompact(Number(t.txns_24h.total))}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">TXN 24h</div>
+              <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.txns_24h.total))}</div>
             </div>
 
             {/* Holders */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Holders</div>
-              <div className="text-sm font-medium">{formatCompact(Number(t.holders.count))}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">Holders</div>
+              <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.holders.count))}</div>
             </div>
 
             {/* Volume */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Volume</div>
-              <div className="text-sm font-medium">{formatCurrency(Number(t.volume_24h))}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">Volume</div>
+              <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.volume_24h))}</div>
             </div>
 
             {/* Age */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Age</div>
-              <div className="text-sm font-medium">{formatAge(Number(t.age_seconds))}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">Age</div>
+              <div className="text-sm font-medium text-slate-200">{formatAge(Number(t.age_seconds))}</div>
             </div>
 
             {/* Price Change */}
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Price Change</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">Price</div>
               <div className="text-sm font-medium">
-                {formatPrice(Number(t.price))} / <span className={`${Number(t.price_change_24h) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                <span className="text-slate-200">{formatPrice(Number(t.price))}</span>
+                <span className="mx-1 text-slate-500">/</span>
+                <span className={`${Number(t.price_change_24h) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                   {formatPercent(Number(t.price_change_24h))}
                 </span>
               </div>
@@ -387,21 +400,21 @@ function TokenResults({
 }
 
 function PoolResults({ pools }: { pools: Array<{ address: string; protocol: string; base_token: { symbol: string }; quote_token: { symbol: string }; volume_24h?: number; fee_percent?: number }> }) {
-  if (!pools?.length) return <div className="text-muted-foreground">No pools found.</div>;
+  if (!pools?.length) return <div className="text-slate-400 text-sm">No pools found</div>;
   return (
-    <ul className="divide-y divide-border">
+    <div className="space-y-2">
       {pools.map((p) => (
-        <li key={p.address} className="flex items-center justify-between gap-3 py-2">
+        <div key={p.address} className="flex items-center justify-between gap-3 p-3 border border-slate-700 rounded-lg hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 transition-all duration-200">
           <div className="min-w-0">
-            <div className="font-medium truncate">{p.base_token.symbol} / {p.quote_token.symbol}</div>
-            <div className="text-xs text-muted-foreground truncate">{p.protocol}</div>
+            <div className="font-medium text-slate-200 truncate">{p.base_token.symbol} / {p.quote_token.symbol}</div>
+            <div className="text-xs text-slate-400 truncate">{p.protocol}</div>
           </div>
-          <div className="text-right text-sm text-muted-foreground">
-            {typeof p.fee_percent === 'number' ? <div>Fee {p.fee_percent}%</div> : null}
-            {typeof p.volume_24h === 'number' ? <div>Vol 24h ${p.volume_24h.toLocaleString()}</div> : null}
+          <div className="text-right text-sm text-slate-200 flex-shrink-0">
+            {typeof p.fee_percent === 'number' ? <div className="text-xs text-slate-500">Fee {p.fee_percent}%</div> : null}
+            {typeof p.volume_24h === 'number' ? <div className="font-medium">Vol ${p.volume_24h.toLocaleString()}</div> : null}
           </div>
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

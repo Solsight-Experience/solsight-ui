@@ -251,8 +251,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             : null;
 
         internalUpdateRef.current = true;
-        if (nextPay !== null) setPayAmount(nextPay);
-        if (nextReceive !== null) setReceiveAmount(nextReceive);
+        if (nextPay !== null) {
+          setPayAmount(nextPay);
+        }
+        if (nextReceive !== null) {
+          setReceiveAmount(nextReceive);
+        }
+
+        const routeDetails: string[] = Array.isArray(data.routePlan)
+          ? (data.routePlan as any[])
+              .map((item: any) => item?.swapInfo?.label || item?.swapInfo?.ammKey || item?.swapInfo?.programId)
+              .filter((item: any): item is string => Boolean(item))
+              .map((label: string) => label.trim())
+          : [];
+        const uniqueRouteDetails: string[] = [...new Set(routeDetails)];
+        const routeCount = Array.isArray(data.routePlan) ? data.routePlan.length : 0;
+        const routePathTokens = buildRoutePathTokens(
+          data.routePlan,
+          payMint,
+          receiveMint,
+          payToken,
+          receiveToken
+        );
 
         setQuoteState({
           loading: false,
@@ -343,18 +363,30 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   };
 
   return (
-    <div className="border border-gray-700 rounded-lg p-4 bg-gradient-to-br">
+    <div className={`rounded-xl p-4 bg-gray-900/80 backdrop-blur border-2 transition-all duration-300 ${
+      tradeMode === 'buy'
+        ? 'border-green-500/40 shadow-lg shadow-green-500/10'
+        : 'border-red-500/40 shadow-lg shadow-red-500/10'
+    }`}>
       <div className="flex gap-2 mb-4">
         <Button
-          className="flex-1"
-          variant={tradeMode === 'buy' ? 'default' : 'outline'}
+          className={`flex-1 font-semibold transition-all duration-200 ${
+            tradeMode === 'buy'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+          }`}
+          variant="ghost"
           onClick={() => setTradeMode('buy')}
         >
           Buy
         </Button>
         <Button
-          variant={tradeMode === 'sell' ? 'default' : 'outline'}
-          className="flex-1"
+          className={`flex-1 font-semibold transition-all duration-200 ${
+            tradeMode === 'sell'
+              ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+          }`}
+          variant="ghost"
           onClick={() => setTradeMode('sell')}
         >
           Sell
@@ -387,12 +419,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       </div>
 
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">{tradeMode === 'buy' ? 'From' : 'Sell'}</Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">
+          {tradeMode === 'buy' ? 'From' : 'Sell'}
+        </Label>
+        <div className={`border-l-4 rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all ${
+          tradeMode === 'buy' ? 'border-l-green-500' : 'border-l-red-500'
+        } border border-gray-700`}>
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 bg-gray-700 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
-              <span className="font-semibold">{payToken}</span>
+              <span className="font-semibold text-gray-100">{payToken}</span>
             </div>
           </div>
           <input
@@ -403,20 +439,24 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setPayAmount(sanitizeInput(e.target.value, payDecimals));
             }}
             placeholder="0.00"
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
             onBlur={() => setPayAmount(formatInputValue(payAmount, payDecimals))}
           />
-          <div className="mt-1 text-xs text-gray-500">Enter one field and the other updates from quote.</div>
+          <div className="mt-2 text-xs text-gray-500">
+            Enter one field and the other updates from quote.
+          </div>
         </div>
       </div>
 
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">Receive</Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
+        <div className={`border-l-4 rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all ${
+          tradeMode === 'buy' ? 'border-l-green-500' : 'border-l-red-500'
+        } border border-gray-700`}>
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 bg-gray-700 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
-              <span className="font-semibold">{receiveToken}</span>
+              <span className="font-semibold text-gray-100">{receiveToken}</span>
             </div>
           </div>
           <input
@@ -427,48 +467,49 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setReceiveAmount(sanitizeInput(e.target.value, receiveDecimals));
             }}
             placeholder="0.00"
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
             onBlur={() => setReceiveAmount(formatInputValue(receiveAmount, receiveDecimals))}
           />
         </div>
       </div>
 
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">Slippage</Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50 flex items-center gap-2">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">Slippage</Label>
+        <div className="border border-gray-700 rounded-lg p-3 bg-gray-800/70 backdrop-blur flex items-center gap-2 hover:bg-gray-800/80 transition-colors">
           <input
             type="number"
             min="1"
             step="1"
             value={slippageBps}
             onChange={(e) => setSlippageBps(Number(e.target.value))}
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
           />
-          <span className="text-sm text-gray-400">bps</span>
+          <span className="text-sm text-gray-400 font-semibold">bps</span>
         </div>
-        <div className="mt-1 text-xs text-gray-500">Example: 50 bps = 0.5%</div>
+        <div className="mt-2 text-xs text-gray-500">Example: 50 bps = 0.5%</div>
       </div>
 
-      <div className="mb-4 text-sm text-gray-400">
-        <div className="flex items-center justify-between">
-          <span>Price Impact</span>
-          <span>
+      {/* Quote Summary */}
+      <div className="mb-4 text-sm bg-gray-800/50 rounded-lg p-3 border border-gray-700 space-y-2">
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">Price Impact</span>
+          <span className="font-semibold">
             {quoteState.priceImpactPct === null ? '--' : `${(quoteState.priceImpactPct * 100).toFixed(2)}%`}
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span>{lastEdited === 'receive' ? 'Maximum Paid' : 'Minimum Received'}</span>
-          <span>{formattedQuote}</span>
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">{lastEdited === 'receive' ? 'Maximum Paid' : 'Minimum Received'}</span>
+          <span className="font-semibold">{formattedQuote}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span>Route</span>
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">Route</span>
           <span className="flex items-center gap-2">
             <span>{quoteState.routeLabel ?? '--'}</span>
             {quoteState.routePathTokens.length > 0 && (
               <button
                 type="button"
                 onClick={() => setRouteModalOpen(true)}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
               >
                 View route details
               </button>
@@ -476,12 +517,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           </span>
         </div>
         {quoteState.routeDetails.length > 0 && (
-          <div className="mt-2 text-xs text-gray-500">{quoteState.routeDetails.join(' -> ')}</div>
+          <div className="mt-2 text-xs text-gray-400 border-t border-gray-700 pt-2">
+            {quoteState.routeDetails.join(' → ')}
+          </div>
         )}
-        {quoteState.loading && <div className="mt-2 text-xs text-gray-500">Fetching quote...</div>}
-        {quoteState.error && <div className="mt-2 text-xs text-red-400">{quoteState.error}</div>}
-        {validation.error && <div className="mt-2 text-xs text-red-400">{validation.error}</div>}
-        {swapState.error && <div className="mt-2 text-xs text-red-400">{swapState.error}</div>}
+        {quoteState.loading && <div className="mt-2 text-xs text-yellow-400 font-medium">Fetching quote...</div>}
+        {quoteState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {quoteState.error}</div>}
+        {validation.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
+        {swapState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
         {swapState.signature && (
           <div className="mt-2 text-xs text-green-400">Swap submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
         )}
@@ -495,7 +538,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setLastEdited('pay');
               setPayAmount(amount === 'MAX' ? payBalance : amount);
             }}
-            className="flex-1 py-2 px-3 rounded bg-gray-800 hover:bg-gray-700 text-sm"
+            className="flex-1 py-2 px-3 rounded-lg bg-gray-800/70 hover:bg-gray-700/80 text-sm font-medium text-gray-300 border border-gray-700/50 transition-all hover:border-gray-600"
           >
             {amount}
           </button>
@@ -503,7 +546,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       </div>
 
       <Button
-        className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-6 text-lg"
+        className={`w-full font-bold py-6 text-lg transition-all duration-200 ${
+          tradeMode === 'buy'
+            ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/40'
+            : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40'
+        }`}
         onClick={handleSwap}
         disabled={swapState.loading || quoteState.loading || !!validation.error}
       >
@@ -519,26 +566,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         )}
       </Button>
 
-      <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
+      <div className="flex items-center justify-between mt-4 text-xs text-gray-500 border-t border-gray-700 pt-3">
         <span>Powered by Jupiter API</span>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
           <span>Connected: Solana Mainnet</span>
         </div>
       </div>
 
       <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
-        <DialogContent className="sm:max-w-lg border-gray-700 bg-gray-900">
+        <DialogContent className="sm:max-w-lg border-2 border-gray-700 bg-gray-900 shadow-xl shadow-black/50">
           <DialogHeader>
-            <DialogTitle className="text-lg text-white">Route details</DialogTitle>
-            <DialogDescription className="text-gray-400">Token hops and DEX path for this quote.</DialogDescription>
+            <DialogTitle className="text-lg font-bold text-white">Route details</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Token hops and DEX path for this quote.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-gray-200">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-400">Token hops</div>
-              <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+              <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">Token hops</div>
+              <div className="flex flex-wrap items-center gap-1">
                 {quoteState.routePathTokens.length === 0 ? (
-                  <span>--</span>
+                  <span className="text-gray-400">--</span>
                 ) : (
                   quoteState.routePathTokens.map((routeToken, index) => (
                     <React.Fragment key={`${routeToken.display}-${index}`}>
@@ -558,34 +607,34 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                             );
                           }
                         }}
-                        className="flex items-center gap-1 rounded bg-gray-800 px-2 py-0.5 text-left hover:bg-gray-700"
-                        title={routeToken.full ?? routeToken.display}
+                        className="flex items-center gap-1 rounded bg-gray-700/80 px-2 py-1 text-left hover:bg-gray-700 border border-gray-600/50 transition-colors"
+                        title={token.full ?? token.display}
                       >
-                        <span>{routeToken.display}</span>
-                        {routeToken.full && copiedMint === routeToken.full ? (
+                        <span className="text-sm font-medium">{token.display}</span>
+                        {token.full && copiedMint === token.full ? (
                           <Check className="h-3 w-3 text-green-400" />
                         ) : (
                           <Copy className="h-3 w-3 text-gray-500" />
                         )}
                       </button>
                       {index < quoteState.routePathTokens.length - 1 && (
-                        <span className="text-gray-500">-&gt;</span>
+                        <span className="text-gray-500 text-xs">→</span>
                       )}
                     </React.Fragment>
                   ))
                 )}
               </div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-400">DEX path</div>
-              <div className="mt-1">
-                {quoteState.routeDetails.length > 0 ? quoteState.routeDetails.join(' -> ') : '--'}
+            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+              <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">DEX path</div>
+              <div className="text-sm font-medium text-gray-300">
+                {quoteState.routeDetails.length > 0 ? quoteState.routeDetails.join(' → ') : '--'}
               </div>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" className="border-gray-600 text-gray-200">
+              <Button variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-800">
                 Close
               </Button>
             </DialogClose>
