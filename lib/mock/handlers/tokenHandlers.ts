@@ -196,48 +196,52 @@ const mockHolders = [
 
 export function setupTokenMockApi(mock: MockAdapter) {
   // Get chart data
-  mock.onGet(/\/api\/tokens\/.*\/chart/).reply((config) => {
-    const params = config.params;
-    const points = params?.limit || 60;
+  // NOTE: Disabled to fetch real data from API
+  // mock.onGet(/\/api\/tokens\/.*\/chart/).reply((config) => {
+  //   const params = config.params;
+  //   const points = params?.limit || 60;
 
-    return [
-      200,
-      {
-        interval: params?.interval || '1m',
-        points: generateChartData(20),
-      },
-    ];
-  });
+  //   return [
+  //     200,
+  //     {
+  //       interval: params?.interval || '1m',
+  //       points: generateChartData(20),
+  //     },
+  //   ];
+  // });
 
   // Get trades
-  mock.onGet(/\/api\/tokens\/.*\/trades/).reply(200, {
-    trades: mockTrades,
-    total: mockTrades.length,
-  });
+  // NOTE: Disabled to fetch real data from API
+  // mock.onGet(/\/api\/tokens\/.*\/trades/).reply(200, {
+  //   trades: mockTrades,
+  //   total: mockTrades.length,
+  // });
 
   // Get top traders
-  mock.onGet(/\/api\/tokens\/.*\/top-traders/).reply(200, {
-    traders: mockTopTraders,
-  });
+  // NOTE: Disabled to fetch real data from API
+  // mock.onGet(/\/api\/tokens\/.*\/top-traders/).reply(200, {
+  //   traders: mockTopTraders,
+  // });
 
   // Get holders
-  mock.onGet(/\/api\/tokens\/.*\/holders/).reply(200, {
-    holders: mockHolders,
-    total: 1450,
-    summary: {
-      total_holders: 1450,
-      top_10_holding_percent: 45.2,
-      top_20_holding_percent: 62.8,
-    },
-  });
+  // NOTE: Disabled to fetch real data from API
+  // mock.onGet(/\/api\/tokens\/.*\/holders/).reply(200, {
+  //   holders: mockHolders,
+  //   total: 1450,
+  //   summary: {
+  //     total_holders: 1450,
+  //     top_10_holding_percent: 45.2,
+  //     top_20_holding_percent: 62.8,
+  //   },
+  // });
 
   // Get token details
-  mock.onGet(/\/api\/tokens\/.*/).reply((config) => {
-    const address = config.url?.split('/').pop();
-    // if (!address) return [404, { error: 'Token not found' }];
-
-    return [200, mockTokenData];
-  });
+  // NOTE: Disabled to fetch real data from API based on token address
+  // Uncomment the line below to re-enable mock data
+  // mock.onGet(/\/api\/tokens\/.*/).reply((config) => {
+  //   const address = config.url?.split('/').pop();
+  //   return [200, mockTokenData];
+  // });
 
   return mock;
 }

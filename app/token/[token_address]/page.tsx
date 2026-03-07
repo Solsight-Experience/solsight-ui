@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTokenDetail } from '@/features/token/hooks/token.hooks';
 import {
@@ -9,11 +9,17 @@ import {
   TokenChart,
   TradingPanel,
   TokenTabs,
+  AISummaryButton,
+  AISummaryPanel,
+  AISummaryOptions,
 } from '@/features/token/components';
+import { AISummaryOptions as AISummaryOptionsType, DEFAULT_AI_OPTIONS } from '@/lib/mock/aiSummary';
 
 export default function TokenDetailPage() {
   const params = useParams();
   const tokenAddress = params?.token_address as string;
+  const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
+  const [aiOptions, setAiOptions] = useState<AISummaryOptionsType>(DEFAULT_AI_OPTIONS);
 
   const { data: token, isLoading, error } = useTokenDetail(tokenAddress);
 
@@ -50,28 +56,50 @@ export default function TokenDetailPage() {
   }
 
   return (
-    <div className="min-h-screen text-white">
+    <div>
       {/* Header */}
-      <TokenHeader token={token} />
+      <TokenHeader 
+        token={token} 
+        aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(!isAISummaryOpen)} />}
+      />
+      {isAISummaryOpen && <div className="max-w-7xl mx-auto px-4 pt-4 space-y-2">
+        <AISummaryOptions
+          options={aiOptions}
+          onOptionsChange={setAiOptions}
+        />
+        <AISummaryPanel 
+          isOpen={isAISummaryOpen} 
+          onToggle={() => setIsAISummaryOpen(!isAISummaryOpen)}
+          tokenAddress={tokenAddress}
+          tokenName={token.name}
+          options={aiOptions}
+        />
+      </div>}
 
       {/* Stats Bar */}
       <TokenStats token={token} />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-4 grid grid-cols-3 gap-4">
-        {/* Left Column - Chart */}
-        <div className="col-span-2 flex flex-col gap-4">
-          <TokenChart tokenAddress={tokenAddress} />
+      {/* Main Content - Two Column Layout */}
+      <div className="max-w-7xl mx-auto p-4 flex flex-row gap-6">
+        {/* Left Column - Chart & Tabs */}
+        <div className="flex flex-col gap-4 overflow-hidden flex-2">
+          {/* Chart */}
+          <div className="flex-2 border border-gray-700 rounded-lg p-4 bg-gray-900/50 ">
+            <TokenChart tokenAddress={tokenAddress} isMulti={false} />
+          </div>
+          {/* Tabs */}
+          <div className="flex-1 border border-gray-700 rounded-lg bg-gray-900/50 overflow-auto">
+            <TokenTabs tokenAddress={tokenAddress} />
+          </div>
         </div>
 
         {/* Right Column - Trading Panel */}
-        <div className="flex flex-col gap-4">
+        <div className="flex-1">
           <TradingPanel token={token} />
         </div>
-
-        {/* Trades/Top Traders/Holders Tabs */}
-        <TokenTabs tokenAddress={tokenAddress} />
       </div>
+
+      
     </div>
   );
 }

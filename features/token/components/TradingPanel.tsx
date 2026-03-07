@@ -17,11 +17,27 @@ import { copyToClipboard } from '../utils/token.utils';
 import { Check, Copy, Loader2 } from 'lucide-react';
 import { useWallet } from '@/features/wallets/hooks/useWallet';
 import { toast } from 'sonner';
-import { Connection, VersionedTransaction, clusterApiUrl } from '@solana/web3.js';
+import {
+  executeJupiterSwap,
+  fetchJupiterQuote,
+  formatDisplay,
+  formatFromBaseUnits,
+  formatInputValue,
+  getSwapApiConfig,
+  isValidAmount,
+  parseInputNumber,
+  sanitizeInput,
+  toBaseUnits,
+} from '@/features/swap';
 
 interface TradingPanelProps {
   token: TokenDetail;
 }
+
+type PhantomProvider = {
+  isPhantom?: boolean;
+  signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+};
 
 export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   const {
@@ -59,7 +75,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     routeLabel: string | null;
     routeDetails: string[];
     routePathTokens: Array<{ display: string; full?: string }>;
-    rawQuote: any | null;
+    rawQuote: Record<string, unknown> | null;
   }>({
     loading: false,
     error: null,
@@ -71,10 +87,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     rawQuote: null,
   });
 
+  const swapConfig = useMemo(() => getSwapApiConfig(), []);
   const internalUpdateRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Dynamic token values based on trade mode
   const payToken = tradeMode === 'buy' ? 'SOL' : token.symbol;
   const receiveToken = tradeMode === 'buy' ? token.symbol : 'SOL';
   const payTokenLogo =
@@ -87,7 +103,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       : 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
   const payBalance = tradeMode === 'buy' ? '2.45' : '0.00';
-  // const receiveBalance = tradeMode === 'buy' ? '0.00' : '2.45';
 
   useEffect(() => {
     resetTradingPanel();
@@ -106,34 +121,24 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     setSwapState({ loading: false, error: null, signature: null });
   }, [token.address, resetTradingPanel]);
 
-  // code: fix tạm - fetch decimals từ Jupiter token list vì backend chưa trả về field decimals
   const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
   useEffect(() => {
     if (token.decimals != null) return;
     fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
-      .then(r => r.json())
+      .then((r) => r.json())
       .then((data: Array<{ id: string; decimals: number }>) => {
-        const found = Array.isArray(data) ? data.find(t => t.id === token.address) : null;
+        const found = Array.isArray(data) ? data.find((item) => item.id === token.address) : null;
         if (found && typeof found.decimals === 'number') setFetchedDecimals(found.decimals);
       })
       .catch(() => {});
   }, [token.address, token.decimals]);
-  const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
-  // end code
 
-  // const payDecimals = tradeMode === 'buy' ? COMMON_TOKENS.SOL.decimals : token.decimals ?? 9;
-  // const receiveDecimals = tradeMode === 'buy' ? token.decimals ?? 9 : COMMON_TOKENS.SOL.decimals;
+  const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
   const payDecimals = tradeMode === 'buy' ? COMMON_TOKENS.SOL.decimals : resolvedTokenDecimals;
   const receiveDecimals = tradeMode === 'buy' ? resolvedTokenDecimals : COMMON_TOKENS.SOL.decimals;
 
   const payMint = tradeMode === 'buy' ? COMMON_TOKENS.SOL.mint : token.address;
   const receiveMint = tradeMode === 'buy' ? token.address : COMMON_TOKENS.SOL.mint;
-
-  const quoteBaseUrl =
-    process.env.NEXT_PUBLIC_JUPITER_QUOTE_URL ?? 'https://api.jup.ag/swap/v1/quote';
-  const quoteApiKey = process.env.NEXT_PUBLIC_JUPITER_API_KEY;
-  const swapBaseUrl =
-    process.env.NEXT_PUBLIC_JUPITER_SWAP_URL ?? 'https://api.jup.ag/swap/v1/swap';
 
   const formattedQuote = useMemo(() => {
     if (!quoteState.otherAmountThreshold) {
@@ -192,6 +197,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     if (!isValidAmount(sourceAmount)) {
       setQuoteState((prev) => ({
         ...prev,
+        loading: false,
         error: null,
         priceImpactPct: null,
         otherAmountThreshold: null,
@@ -204,14 +210,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }
 
     const swapMode = lastEdited === 'pay' ? 'ExactIn' : 'ExactOut';
-    const amountBaseUnits = toBaseUnits(
-      sourceAmount,
-      swapMode === 'ExactIn' ? payDecimals : receiveDecimals
-    );
+    const amountBaseUnits = toBaseUnits(sourceAmount, swapMode === 'ExactIn' ? payDecimals : receiveDecimals);
 
-    if (!amountBaseUnits) {
-      return;
-    }
+    if (!amountBaseUnits) return;
 
     if (abortRef.current) {
       abortRef.current.abort();
@@ -223,36 +224,30 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const timeoutId = setTimeout(async () => {
       setQuoteState((prev) => ({ ...prev, loading: true, error: null }));
 
-      const params = new URLSearchParams({
-        inputMint: payMint,
-        outputMint: receiveMint,
-        amount: amountBaseUnits,
-        swapMode,
-        slippageBps: String(slippageBps),
-      });
-
       try {
-        const response = await fetch(`${quoteBaseUrl}?${params.toString()}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(quoteApiKey ? { 'x-api-key': quoteApiKey } : {}),
+        const result = await fetchJupiterQuote(
+          {
+            inputMint: payMint,
+            outputMint: receiveMint,
+            amount: amountBaseUnits,
+            swapMode,
+            slippageBps,
           },
-          signal: controller.signal,
-        });
+          {
+            signal: controller.signal,
+            config: swapConfig,
+            payTokenSymbol: payToken,
+            receiveTokenSymbol: receiveToken,
+          }
+        );
 
-        const data = await response.json();
-        if (!response.ok) {
-          const message = mapQuoteError(data);
-          throw new Error(message);
-        }
         const nextPay =
-          swapMode === 'ExactOut'
-            ? formatInputValue(formatFromBaseUnits(String(data.inAmount ?? ''), payDecimals), payDecimals)
+          swapMode === 'ExactOut' && result.inAmount
+            ? formatInputValue(formatFromBaseUnits(result.inAmount, payDecimals), payDecimals)
             : null;
         const nextReceive =
-          swapMode === 'ExactIn'
-            ? formatInputValue(formatFromBaseUnits(String(data.outAmount ?? ''), receiveDecimals), receiveDecimals)
+          swapMode === 'ExactIn' && result.outAmount
+            ? formatInputValue(formatFromBaseUnits(result.outAmount, receiveDecimals), receiveDecimals)
             : null;
 
         internalUpdateRef.current = true;
@@ -263,13 +258,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           setReceiveAmount(nextReceive);
         }
 
-        const routeDetails = Array.isArray(data.routePlan)
-          ? data.routePlan
+        const routeDetails: string[] = Array.isArray(data.routePlan)
+          ? (data.routePlan as any[])
               .map((item: any) => item?.swapInfo?.label || item?.swapInfo?.ammKey || item?.swapInfo?.programId)
-              .filter(Boolean)
+              .filter((item: any): item is string => Boolean(item))
               .map((label: string) => label.trim())
           : [];
-        const uniqueRouteDetails = [...new Set(routeDetails)];
+        const uniqueRouteDetails: string[] = [...new Set(routeDetails)];
         const routeCount = Array.isArray(data.routePlan) ? data.routePlan.length : 0;
         const routePathTokens = buildRoutePathTokens(
           data.routePlan,
@@ -282,17 +277,18 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setQuoteState({
           loading: false,
           error: null,
-          priceImpactPct: data.priceImpactPct ? Number(data.priceImpactPct) : null,
-          otherAmountThreshold: data.otherAmountThreshold ? String(data.otherAmountThreshold) : null,
-          routeLabel: routeCount ? `${routeCount} hops` : '--',
-          routeDetails: uniqueRouteDetails,
-          routePathTokens,
-          rawQuote: data,
+          priceImpactPct: result.priceImpactPct,
+          otherAmountThreshold: result.otherAmountThreshold,
+          routeLabel: result.routeLabel,
+          routeDetails: result.routeDetails,
+          routePathTokens: result.routePathTokens,
+          rawQuote: result.rawQuote,
         });
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
           return;
         }
+
         setQuoteState((prev) => ({
           ...prev,
           loading: false,
@@ -314,10 +310,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     payMint,
     receiveMint,
     slippageBps,
-    quoteBaseUrl,
-    quoteApiKey,
+    swapConfig,
     setPayAmount,
     setReceiveAmount,
+    payToken,
+    receiveToken,
   ]);
 
   const handleSwap = async () => {
@@ -331,7 +328,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       return;
     }
 
-    const provider = (window as any).solana;
+    const provider = (window as Window & { solana?: PhantomProvider }).solana;
     if (!provider?.isPhantom) {
       toast.error('Phantom wallet not found.');
       return;
@@ -347,38 +344,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     setSwapState({ loading: true, error: null, signature: null });
 
     try {
-      const response = await fetch(swapBaseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(quoteApiKey ? { 'x-api-key': quoteApiKey } : {}),
-        },
-        body: JSON.stringify({
+      const { signature } = await executeJupiterSwap(
+        {
           quoteResponse: quoteState.rawQuote,
           userPublicKey: publicKey,
-          wrapAndUnwrapSol: true,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(mapQuoteError(data));
-      }
-
-      const swapTx = data?.swapTransaction as string | undefined;
-      if (!swapTx) {
-        throw new Error('Missing swap transaction.');
-      }
-
-      const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
-      const tx = VersionedTransaction.deserialize(base64ToBytes(swapTx));
-      const signed = await provider.signTransaction(tx);
-      const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        maxRetries: 3,
-      });
-
-      await connection.confirmTransaction(signature, 'confirmed');
+          signTransaction: (tx) => provider.signTransaction(tx),
+        },
+        { config: swapConfig }
+      );
 
       setSwapState({ loading: false, error: null, signature });
       toast.success('Swap submitted!');
@@ -390,18 +363,30 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   };
 
   return (
-    <div className="border border-gray-700 rounded-lg p-4 bg-gradient-to-br">
+    <div className={`rounded-xl p-4 bg-gray-900/80 backdrop-blur border-2 transition-all duration-300 ${
+      tradeMode === 'buy'
+        ? 'border-green-500/40 shadow-lg shadow-green-500/10'
+        : 'border-red-500/40 shadow-lg shadow-red-500/10'
+    }`}>
       <div className="flex gap-2 mb-4">
         <Button
-          className="flex-1"
-          variant={tradeMode === 'buy' ? 'default' : 'outline'}
+          className={`flex-1 font-semibold transition-all duration-200 ${
+            tradeMode === 'buy'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+          }`}
+          variant="ghost"
           onClick={() => setTradeMode('buy')}
         >
           Buy
         </Button>
         <Button
-          variant={tradeMode === 'sell' ? 'default' : 'outline'}
-          className="flex-1"
+          className={`flex-1 font-semibold transition-all duration-200 ${
+            tradeMode === 'sell'
+              ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+          }`}
+          variant="ghost"
           onClick={() => setTradeMode('sell')}
         >
           Sell
@@ -433,18 +418,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         </button>
       </div>
 
-      {/* Pay Section */}
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">
           {tradeMode === 'buy' ? 'From' : 'Sell'}
         </Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50">
+        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 bg-gray-700 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
-              <span className="font-semibold">{payToken}</span>
+              <span className="font-semibold text-gray-100">{payToken}</span>
             </div>
-            {/* <span className="text-xs text-gray-400">Balance: {payBalance}</span> */}
           </div>
           <input
             type="text"
@@ -454,25 +437,23 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setPayAmount(sanitizeInput(e.target.value, payDecimals));
             }}
             placeholder="0.00"
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
             onBlur={() => setPayAmount(formatInputValue(payAmount, payDecimals))}
           />
-          <div className="mt-1 text-xs text-gray-500">
+          <div className="mt-2 text-xs text-gray-500">
             Enter one field and the other updates from quote.
           </div>
         </div>
       </div>
 
-      {/* Receive Section */}
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">Receive</Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
+        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 bg-gray-700 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
               <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
-              <span className="font-semibold">{receiveToken}</span>
+              <span className="font-semibold text-gray-100">{receiveToken}</span>
             </div>
-            {/* <span className="text-xs text-gray-400">Balance: {receiveBalance}</span> */}
           </div>
           <input
             type="text"
@@ -482,50 +463,49 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setReceiveAmount(sanitizeInput(e.target.value, receiveDecimals));
             }}
             placeholder="0.00"
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
             onBlur={() => setReceiveAmount(formatInputValue(receiveAmount, receiveDecimals))}
           />
         </div>
       </div>
 
-      {/* Slippage */}
       <div className="mb-4">
-        <Label className="text-sm text-gray-400 mb-2">Slippage</Label>
-        <div className="border border-gray-600 rounded-lg p-2 bg-gray-800/50 flex items-center gap-2">
+        <Label className="text-sm text-gray-400 mb-2 font-semibold">Slippage</Label>
+        <div className="border border-gray-700 rounded-lg p-3 bg-gray-800/70 backdrop-blur flex items-center gap-2 hover:bg-gray-800/80 transition-colors">
           <input
             type="number"
             min="1"
             step="1"
             value={slippageBps}
             onChange={(e) => setSlippageBps(Number(e.target.value))}
-            className="w-full bg-transparent text-base font-bold outline-none"
+            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
           />
-          <span className="text-sm text-gray-400">bps</span>
+          <span className="text-sm text-gray-400 font-semibold">bps</span>
         </div>
-        <div className="mt-1 text-xs text-gray-500">Example: 50 bps = 0.5%</div>
+        <div className="mt-2 text-xs text-gray-500">Example: 50 bps = 0.5%</div>
       </div>
 
       {/* Quote Summary */}
-      <div className="mb-4 text-sm text-gray-400">
-        <div className="flex items-center justify-between">
-          <span>Price Impact</span>
-          <span>
+      <div className="mb-4 text-sm bg-gray-800/50 rounded-lg p-3 border border-gray-700 space-y-2">
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">Price Impact</span>
+          <span className="font-semibold">
             {quoteState.priceImpactPct === null ? '--' : `${(quoteState.priceImpactPct * 100).toFixed(2)}%`}
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span>{lastEdited === 'receive' ? 'Maximum Paid' : 'Minimum Received'}</span>
-          <span>{formattedQuote}</span>
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">{lastEdited === 'receive' ? 'Maximum Paid' : 'Minimum Received'}</span>
+          <span className="font-semibold">{formattedQuote}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span>Route</span>
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400">Route</span>
           <span className="flex items-center gap-2">
             <span>{quoteState.routeLabel ?? '--'}</span>
             {quoteState.routePathTokens.length > 0 && (
               <button
                 type="button"
                 onClick={() => setRouteModalOpen(true)}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
               >
                 View route details
               </button>
@@ -533,20 +513,19 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           </span>
         </div>
         {quoteState.routeDetails.length > 0 && (
-          <div className="mt-2 text-xs text-gray-500">
-            {quoteState.routeDetails.join(' -> ')}
+          <div className="mt-2 text-xs text-gray-400 border-t border-gray-700 pt-2">
+            {quoteState.routeDetails.join(' → ')}
           </div>
         )}
-        {quoteState.loading && <div className="mt-2 text-xs text-gray-500">Fetching quote...</div>}
-        {quoteState.error && <div className="mt-2 text-xs text-red-400">{quoteState.error}</div>}
-        {validation.error && <div className="mt-2 text-xs text-red-400">{validation.error}</div>}
-        {swapState.error && <div className="mt-2 text-xs text-red-400">{swapState.error}</div>}
+        {quoteState.loading && <div className="mt-2 text-xs text-yellow-400 font-medium">Fetching quote...</div>}
+        {quoteState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {quoteState.error}</div>}
+        {validation.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
+        {swapState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
         {swapState.signature && (
-          <div className="mt-2 text-xs text-green-400">Swap submitted: {shortenMint(swapState.signature)}</div>
+          <div className="mt-2 text-xs text-green-400">Swap submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
         )}
       </div>
 
-      {/* Quick Amount Buttons */}
       <div className="flex gap-2 mb-4">
         {['0.1', '0.5', '1', 'MAX'].map((amount) => (
           <button
@@ -555,16 +534,19 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               setLastEdited('pay');
               setPayAmount(amount === 'MAX' ? payBalance : amount);
             }}
-            className="flex-1 py-2 px-3 rounded bg-gray-800 hover:bg-gray-700 text-sm"
+            className="flex-1 py-2 px-3 rounded-lg bg-gray-800/70 hover:bg-gray-700/80 text-sm font-medium text-gray-300 border border-gray-700/50 transition-all hover:border-gray-600"
           >
             {amount}
           </button>
         ))}
       </div>
 
-      {/* Buy/Sell Button */}
       <Button
-        className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-6 text-lg"
+        className={`w-full font-bold py-6 text-lg transition-all duration-200 ${
+          tradeMode === 'buy'
+            ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/40'
+            : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40'
+        }`}
         onClick={handleSwap}
         disabled={swapState.loading || quoteState.loading || !!validation.error}
       >
@@ -580,45 +562,51 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         )}
       </Button>
 
-      <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
+      <div className="flex items-center justify-between mt-4 text-xs text-gray-500 border-t border-gray-700 pt-3">
         <span>Powered by Jupiter API</span>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
           <span>Connected: Solana Mainnet</span>
         </div>
       </div>
 
       <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
-        <DialogContent className="sm:max-w-lg border-gray-700 bg-gray-900">
+        <DialogContent className="sm:max-w-lg border-2 border-gray-700 bg-gray-900 shadow-xl shadow-black/50">
           <DialogHeader>
-            <DialogTitle className="text-lg text-white">Route details</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-white">Route details</DialogTitle>
             <DialogDescription className="text-gray-400">
               Token hops and DEX path for this quote.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-gray-200">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-400">Token hops</div>
-              <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+              <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">Token hops</div>
+              <div className="flex flex-wrap items-center gap-1">
                 {quoteState.routePathTokens.length === 0 ? (
-                  <span>--</span>
+                  <span className="text-gray-400">--</span>
                 ) : (
-                  quoteState.routePathTokens.map((token, index) => (
-                    <React.Fragment key={`${token.display}-${index}`}>
+                  quoteState.routePathTokens.map((routeToken, index) => (
+                    <React.Fragment key={`${routeToken.display}-${index}`}>
                       <button
                         type="button"
                         onClick={async () => {
-                          if (!token.full) return;
-                          const success = await copyToClipboard(token.full);
+                          if (!routeToken.full) return;
+                          const success = await copyToClipboard(routeToken.full);
                           if (success) {
-                            setCopiedMint(token.full);
-                            window.setTimeout(() => setCopiedMint((prev) => (prev === token.full ? null : prev)), 1500);
+                            setCopiedMint(routeToken.full);
+                            window.setTimeout(
+                              () =>
+                                setCopiedMint((prev) =>
+                                  prev === routeToken.full ? null : prev
+                                ),
+                              1500
+                            );
                           }
                         }}
-                        className="flex items-center gap-1 rounded bg-gray-800 px-2 py-0.5 text-left hover:bg-gray-700"
+                        className="flex items-center gap-1 rounded bg-gray-700/80 px-2 py-1 text-left hover:bg-gray-700 border border-gray-600/50 transition-colors"
                         title={token.full ?? token.display}
                       >
-                        <span>{token.display}</span>
+                        <span className="text-sm font-medium">{token.display}</span>
                         {token.full && copiedMint === token.full ? (
                           <Check className="h-3 w-3 text-green-400" />
                         ) : (
@@ -626,23 +614,23 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         )}
                       </button>
                       {index < quoteState.routePathTokens.length - 1 && (
-                        <span className="text-gray-500">-&gt;</span>
+                        <span className="text-gray-500 text-xs">→</span>
                       )}
                     </React.Fragment>
                   ))
                 )}
               </div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-400">DEX path</div>
-              <div className="mt-1">
-                {quoteState.routeDetails.length > 0 ? quoteState.routeDetails.join(' -> ') : '--'}
+            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+              <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">DEX path</div>
+              <div className="text-sm font-medium text-gray-300">
+                {quoteState.routeDetails.length > 0 ? quoteState.routeDetails.join(' → ') : '--'}
               </div>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" className="border-gray-600 text-gray-200">
+              <Button variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-800">
                 Close
               </Button>
             </DialogClose>
@@ -652,136 +640,3 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     </div>
   );
 };
-
-function isValidAmount(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  const numeric = Number(trimmed);
-  return Number.isFinite(numeric) && numeric > 0;
-}
-
-function sanitizeInput(value: string, decimals: number): string {
-  const cleaned = value.replace(/,/g, '').replace(/[^\d.]/g, '');
-  const parts = cleaned.split('.');
-  const whole = parts[0] ?? '';
-  const fraction = parts[1] ?? '';
-  const normalizedWhole = whole.replace(/^0+(?=\d)/, '');
-  if (parts.length === 1) {
-    return normalizedWhole;
-  }
-  const clippedFraction = fraction.slice(0, decimals);
-  return `${normalizedWhole || '0'}.${clippedFraction}`;
-}
-
-function formatInputValue(value: string, decimals: number): string {
-  if (!value) return '';
-  const numeric = Number(value.replace(/,/g, ''));
-  if (!Number.isFinite(numeric)) return '';
-  const maxDecimals = Math.min(decimals, 6);
-  const normalized = numeric.toFixed(maxDecimals).replace(/\.?0+$/, '');
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: maxDecimals,
-  }).format(Number(normalized));
-}
-
-function formatDisplay(value: string, decimals: number): string {
-  if (!value) return '--';
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return '--';
-  const maxDecimals = Math.min(decimals, 6);
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: maxDecimals,
-  }).format(numeric);
-}
-
-function toBaseUnits(value: string, decimals: number): string | null {
-  const normalized = value.replace(/,/g, '').trim();
-  if (!/^\d*\.?\d*$/.test(normalized)) return null;
-  if (normalized === '' || normalized === '.') return null;
-
-  const [whole, fraction = ''] = normalized.split('.');
-  const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals);
-  const combined = `${whole || '0'}${paddedFraction}`;
-  const trimmed = combined.replace(/^0+/, '') || '0';
-  return trimmed;
-}
-
-function formatFromBaseUnits(value: string, decimals: number): string {
-  if (!value) return '';
-  const padded = value.padStart(decimals + 1, '0');
-  const whole = padded.slice(0, -decimals);
-  const fraction = padded.slice(-decimals).replace(/0+$/, '');
-  return fraction ? `${whole}.${fraction}` : whole;
-}
-
-function parseInputNumber(value: string): number {
-  if (!value) return 0;
-  const normalized = value.replace(/,/g, '');
-  const numeric = Number(normalized);
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function mapQuoteError(payload: any): string {
-  const code = payload?.errorCode;
-  if (code === 'TOKEN_NOT_TRADABLE') {
-    return 'This token is not tradable on Jupiter.';
-  }
-  if (payload?.error) {
-    return String(payload.error);
-  }
-  return 'Quote failed. Please try again.';
-}
-
-function getSolanaRpcUrl(): string {
-  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'mainnet').toLowerCase();
-  if (network.includes('devnet')) return clusterApiUrl('devnet');
-  if (network.includes('testnet')) return clusterApiUrl('testnet');
-  return clusterApiUrl('mainnet-beta');
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function buildRoutePathTokens(
-  routePlan: any,
-  inputMint: string,
-  outputMint: string,
-  payTokenSymbol: string,
-  receiveTokenSymbol: string
-): Array<{ display: string; full?: string }> {
-  if (!Array.isArray(routePlan) || routePlan.length === 0) return [];
-  const tokens: Array<{ display: string; full?: string }> = [];
-  for (const step of routePlan) {
-    const input = step?.swapInfo?.inputMint;
-    const output = step?.swapInfo?.outputMint;
-    if (input) tokens.push(mapMintToToken(input, inputMint, outputMint, payTokenSymbol, receiveTokenSymbol));
-    if (output) tokens.push(mapMintToToken(output, inputMint, outputMint, payTokenSymbol, receiveTokenSymbol));
-  }
-  const cleaned = tokens.filter(Boolean);
-  const path = cleaned.filter((item, idx) => item.display !== cleaned[idx - 1]?.display);
-  return path;
-}
-
-function mapMintToToken(
-  mint: string,
-  inputMint: string,
-  outputMint: string,
-  payTokenSymbol: string,
-  receiveTokenSymbol: string
-): { display: string; full?: string } {
-  if (mint === inputMint) return { display: payTokenSymbol, full: mint };
-  if (mint === outputMint) return { display: receiveTokenSymbol, full: mint };
-  if (mint === COMMON_TOKENS.SOL.mint) return { display: 'SOL', full: mint };
-  return { display: shortenMint(mint), full: mint };
-}
-
-function shortenMint(mint: string): string {
-  if (mint.length <= 8) return mint;
-  return `${mint.slice(0, 4)}...${mint.slice(-4)}`;
-}
