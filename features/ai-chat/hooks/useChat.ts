@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChatSocketManager, ChatStreamChunk } from '../services/chat.socket.service';
+import { useAuth } from '@/contexts/AuthContext';
+import { phantomWallet } from '@/lib/wallet';
+import { ChatSocketManager } from '../services/chat.socket.service';
 import { ChatMessageDto, ChatResponseDto } from '@/types/dto';
 
 export function useChat() {
@@ -9,41 +11,11 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string>(crypto.randomUUID());
-  const streamingContentRef = useRef<string>('');
   const socketManager = ChatSocketManager.getInstance();
+  const { user } = useAuth();
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;
-
-    socketManager.onStream(sessionId, (chunkPayload: ChatStreamChunk) => {
-      if (chunkPayload.sessionId === sessionId) {
-        streamingContentRef.current += chunkPayload.chunk;
-
-        setMessages((prev) => {
-          const lastMsg = prev[prev.length - 1];
-          const isLastMsgAssistant = lastMsg?.role === 'assistant' && lastMsg?.content;
-
-          if (isLastMsgAssistant) {
-            return [
-              ...prev.slice(0, -1),
-              {
-                ...lastMsg,
-                content: streamingContentRef.current,
-              },
-            ];
-          }
-
-          return [
-            ...prev,
-            {
-              role: 'assistant',
-              content: streamingContentRef.current,
-              timestamp: Date.now(),
-            },
-          ];
-        });
-      }
-    });
 
     socketManager.onResponse(sessionId, (response: ChatResponseDto) => {
       setMessages((prev) => [
@@ -59,7 +31,6 @@ export function useChat() {
     });
 
     socketManager.onComplete(sessionId, () => {
-      streamingContentRef.current = '';
       setIsLoading(false);
     });
 
@@ -84,10 +55,11 @@ export function useChat() {
     ]);
     setIsLoading(true);
     setError(null);
-    streamingContentRef.current = '';
     socketManager.sendMessage({
       message: text,
       sessionId: sessionIdRef.current,
+      userId: user?.id,
+      walletAddress: phantomWallet.publicKey ?? undefined,
     });
   };
 

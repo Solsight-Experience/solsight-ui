@@ -2,7 +2,7 @@
 import './globals.css';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import QueryProvider from '@/providers/query-provider';
 import { SolanaWalletProvider } from '@/providers/wallet-provider';
 import Header from '@/components/layout/Header';
@@ -11,6 +11,12 @@ import { usePathname } from 'next/navigation';
 import MockProvider from '@/providers/mock-provider';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
+
+function ChatGate() {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  return <ChatWidget />;
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 {showHeader && <Header />}
                 <main>{children}</main>
-                <ChatWidget />
+                <ChatGate />
               </AuthProvider>
             </MockProvider>
           </QueryProvider>

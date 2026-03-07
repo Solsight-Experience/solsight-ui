@@ -92,6 +92,7 @@ export interface ChatMessageDto {
 export interface SendChatMessageDto {
   message: string;
   sessionId: string;
+  userId?: string;
   walletAddress?: string;
 }
 
