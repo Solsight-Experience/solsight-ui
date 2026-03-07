@@ -13,7 +13,7 @@ export const AISummaryButton: React.FC<AISummaryButtonProps> = ({ onClick }) => 
       title="AI Summary"
     >
       <Sparkles size={14} />
-      <span>AI</span>
+      <span>Summary</span>
     </button>
   );
 };

@@ -2,12 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   createChart,
   ColorType,
-  LineSeries,
-  AreaSeries,
-  BarSeries,
-  CandlestickSeries,
-  BaselineSeries,
-  HistogramSeries,
 } from 'lightweight-charts';
 import {
   toLineData,
@@ -253,34 +247,43 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     const chart = chartRef.current;
     switch (type) {
       case 'candles':
-        seriesRef.current = chart.addSeries(CandlestickSeries, {
-          upColor: '#22c55e', downColor: '#ef4444',
-          borderVisible: false, wickUpColor: '#22c55e', wickDownColor: '#ef4444',
+        seriesRef.current = chart.addCandlestickSeries({
+          upColor: '#22c55e',
+          downColor: '#ef4444',
+          borderVisible: false,
+          wickUpColor: '#22c55e',
+          wickDownColor: '#ef4444',
         });
         break;
       case 'line':
-        seriesRef.current = chart.addSeries(LineSeries, { color: '#3b82f6' });
+        seriesRef.current = chart.addLineSeries({
+          color: '#3b82f6',
+        });
         break;
       case 'area':
-        seriesRef.current = chart.addSeries(AreaSeries, {
+        seriesRef.current = chart.addAreaSeries({
           lineColor: '#3b82f6',
           topColor: 'rgba(59,130,246,0.4)',
           bottomColor: 'rgba(59,130,246,0.05)',
         });
         break;
       case 'bars':
-        seriesRef.current = chart.addSeries(BarSeries, { upColor: '#22c55e', downColor: '#ef4444' });
+        seriesRef.current = chart.addBarSeries({
+          upColor: '#22c55e',
+          downColor: '#ef4444'
+        });
         break;
       case 'baseline':
-        seriesRef.current = chart.addSeries(BaselineSeries, {
+       seriesRef.current = chart.addBaselineSeries({
           baseValue: { type: 'price', price: 50 },
-          topLineColor: '#22c55e', bottomLineColor: '#ef4444',
-          topFillColor1: 'rgba(34,197,94,0.4)', topFillColor2: 'rgba(34,197,94,0.1)',
-          bottomFillColor1: 'rgba(239,68,68,0.1)', bottomFillColor2: 'rgba(239,68,68,0.4)',
+          topLineColor: '#22c55e',
+          bottomLineColor: '#ef4444',
         });
         break;
       case 'histogram':
-        seriesRef.current = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' } });
+       seriesRef.current = chart.addHistogramSeries({
+          priceFormat: { type: 'volume' },
+        });
         break;
     }
     if (dataRef.current.length) {

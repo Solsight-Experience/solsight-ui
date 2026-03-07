@@ -9,12 +9,7 @@ import type { TokenChartItem } from '@/features/multi-chart/types';
 const MAX_CHARTS = 6;
 
 const SAMPLE_TOKENS: TokenChartItem[] = [
-  { id: '1', address: 'EPjFWaJy47gowzcQmqgJ2gFiYKXqerijeFZcT6UnKAU', symbol: 'USDC' },
-  { id: '2', address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenEqw', symbol: 'USDT' },
-  { id: '3', address: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', symbol: 'RAY' },
-  { id: '4', address: '8HGyAAB1yoM1ttS7H3B4pXscFSq4adCY6gburMychdM', symbol: 'COPE' },
-  { id: '5', address: 'JET6zUm7wWyk9rArgcnVeTooE8r2L6Kx3MaFqnab5X8', symbol: 'JET' },
-  { id: '6', address: 'MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', symbol: 'MANGO' },
+  { id: '1', address: 'MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', symbol: 'MANGO' },
 ];
 
 export const MultiChartPage: React.FC = () => {
