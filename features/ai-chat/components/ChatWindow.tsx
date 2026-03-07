@@ -68,7 +68,7 @@ export const ChatWindow: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-background relative">
       <ScrollArea 
-        className="flex-1 px-4" 
+        className="flex-1 px-4 overflow-auto" 
         onScrollCapture={handleScroll}
       >
         <div className="flex flex-col gap-5 py-6" role="log" aria-live="polite">
