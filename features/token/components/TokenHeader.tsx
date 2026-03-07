@@ -7,9 +7,10 @@ import type { TokenDetail } from '../types/token.types';
 
 interface TokenHeaderProps {
   token: TokenDetail;
+  aiSummaryButton?: React.ReactNode;
 }
 
-export const TokenHeader: React.FC<TokenHeaderProps> = ({ token }) => {
+export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton }) => {
   const { isFavorite, toggleFavorite } = useTokenUIStore();
   const toggleFavoriteMutation = useToggleFavorite();
   const isTokenFavorite = isFavorite(token.address);
@@ -36,7 +37,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token }) => {
         <div className="flex items-center gap-4">
           <img src={token.logo_uri} alt={token.symbol} className="w-12 h-12 rounded-full" />
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{token.symbol}</h1>
               {token.audit.is_verified && <Shield className="w-5 h-5 text-blue-500" />}
               <button
@@ -49,6 +50,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token }) => {
                   }`}
                 />
               </button>
+              {aiSummaryButton && <div className="ml-2">{aiSummaryButton}</div>}
             </div>
             <span className="text-sm text-gray-400">{token.name}</span>
           </div>

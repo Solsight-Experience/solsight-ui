@@ -47,14 +47,6 @@ export default function TokenTable() {
     } = useTokenTable();
 
     // Debug log for favorites
-    useEffect(() => {
-        if (filters.activeTab === 'FAVOURITES') {
-            console.log('Favorites Tab Active');
-            console.log('Favorite IDs:', Array.from(filters.favouriteIds));
-            console.log('Table rows:', table.getRowModel().rows.length);
-        }
-    }, [filters.activeTab, filters.favouriteIds, table]);
-
     const handleRowClick = (tokenAddress: string) => {
         router.push(`/token/${tokenAddress}`);
     };
@@ -77,12 +69,8 @@ export default function TokenTable() {
                             onSortChange={toggleSort}
                         />
                         <FilterButton 
-                            onReset={() => {
-                                resetFilters();
-                            }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
-                                applyFilterResults(res);
-                            }} 
+                            onReset={() => { resetFilters(); }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
                         />
                         <QuickBuyInput
                             value={filters.quickBuyAmount}
@@ -103,14 +91,9 @@ export default function TokenTable() {
                             onChange={setCategorySearch}
                         />
                         <FilterButton 
-                            onReset={() => {
-                                resetFilters();
-                            }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
-                                applyFilterResults(res);
-                            }} 
+                            onReset={() => { resetFilters(); }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
                         />
-
                     </RightPanelFilter>
                 );
 
@@ -124,12 +107,8 @@ export default function TokenTable() {
                             onFilterChange={setTimeFilter}
                         />
                         <FilterButton 
-                            onReset={() => {
-                                resetFilters();
-                            }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
-                                applyFilterResults(res);
-                            }} 
+                            onReset={() => { resetFilters(); }} 
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
                         />
                         <QuickBuyInput
                             value={filters.quickBuyAmount}
@@ -146,47 +125,45 @@ export default function TokenTable() {
     if (filters.activeTab === 'CATEGORIES') {
         return (
             <>
-                <div className="flex justify-between">
-                    <TokenTabs
-                        activeTab={filters.activeTab}
-                        onTabClick={setActiveTab}
-                    />
+                <div className="flex justify-between items-center mb-3">
+                    <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
                     {renderRightPanel()}
                 </div>
-                <CategoryTable 
-                    searchQuery={filters.categorySearch} 
-                />
+                <CategoryTable searchQuery={filters.categorySearch} />
             </>
         );
     }
 
-    // Render regular TokenTable for other tabs
     return (
         <>
-            <div className="flex justify-between">
-                <TokenTabs
-                    activeTab={filters.activeTab}
-                    onTabClick={setActiveTab}
-                />
+            <div className="flex justify-between items-center mb-3">
+                <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
                 {renderRightPanel()}
             </div>
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+
+            <div className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
+                            shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]">
                 {error ? (
                     <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : 'Unknown error'}`} />
                 ) : isLoading ? (
-                    <EmptyState message="Loading tokens..." emptyStateForLoading={true} />
+                    <LoadingSkeleton />
                 ) : !hasData && filters.activeTab === 'FAVOURITES' ? (
                     <EmptyState message="No favorite tokens yet. Click the star icon on any token to add it to your favorites!" />
                 ) : hasData ? (
-                    <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
-                        <Table className="px-4">
-                            <TableHeader className="bg-muted/20">
+                    <div className="overflow-y-auto max-h-[calc(100vh-250px)]
+                                    [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.25)_transparent]">
+                        <Table>
+                            <TableHeader>
                                 {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
+                                    <TableRow
+                                        key={headerGroup.id}
+                                        className="border-b border-white/[0.06] hover:bg-transparent"
+                                    >
                                         {headerGroup.headers.map((header) => (
                                             <TableHead
                                                 key={header.id}
-                                                className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                                className="h-9 px-4 bg-white/[0.02]
+                                                           text-xs font-semibold uppercase tracking-wider text-white/50"
                                             >
                                                 {header.isPlaceholder
                                                     ? null
@@ -197,15 +174,23 @@ export default function TokenTable() {
                                 ))}
                             </TableHeader>
                             <TableBody>
-                                {table.getRowModel().rows.map((row) => (
+                                {table.getRowModel().rows.map((row, idx) => (
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && 'selected'}
                                         onClick={() => handleRowClick(row.original.id)}
-                                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                        className={[
+                                            'cursor-pointer border-b border-white/[0.04]',
+                                            'transition-all duration-150',
+                                            'hover:bg-purple-500/[0.06] hover:border-purple-500/20',
+                                            idx % 2 !== 0 ? 'bg-white/[0.01]' : 'bg-transparent',
+                                        ].join(' ')}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className="py-4">
+                                            <TableCell
+                                                key={cell.id}
+                                                className="px-4 py-3 text-sm font-medium text-white/80"
+                                            >
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
                                         ))}
@@ -219,5 +204,42 @@ export default function TokenTable() {
                 )}
             </div>
         </>
+    );
+}
+
+/* ── Loading Skeleton ────────────────────────────────────────────────────── */
+function LoadingSkeleton() {
+    return (
+        <div className="divide-y divide-white/[0.04]">
+            {/* Fake header */}
+            <div className="flex items-center gap-6 px-4 h-9 bg-white/[0.02]">
+                {[80, 120, 60, 90, 70, 80, 60].map((w, i) => (
+                    <div key={i} className="h-2 rounded-full bg-white/10 animate-pulse" style={{ width: w }} />
+                ))}
+            </div>
+            {/* Fake rows */}
+            {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-6 px-4 py-3">
+                    <div className="flex items-center gap-2.5 shrink-0" style={{ width: 160 }}>
+                        <div className="w-7 h-7 rounded-full bg-purple-500/10 animate-pulse" />
+                        <div className="space-y-1.5">
+                            <div className="h-2.5 w-16 rounded-full bg-white/10 animate-pulse" />
+                            <div className="h-2 w-10 rounded-full bg-white/[0.06] animate-pulse" />
+                        </div>
+                    </div>
+                    {[70, 80, 65, 75, 60, 55].map((w, j) => (
+                        <div
+                            key={j}
+                            className="h-2.5 rounded-full animate-pulse"
+                            style={{
+                                width: w,
+                                backgroundColor: `rgba(255,255,255,${0.04 + (j % 2) * 0.02})`,
+                                animationDelay: `${i * 50 + j * 25}ms`,
+                            }}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
     );
 }
