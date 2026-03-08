@@ -882,9 +882,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         {quoteState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {quoteState.error}</div>}
         {validation.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
         {swapState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
-        {swapState.signature && (
-          <div className="mt-2 text-xs text-green-400">Swap submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
-        )}
       </div>
 
       <div className="flex gap-2 mb-4">

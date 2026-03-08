@@ -1,5 +1,4 @@
 import TransferForm from '@/features/transfers/components/TransferForm';
-import { Toaster } from 'sonner';
 
 export default function TransferPage() {
   return (
@@ -12,7 +11,6 @@ export default function TransferPage() {
       </div>
       
       <TransferForm />
-      <Toaster position="top-right" />
     </div>
   );
 }
