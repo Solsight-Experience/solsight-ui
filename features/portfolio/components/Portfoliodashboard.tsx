@@ -267,11 +267,7 @@ export const PortfolioDashboard: React.FC = () => {
 
           <div className="flex justify-between items-center">
             <span className="text-zinc-400">Total TXNS</span>
-            <div className="flex gap-2">
-              <span className="text-green-500">{transactions.buys}</span>
-              <span className="text-zinc-600">/</span>
-              <span className="text-red-500">{transactions.sells}</span>
-            </div>
+            <span className="font-semibold text-white">{transactions.total}</span>
           </div>
         </div>
       </div>

@@ -103,6 +103,9 @@ export const WalletList: React.FC = () => {
                   ${wallet.balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
               </div>
+              <div className="text-xs text-gray-500 font-mono mt-0.5">
+                {wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}
+              </div>
             </div>
             <WalletDropdownMenu walletAddress={wallet.address} isDefault={wallet.is_default} />
           </div>
