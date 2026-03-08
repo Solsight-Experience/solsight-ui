@@ -3,6 +3,7 @@ import {
   buildRoutePathTokens,
   formatFromBaseUnits,
   getRouteDetails,
+  isValidAmount,
   mapQuoteError,
   mapSwapError,
   toBaseUnits,
@@ -13,6 +14,10 @@ describe('swap core utils', () => {
     expect(toBaseUnits('1.23', 6)).toBe('1230000');
     expect(toBaseUnits('0.000001', 6)).toBe('1');
     expect(toBaseUnits('abc', 6)).toBeNull();
+  });
+
+  it('accepts formatted amount with thousand separators', () => {
+    expect(isValidAmount('1,234.56')).toBe(true);
   });
 
   it('formats from base units', () => {
