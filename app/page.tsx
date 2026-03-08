@@ -3,7 +3,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function HomePage() {
   return (
-    <div className="container mx-auto py-16">
+    <div className="px-16 mx-auto py-5">
       <ErrorBoundary>
         <TokenTable />
       </ErrorBoundary>

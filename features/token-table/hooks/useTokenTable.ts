@@ -5,11 +5,13 @@ import { TimeFilterValue } from '../components/TimeFilters';
 import { TokenTableTabOption } from '../components/TokenTabs';
 import { SortOption, SortDirection } from '../components/SortPanel';
 import { createColumns } from '../config/columns';
+import type { TokenTableData } from '../config/types';
 import { TokenDiscoveryService, SortBy, TimeFrame } from '../services/token-discovery.service';
 import { transformTokenOverviews } from '../utils/transform';
 import { queryKeys } from '@/lib/react-query-keys';
 import { apiClient } from '@/lib/api-client';
 import { USER_ENDPOINTS } from '@/lib/constants';
+import type { PoolFilterResponse, TokenFilterResponse } from '@/types/filter';
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -19,10 +21,10 @@ export interface TokenTableFilters {
     sortOption: SortOption;
     sortDirection: SortDirection;
     favouriteIds: Set<string>;
-    filteredData?: any[]; // Store filtered results from API
+    filteredData?: TokenTableData[]; // Store filtered results from API
 }
 
-export function useTokenTable() {
+export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
         timeFilter: '1m',
@@ -110,8 +112,8 @@ export function useTokenTable() {
 
     // Memoize columns
     const columns = useMemo(
-        () => createColumns(toggleFavourite, filters.favouriteIds, filters.quickBuyAmount),
-        [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount]
+        () => createColumns(toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy),
+        [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
     );
 
     // Map time filter to API TimeFrame
@@ -197,7 +199,7 @@ export function useTokenTable() {
             transformedData = transformedData.filter((token) => {
                 const isFavorite = filters.favouriteIds.has(token.id);
                 if (isFavorite) {
-                    console.log('Found favorite token:', token.id, token.token.symbol);
+                    console.log('Found favorite token:', token.id, token.token.ticker);
                 }
                 return isFavorite;
             });
@@ -233,7 +235,7 @@ export function useTokenTable() {
     }, [apiData, filters]);
 
     // Add function to apply filter results
-    const applyFilterResults = useCallback((filterResponse: any) => {
+    const applyFilterResults = useCallback((filterResponse: TokenFilterResponse | PoolFilterResponse) => {
         if ('tokens' in filterResponse) {
             // Transform the filtered tokens to match our table format
             const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
@@ -242,11 +244,6 @@ export function useTokenTable() {
             // Handle pool filtering if needed
             console.log('Pool filtering not yet implemented');
         }
-    }, []);
-
-    // Add function to clear filters and return to normal data
-    const clearAppliedFilters = useCallback(() => {
-        setFilters(prev => ({ ...prev, filteredData: undefined }));
     }, []);
 
     const table = useReactTable({
