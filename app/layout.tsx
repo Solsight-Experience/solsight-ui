@@ -21,10 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             {/* Bọc AuthProvider trước Header */}
             <MockProvider>
-              <AuthProvider>
-                {showHeader && <Header />}
-                <main>{children}</main>
-              </AuthProvider>
+              <SolanaWalletProvider>
+                <AuthProvider>
+                  {showHeader && <Header />}
+                  <main>{children}</main>
+                </AuthProvider>
+              </SolanaWalletProvider>
             </MockProvider>
           </QueryProvider>
         </ThemeProvider>

@@ -135,6 +135,25 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ── Staking page animations ─────────────────────────────────────────────── */
+@keyframes float-orb {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.5; }
+  50%       { transform: translateY(-24px) scale(1.06); opacity: 0.85; }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.6); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+@keyframes shimmer-border {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-float-orb   { animation: float-orb 6s ease-in-out infinite; }
+.animate-float-orb-2 { animation: float-orb 8s ease-in-out infinite; animation-delay: -2s; }
+.animate-float-orb-3 { animation: float-orb 7s ease-in-out infinite; animation-delay: -4s; }
+.animate-twinkle     { animation: twinkle 3s ease-in-out infinite; }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

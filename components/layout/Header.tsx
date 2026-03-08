@@ -186,6 +186,7 @@ const NAV_ITEMS = [
   { href: '/',          label: 'Discover',      icon: <TrendingUp size={12} /> },
   { href: '/portfolio', label: 'Portfolio',     icon: <BarChart2  size={12} /> },
   { href: '/multi-chart', label: 'Multi Viewer', icon: <LayoutGrid size={12} /> },
+  { href: '/stake', label: 'Stake', icon: <Zap size={12} /> },
 ] as const;
 
 const NavLinks = memo(() => (

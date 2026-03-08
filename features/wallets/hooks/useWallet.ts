@@ -1,15 +1,33 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WalletService } from '../services/wallet.service';
 import { phantomWallet } from '@/lib/wallet';
 import { WalletResponseDto } from '@/types/dto';
 import { toast } from 'sonner';
 
 export function useWallet() {
+  // Use React state so connected/publicKey are reactive
+  const [connected, setConnected] = useState(phantomWallet.connected);
+  const [publicKey, setPublicKey] = useState(phantomWallet.publicKey);
   const [isConnecting, setIsConnecting] = useState(false);
   const queryClient = useQueryClient();
+
+  // On mount: if Phantom has already authorized this site (e.g. from a previous
+  // session), silently re-connect so the rest of the app sees the right state
+  // without requiring the user to click "Connect Wallet" again.
+  useEffect(() => {
+    const solana = (window as any).solana;
+    if (solana?.isConnected && !phantomWallet.connected) {
+      phantomWallet.connect()
+        .then(() => {
+          setConnected(phantomWallet.connected);
+          setPublicKey(phantomWallet.publicKey);
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   // Connect to Phantom wallet and register with backend
   const connectWallet = useMutation({
@@ -28,7 +46,9 @@ export function useWallet() {
 
       return walletData;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      setConnected(phantomWallet.connected);
+      setPublicKey(phantomWallet.publicKey);
       toast.success('Wallet connected successfully!');
       queryClient.invalidateQueries({ queryKey: ['wallets'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
@@ -53,6 +73,8 @@ export function useWallet() {
       await phantomWallet.disconnect();
     },
     onSuccess: () => {
+      setConnected(false);
+      setPublicKey(null);
       toast.success('Wallet disconnected');
       queryClient.invalidateQueries({ queryKey: ['wallets'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
@@ -70,8 +92,8 @@ export function useWallet() {
     disconnectWallet: disconnectWallet.mutate,
     isConnecting: isConnecting || connectWallet.isPending,
     isDisconnecting: disconnectWallet.isPending,
-    connected: phantomWallet.connected,
-    publicKey: phantomWallet.publicKey,
+    connected,
+    publicKey,
   };
 }
 

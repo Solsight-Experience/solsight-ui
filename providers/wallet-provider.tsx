@@ -10,9 +10,12 @@ import { useMemo } from 'react';
 
 
 export function SolanaWalletProvider({ children }: { children: React.ReactNode }) {
-    const network = WalletAdapterNetwork.Devnet;
+    const network = WalletAdapterNetwork.Mainnet;
 
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = useMemo(
+        () => process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network),
+        [network]
+    );
 
     const wallets = useMemo(
         () => [
