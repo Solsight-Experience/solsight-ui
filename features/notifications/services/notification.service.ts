@@ -2,10 +2,10 @@ import apiClient from '@/lib/api-client';
 import { NotificationsResponse, UnreadCountResponse } from '../types/notification.types';
 
 const ENDPOINTS = {
-  notifications: '/notifications',
-  unreadCount: '/notifications/unread-count',
-  markAsRead: (id: string) => `/notifications/${id}/read`,
-  markAllAsRead: '/notifications/read-all',
+  notifications: '/api/notifications',
+  unreadCount: '/api/notifications/unread-count',
+  markAsRead: (id: string) => `/api/notifications/${id}/read`,
+  markAllAsRead: '/api/notifications/read-all',
 } as const;
 
 export async function fetchNotifications(params?: {
