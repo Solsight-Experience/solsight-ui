@@ -102,7 +102,7 @@
 }
 
 .dark {
-  --background: var(--color-dark-darker);
+  --background: var(--color-darkblack-darker);
   --foreground: var(--color-default-light);
   --card: var(--color-darkblack-darker);
   --card-foreground: var(--color-default-light);

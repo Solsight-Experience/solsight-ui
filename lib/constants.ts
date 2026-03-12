@@ -124,3 +124,17 @@ export type ChartInterval = (typeof CHART_INTERVALS)[number];
 // Trade tabs
 export const TRADE_TABS = ['trades', 'top_traders', 'holders'] as const;
 export type TradeTab = (typeof TRADE_TABS)[number];
+
+// Chat API Endpoints
+export const CHAT_ENDPOINTS = {
+  MESSAGE: '/api/chat/message',
+} as const;
+
+// Chat Socket Events
+export const CHAT_SOCKET_EVENTS = {
+  SEND: 'chat:message',
+  RESPONSE: 'chat:response',
+  STREAM: 'chat:stream',
+  COMPLETE: 'chat:complete',
+  ERROR: 'chat:error',
+} as const;

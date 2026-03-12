@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tokenApi } from '../services/token.services';
 import type {
   ChartData,
-  ChartDataPoint,
+  ChartCandlePointDto,
   Holder,
   SwapPreviewRequest,
   TokenDetail,
@@ -19,6 +19,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { ChartInterval } from '@/lib/constants';
 import { generateCandleData } from '../utils/token.utils';
+import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 
 // Query Keys
 export const tokenKeys = {
@@ -31,6 +32,58 @@ export const tokenKeys = {
     [...tokenKeys.all, 'top-traders', address, timeFrame] as const,
   holders: (address: string, params?: any) =>
     [...tokenKeys.all, 'holders', address, params] as const,
+};
+
+const normalizeCandlePoint = (
+  point: ChartCandlePointDto,
+): CandlestickData | null => {
+  const rawTimestamp = Number(point.timestamp);
+  const open = Number(point.open);
+  const high = Number(point.high);
+  const low = Number(point.low);
+  const close = Number(point.close);
+
+  if (
+    !Number.isFinite(rawTimestamp) ||
+    !Number.isFinite(open) ||
+    !Number.isFinite(high) ||
+    !Number.isFinite(low) ||
+    !Number.isFinite(close)
+  ) {
+    return null;
+  }
+
+  const seconds =
+    rawTimestamp > 10_000_000_000
+      ? Math.floor(rawTimestamp / 1000)
+      : Math.floor(rawTimestamp);
+
+  if (seconds <= 0) {
+    return null;
+  }
+
+  return {
+    time: seconds as UTCTimestamp,
+    open,
+    high,
+    low,
+    close,
+  };
+};
+
+const normalizeChartPoints = (
+  points: ChartCandlePointDto[] | undefined,
+): CandlestickData[] => {
+  if (!points?.length) {
+    return [];
+  }
+
+  const normalized = points
+    .map(normalizeCandlePoint)
+    .filter((point): point is CandlestickData => point !== null)
+    .sort((a, b) => Number(a.time) - Number(b.time));
+
+  return normalized;
 };
 
 // Hooks
@@ -76,7 +129,7 @@ export function useChartData(address: string, interval: string) {
     if (initial.isError) {
       return generateCandleData(80);
     }
-    return initial.data?.points;
+    return normalizeChartPoints(initial.data?.points);
   }, [initial.data, initial.isError]);
 
   return {
