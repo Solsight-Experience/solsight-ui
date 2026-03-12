@@ -99,6 +99,15 @@ export const USER_ENDPOINTS = {
   FAVORITE_DETAIL: (tokenAddress: string) => `/api/account/me/favorites/${tokenAddress}`,
 } as const;
 
+// Limit Order API Endpoints
+export const LIMIT_ORDER_ENDPOINTS = {
+  CREATE: '/api/limit-orders/create',
+  EXECUTE: '/api/limit-orders/execute',
+  LIST: '/api/limit-orders',
+  CANCEL: '/api/limit-orders/cancel',
+  CANCEL_MULTIPLE: '/api/limit-orders/cancel-multiple',
+} as const;
+
 // Token API Endpoints
 export const TOKEN_ENDPOINTS = {
   // Token Details
