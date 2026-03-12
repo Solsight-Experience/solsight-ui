@@ -45,3 +45,7 @@ storybook-static
 
 # vitest/test artifacts
 true/
+
+# Sisyphus agent artifacts
+.sisyphus/
+AGENTS.md

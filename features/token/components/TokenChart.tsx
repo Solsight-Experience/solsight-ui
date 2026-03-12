@@ -3,6 +3,7 @@ import {
   createChart,
   ColorType,
   CandlestickSeries,
+  CandlestickData,
   LineSeries,
   AreaSeries,
   BarSeries,
@@ -111,7 +112,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
   const chartRef     = useRef<any>(null);
   const seriesRef    = useRef<any>(null);
   const isInitRef    = useRef(false);
-  const dataRef      = useRef<any[]>([]);
+  const dataRef      = useRef<CandlestickData[]>([]);
 
   const [type, setType]               = useState<ChartType>('candles');
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
