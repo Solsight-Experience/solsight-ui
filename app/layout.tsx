@@ -9,6 +9,7 @@ import Header from '@/components/layout/Header';
 import ChatWidget from '@/features/ai-chat/components/ChatWidget';
 import { usePathname } from 'next/navigation';
 import MockProvider from '@/providers/mock-provider';
+import { Toaster } from 'sonner';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {showHeader && <Header />}
                 <main>{children}</main>
                 <ChatGate />
+                <Toaster position="top-center" richColors />
               </AuthProvider>
             </MockProvider>
           </QueryProvider>
