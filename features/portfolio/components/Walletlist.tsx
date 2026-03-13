@@ -80,7 +80,9 @@ export const WalletList: React.FC = () => {
           </div>
         </div>
       ) : (
-        walletsData.wallets.map((wallet) => (
+        [...walletsData.wallets]
+          .sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
+          .map((wallet) => (
           <div
             key={wallet.address}
             className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"

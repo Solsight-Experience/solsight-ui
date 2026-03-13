@@ -97,7 +97,7 @@ export const PortfolioDashboard: React.FC = () => {
 
   const formatDateLabel = (timestamp?: number) =>
     timestamp
-      ? new Date(timestamp).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+      ? new Date(timestamp).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })
       : '--/--';
   const chartLabels = pnlData.chart_data.map((point) => formatDateLabel(point.timestamp));
   const dateMarkers = chartLabels.slice(-7);
