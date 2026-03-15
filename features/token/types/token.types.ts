@@ -75,9 +75,18 @@ export interface ChartDataPoint {
   volume: number;
 }
 
+export interface ChartCandlePointDto {
+  timestamp: number;
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+}
+
 export interface ChartData {
   interval: string;
-  points: CandlestickData[];
+  points: ChartCandlePointDto[];
 }
 
 // Trade Types

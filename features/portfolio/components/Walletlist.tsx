@@ -80,7 +80,9 @@ export const WalletList: React.FC = () => {
           </div>
         </div>
       ) : (
-        walletsData.wallets.map((wallet) => (
+        [...walletsData.wallets]
+          .sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
+          .map((wallet) => (
           <div
             key={wallet.address}
             className="border flex items-center gap-4 rounded-lg border-gray-600 p-2  transition-colors"
@@ -102,6 +104,9 @@ export const WalletList: React.FC = () => {
                 <div className="text-sm text-gray-400">
                   ${wallet.balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
+              </div>
+              <div className="text-xs text-gray-500 font-mono mt-0.5">
+                {wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}
               </div>
             </div>
             <WalletDropdownMenu walletAddress={wallet.address} isDefault={wallet.is_default} />

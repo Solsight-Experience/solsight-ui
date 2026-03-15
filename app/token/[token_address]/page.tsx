@@ -71,8 +71,8 @@ export default function TokenDetailPage() {
   return (
     <div>
       {/* Header */}
-      <TokenHeader 
-        token={token} 
+      <TokenHeader
+        token={token}
         aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(!isAISummaryOpen)} />}
       />
       {isAISummaryOpen && <div className="max-w-7xl mx-auto px-4 pt-4 space-y-2">
@@ -106,7 +106,7 @@ export default function TokenDetailPage() {
             />
           </div>
           {/* Tabs */}
-          <div className="flex-1 border border-gray-700 rounded-lg bg-gray-900/50 overflow-auto">
+          <div className="grow max-h-[500px] border border-gray-700 rounded-lg bg-gray-900/50 overflow-auto">
             <TokenTabs tokenAddress={tokenAddress} />
           </div>
         </div>
@@ -116,8 +116,6 @@ export default function TokenDetailPage() {
           <TradingPanel token={token} />
         </div>
       </div>
-
-      
     </div>
   );
 }
