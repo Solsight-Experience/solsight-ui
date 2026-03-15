@@ -33,7 +33,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {showHeader && <Header />}
                 <main>{children}</main>
                 <ChatGate />
-                <Toaster position="top-center" richColors />
+                <Toaster
+                  position="top-center"
+                  theme="dark"
+                  toastOptions={{
+                    classNames: {
+                      toast: '!bg-card !text-card-foreground !border-border !rounded-lg',
+                      title: '!text-card-foreground !font-semibold',
+                      description: '!text-muted-foreground',
+                      actionButton:
+                        '!bg-primary !text-primary-foreground !font-medium hover:!opacity-90',
+                    },
+                  }}
+                />
               </AuthProvider>
             </MockProvider>
           </QueryProvider>
