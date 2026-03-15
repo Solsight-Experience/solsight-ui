@@ -19,6 +19,7 @@ import {
 } from '../../../lib/chart-config';
 import { useTokenUIStore } from '../stores/token.stores';
 import { useChartData } from '../hooks/token.hooks';
+import { usePriceRuler } from '../hooks/usePriceRuler';
 import {
   CandlestickChart,
   TrendingUp,
@@ -31,11 +32,14 @@ import {
   RectangleHorizontal,
   Circle,
   Trash2,
+  Ruler,
 } from 'lucide-react';
 
 interface TokenChartProps {
   tokenAddress: string;
   isMulti: boolean;
+  enablePriceRuler?: boolean;
+  onRulerPriceChange?: (price: number) => void;
 }
 
 type ChartType = 'candles' | 'line' | 'area' | 'bars' | 'baseline' | 'histogram';
@@ -103,8 +107,8 @@ const Sep = () => (
   <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '2px auto' }} />
 );
 
-export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti }) => {
-  const { chartInterval } = useTokenUIStore();
+export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
+  const { chartInterval, orderType, limitPrice } = useTokenUIStore();
   const { initPoints, newPoint } = useChartData(tokenAddress, chartInterval);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +123,39 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
   const [isDrawing, setIsDrawing]     = useState(false);
   const [startPos, setStartPos]       = useState<{ x: number; y: number } | null>(null);
   const [drawings, setDrawings]       = useState<Drawing[]>([]);
+  
+  // Ref to track last synced price to prevent circular updates
+  const lastSyncedPriceRef = useRef<number | null>(null);
+
+  // Price ruler hook
+  const { rulerPrice, setRulerPrice } = usePriceRuler(chartRef, seriesRef, {
+    enabled: enablePriceRuler && orderType === 'limit',
+  });
+
+  // Notify parent when ruler price changes (from chart click)
+  useEffect(() => {
+    if (rulerPrice !== null && onRulerPriceChange) {
+      // Only notify if price actually changed to prevent circular updates
+      if (lastSyncedPriceRef.current !== rulerPrice) {
+        lastSyncedPriceRef.current = rulerPrice;
+        onRulerPriceChange(rulerPrice);
+      }
+    }
+  }, [rulerPrice, onRulerPriceChange]);
+
+  // Sync limitPrice from store to rulerPrice (when user types in input)
+  useEffect(() => {
+    if (enablePriceRuler && orderType === 'limit' && limitPrice) {
+      const price = parseFloat(limitPrice);
+      if (!isNaN(price) && price > 0) {
+        // Only update if price is different from last synced to prevent circular updates
+        if (lastSyncedPriceRef.current !== price) {
+          lastSyncedPriceRef.current = price;
+          setRulerPrice(price);
+        }
+      }
+    }
+  }, [limitPrice, enablePriceRuler, orderType, setRulerPrice]);
 
   const hasData = initPoints && initPoints.length > 0;
   const chartH = isMulti ? 200 : 460;
@@ -387,6 +424,36 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     );
   }, [newPoint, type]);
 
+  // ── Chart click handler for price ruler ────────────────────────────────────
+  useEffect(() => {
+    if (!chartRef.current || !enablePriceRuler || orderType !== 'limit') return;
+
+    const handleClick = (param: any) => {
+      // Only handle clicks when not in drawing mode
+      if (drawingMode && drawingMode !== 'pointer') return;
+      
+      if (param.point && param.seriesData && seriesRef.current) {
+        const seriesData = param.seriesData.get(seriesRef.current);
+        if (seriesData) {
+          // Extract price from series data
+          const price = typeof seriesData === 'number' 
+            ? seriesData 
+            : seriesData.close || seriesData.value;
+          
+          if (price && typeof price === 'number') {
+            setRulerPrice(price);
+          }
+        }
+      }
+    };
+
+    chartRef.current.subscribeClick(handleClick);
+    
+    return () => {
+      chartRef.current?.unsubscribeClick(handleClick);
+    };
+  }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
+
   // ── Cursor ─────────────────────────────────────────────────────────────────
   const canvasCursor =
     drawingMode && drawingMode !== 'pointer'
@@ -498,6 +565,30 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
             variant="purple"
           >
             <Circle size={15} />
+          </SideBtn>
+
+          <Sep />
+
+          {/* Price Ruler for Limit Orders */}
+          <SideBtn
+            active={enablePriceRuler && orderType === 'limit'}
+            title="Set Limit Price (Click on chart)"
+            onClick={() => {
+              if (!enablePriceRuler) return;
+              // Get current last price from data
+              const data = dataRef.current;
+              if (data.length > 0) {
+                const lastCandle = data[data.length - 1];
+                const lastPrice = lastCandle.close || lastCandle.value;
+                if (lastPrice) {
+                  setRulerPrice(lastPrice);
+                }
+              }
+            }}
+            variant="purple"
+            disabled={!enablePriceRuler || orderType !== 'limit'}
+          >
+            <Ruler size={15} />
           </SideBtn>
 
           <Sep />

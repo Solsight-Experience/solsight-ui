@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useTokenDetail } from '@/features/token/hooks/token.hooks';
 import {
@@ -14,14 +14,27 @@ import {
   AISummaryOptions,
 } from '@/features/token/components';
 import { AISummaryOptions as AISummaryOptionsType, DEFAULT_AI_OPTIONS } from '@/lib/mock/aiSummary';
+import { useTokenUIStore } from '@/features/token/stores/token.stores';
 
 export default function TokenDetailPage() {
   const params = useParams();
   const tokenAddress = params?.token_address as string;
   const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
   const [aiOptions, setAiOptions] = useState<AISummaryOptionsType>(DEFAULT_AI_OPTIONS);
+  const [enablePriceRuler, setEnablePriceRuler] = useState(false);
 
   const { data: token, isLoading, error } = useTokenDetail(tokenAddress);
+  const { setLimitPrice, orderType } = useTokenUIStore();
+
+  // Enable price ruler when limit order is selected
+  useEffect(() => {
+    setEnablePriceRuler(orderType === 'limit');
+  }, [orderType]);
+
+  // Handle ruler price change from chart
+  const handleRulerPriceChange = useCallback((price: number) => {
+    setLimitPrice(price.toString());
+  }, [setLimitPrice]);
 
   if (isLoading) {
     return (
@@ -62,18 +75,19 @@ export default function TokenDetailPage() {
         token={token}
         aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(!isAISummaryOpen)} />}
       />
-      {isAISummaryOpen && (
-        <div className="max-w-7xl mx-auto px-4 pt-4 space-y-2">
-          <AISummaryOptions options={aiOptions} onOptionsChange={setAiOptions} />
-          <AISummaryPanel
-            isOpen={isAISummaryOpen}
-            onToggle={() => setIsAISummaryOpen(!isAISummaryOpen)}
-            tokenAddress={tokenAddress}
-            tokenName={token.name}
-            options={aiOptions}
-          />
-        </div>
-      )}
+      {isAISummaryOpen && <div className="max-w-7xl mx-auto px-4 pt-4 space-y-2">
+        {/* <AISummaryOptions
+          options={aiOptions}
+          onOptionsChange={setAiOptions}
+        /> */}
+        <AISummaryPanel 
+          isOpen={isAISummaryOpen} 
+          onToggle={() => setIsAISummaryOpen(!isAISummaryOpen)}
+          tokenAddress={tokenAddress}
+          tokenName={token.name}
+          options={aiOptions}
+        />
+      </div>}
 
       {/* Stats Bar */}
       <TokenStats token={token} />
@@ -83,8 +97,13 @@ export default function TokenDetailPage() {
         {/* Left Column - Chart & Tabs */}
         <div className="flex flex-col gap-4 overflow-hidden flex-2">
           {/* Chart */}
-          <div className="h-[500px] border border-gray-700 rounded-lg p-4 bg-gray-900/50 ">
-            <TokenChart tokenAddress={tokenAddress} isMulti={false} />
+          <div className="flex-2 border border-gray-700 rounded-lg p-4 bg-gray-900/50 ">
+            <TokenChart 
+              tokenAddress={tokenAddress} 
+              isMulti={false}
+              enablePriceRuler={enablePriceRuler}
+              onRulerPriceChange={handleRulerPriceChange}
+            />
           </div>
           {/* Tabs */}
           <div className="grow max-h-[500px] border border-gray-700 rounded-lg bg-gray-900/50 overflow-auto">
