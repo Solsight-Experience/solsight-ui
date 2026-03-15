@@ -40,11 +40,23 @@ interface AISummaryContentProps {
 export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, onRegenerate }) => {
   const paragraphs = content.split('\n\n').filter(p => p.trim());
 
+  // Parse markdown bold syntax (**text**)
+  const parseMarkdownBold = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return <strong key={idx} className="font-semibold text-gray-100">{boldText}</strong>;
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="space-y-3 text-sm text-gray-300">
       {paragraphs.map((paragraph, index) => (
         <p key={index} className="leading-relaxed">
-          {paragraph}
+          {parseMarkdownBold(paragraph)}
         </p>
       ))}
 

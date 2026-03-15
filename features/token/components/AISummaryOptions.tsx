@@ -8,12 +8,7 @@ interface AISummaryOptionsProps {
 }
 
 const optionsList = [
-  { key: 'includePriceAnalysis' as const, label: 'Price' },
-  { key: 'includeRiskAssessment' as const, label: 'Risk' },
-  { key: 'includeTradingMetrics' as const, label: 'Trading' },
-  { key: 'includeMarketComparison' as const, label: 'Market' },
-  { key: 'includeSocialSentiment' as const, label: 'Sentiment' },
-  { key: 'forceRefresh' as const, label: 'Refresh' },
+  { key: 'forceRefresh' as const, label: 'Force Refresh' },
 ];
 
 export const AISummaryOptions: React.FC<AISummaryOptionsProps> = ({

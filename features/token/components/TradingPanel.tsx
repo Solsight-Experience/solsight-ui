@@ -29,6 +29,8 @@ import {
   sanitizeInput,
   toBaseUnits,
 } from '@/features/swap';
+import { LimitOrderService } from '@/features/limit-orders';
+import { VersionedTransaction } from '@solana/web3.js';
 
 interface TradingPanelProps {
   token: TokenDetail;
@@ -51,6 +53,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     setReceiveAmount,
     slippageBps,
     setSlippageBps,
+    limitPrice,
+    setLimitPrice,
     resetTradingPanel,
   } = useTokenUIStore();
   const { connectWallet, isConnecting, connected, publicKey } = useWallet();
@@ -258,22 +262,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           setReceiveAmount(nextReceive);
         }
 
-        const routeDetails: string[] = Array.isArray(data.routePlan)
-          ? (data.routePlan as any[])
-              .map((item: any) => item?.swapInfo?.label || item?.swapInfo?.ammKey || item?.swapInfo?.programId)
-              .filter((item: any): item is string => Boolean(item))
-              .map((label: string) => label.trim())
-          : [];
-        const uniqueRouteDetails: string[] = [...new Set(routeDetails)];
-        const routeCount = Array.isArray(data.routePlan) ? data.routePlan.length : 0;
-        const routePathTokens = buildRoutePathTokens(
-          data.routePlan,
-          payMint,
-          receiveMint,
-          payToken,
-          receiveToken
-        );
-
         setQuoteState({
           loading: false,
           error: null,
@@ -362,6 +350,104 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }
   };
 
+  // Handle limit order creation
+  const handleLimitOrder = async () => {
+    if (validation.error) {
+      toast.error(validation.error);
+      return;
+    }
+
+    if (!limitPrice || parseInputNumber(limitPrice) <= 0) {
+      toast.error('Enter a valid limit price.');
+      return;
+    }
+
+    const provider = (window as Window & { solana?: PhantomProvider }).solana;
+    if (!provider?.isPhantom) {
+      toast.error('Phantom wallet not found.');
+      return;
+    }
+
+    if (!connected || !publicKey) {
+      if (isConnecting) return;
+      connectWallet();
+      toast.info('Please connect your wallet.');
+      return;
+    }
+
+    if (!payAmount || !receiveAmount) {
+      toast.error('Enter amounts.');
+      return;
+    }
+
+    setSwapState({ loading: true, error: null, signature: null });
+
+    try {
+      const makingAmount = toBaseUnits(payAmount, payDecimals);
+      const takingAmount = toBaseUnits(receiveAmount, receiveDecimals);
+
+      if (!makingAmount || !takingAmount) {
+        throw new Error('Invalid amounts');
+      }
+
+      const walletAddress = typeof publicKey === 'string' ? publicKey : (publicKey as any).toBase58();
+
+      // Step 1: Create limit order
+      const createResponse = await LimitOrderService.createOrder({
+        inputMint: payMint,
+        outputMint: receiveMint,
+        maker: walletAddress,
+        payer: walletAddress,
+        params: {
+          makingAmount,
+          takingAmount,
+          slippageBps: slippageBps.toString(),
+        },
+        computeUnitPrice: 'auto',
+        wrapAndUnwrapSol: true,
+      });
+
+      // Step 2: Sign transaction
+      const txBuffer = Buffer.from(createResponse.transaction, 'base64');
+      const transaction = VersionedTransaction.deserialize(txBuffer);
+      const signedTx = await provider.signTransaction(transaction);
+      const signedTxBase64 = Buffer.from(signedTx.serialize()).toString('base64');
+
+      // Step 3: Execute
+      const executeResponse = await LimitOrderService.executeOrder({
+        requestId: createResponse.requestId,
+        signedTransaction: signedTxBase64,
+      });
+
+      setSwapState({ loading: false, error: null, signature: executeResponse.signature });
+      toast.success('Limit order created!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create limit order';
+      setSwapState({ loading: false, error: message, signature: null });
+      toast.error(message);
+    }
+  };
+
+  // Calculate amounts based on limit price
+  useEffect(() => {
+    if (orderType !== 'limit' || !limitPrice || !payAmount) return;
+    
+    const price = parseInputNumber(limitPrice);
+    const amount = parseInputNumber(payAmount);
+    
+    if (price <= 0 || amount <= 0) return;
+    
+    if (tradeMode === 'buy') {
+      // Buying: receiveAmount = payAmount / limitPrice
+      const calculated = amount / price;
+      setReceiveAmount(formatInputValue(calculated.toString(), receiveDecimals));
+    } else {
+      // Selling: receiveAmount = payAmount * limitPrice
+      const calculated = amount * price;
+      setReceiveAmount(formatInputValue(calculated.toString(), receiveDecimals));
+    }
+  }, [limitPrice, payAmount, orderType, tradeMode, receiveDecimals, setReceiveAmount]);
+
   return (
     <div className={`rounded-xl p-4 bg-gray-900/80 backdrop-blur border-2 transition-all duration-300 ${
       tradeMode === 'buy'
@@ -406,13 +492,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         </button>
         <button
           onClick={() => setOrderType('limit')}
-          disabled
           className={`flex-1 py-2 px-3 rounded ${
             orderType === 'limit'
               ? 'bg-gray-800 border-b-2 border-purple-500'
               : 'bg-gray-800 text-gray-400'
           }`}
-          title="Limit order is not supported yet"
         >
           Limit
         </button>
@@ -445,6 +529,29 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
           </div>
         </div>
       </div>
+
+      {orderType === 'limit' && (
+        <div className="mb-4">
+          <Label className="text-sm text-gray-400 mb-2 font-semibold">
+            Limit Price ({receiveToken} per {payToken})
+          </Label>
+          <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50">
+            <input
+              type="text"
+              value={limitPrice}
+              onChange={(e) => {
+                setLimitPrice(sanitizeInput(e.target.value, receiveDecimals));
+              }}
+              placeholder="0.00"
+              className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
+              onBlur={() => setLimitPrice(formatInputValue(limitPrice, receiveDecimals))}
+            />
+            <div className="mt-2 text-xs text-yellow-500">
+              Order executes when price reaches this level
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4">
         <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
@@ -547,17 +654,20 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/40'
             : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40'
         }`}
-        onClick={handleSwap}
-        disabled={swapState.loading || quoteState.loading || !!validation.error}
+        onClick={orderType === 'market' ? handleSwap : handleLimitOrder}
+        disabled={swapState.loading || (orderType === 'market' && quoteState.loading) || !!validation.error}
       >
         {swapState.loading ? (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />
-            Swapping...
+            {orderType === 'market' ? 'Swapping...' : 'Creating Order...'}
           </span>
         ) : (
           <>
-            {tradeMode.toUpperCase()} {tradeMode === 'buy' ? token.symbol : payToken}
+            {orderType === 'market' 
+              ? `${tradeMode.toUpperCase()} ${tradeMode === 'buy' ? token.symbol : payToken}`
+              : 'PLACE LIMIT ORDER'
+            }
           </>
         )}
       </Button>
@@ -604,10 +714,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                           }
                         }}
                         className="flex items-center gap-1 rounded bg-gray-700/80 px-2 py-1 text-left hover:bg-gray-700 border border-gray-600/50 transition-colors"
-                        title={token.full ?? token.display}
+                        title={routeToken.full ?? routeToken.display}
                       >
-                        <span className="text-sm font-medium">{token.display}</span>
-                        {token.full && copiedMint === token.full ? (
+                        <span className="text-sm font-medium">{routeToken.display}</span>
+                        {routeToken.full && copiedMint === routeToken.full ? (
                           <Check className="h-3 w-3 text-green-400" />
                         ) : (
                           <Copy className="h-3 w-3 text-gray-500" />
