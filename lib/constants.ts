@@ -99,6 +99,15 @@ export const USER_ENDPOINTS = {
   FAVORITE_DETAIL: (tokenAddress: string) => `/api/account/me/favorites/${tokenAddress}`,
 } as const;
 
+// Limit Order API Endpoints
+export const LIMIT_ORDER_ENDPOINTS = {
+  CREATE: '/api/limit-orders/create',
+  EXECUTE: '/api/limit-orders/execute',
+  LIST: '/api/limit-orders',
+  CANCEL: '/api/limit-orders/cancel',
+  CANCEL_MULTIPLE: '/api/limit-orders/cancel-multiple',
+} as const;
+
 // Token API Endpoints
 export const TOKEN_ENDPOINTS = {
   // Token Details
@@ -124,3 +133,17 @@ export type ChartInterval = (typeof CHART_INTERVALS)[number];
 // Trade tabs
 export const TRADE_TABS = ['trades', 'top_traders', 'holders'] as const;
 export type TradeTab = (typeof TRADE_TABS)[number];
+
+// Chat API Endpoints
+export const CHAT_ENDPOINTS = {
+  MESSAGE: '/api/chat/message',
+} as const;
+
+// Chat Socket Events
+export const CHAT_SOCKET_EVENTS = {
+  SEND: 'chat:message',
+  RESPONSE: 'chat:response',
+  STREAM: 'chat:stream',
+  COMPLETE: 'chat:complete',
+  ERROR: 'chat:error',
+} as const;

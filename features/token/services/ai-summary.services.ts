@@ -29,10 +29,13 @@ export const aiSummaryApi = {
     address: string,
     options?: Partial<AISummaryOptions>
   ): Promise<AISummaryResponse> => {
-    const requestBody = {
+    const requestBody: { address: string; forceRefresh?: boolean } = {
       address,
-      ...options,
     };
+    
+    if (options?.forceRefresh !== undefined) {
+      requestBody.forceRefresh = options.forceRefresh;
+    }
 
     const response = await apiClient.post<AISummaryResponse>(
       TOKEN_ENDPOINTS.AI_SUMMARY,
@@ -49,11 +52,6 @@ export const aiSummaryApi = {
   generateSummaryWithDefaults: async (address: string): Promise<AISummaryResponse> => {
     const requestBody = {
       address,
-      includePriceAnalysis: true,
-      includeRiskAssessment: true,
-      includeTradingMetrics: false,
-      includeMarketComparison: false,
-      includeSocialSentiment: false,
       forceRefresh: false,
     };
 

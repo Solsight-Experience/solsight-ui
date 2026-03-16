@@ -97,7 +97,7 @@ export const PortfolioDashboard: React.FC = () => {
 
   const formatDateLabel = (timestamp?: number) =>
     timestamp
-      ? new Date(timestamp).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+      ? new Date(timestamp).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })
       : '--/--';
   const chartLabels = pnlData.chart_data.map((point) => formatDateLabel(point.timestamp));
   const dateMarkers = chartLabels.slice(-7);
@@ -267,11 +267,7 @@ export const PortfolioDashboard: React.FC = () => {
 
           <div className="flex justify-between items-center">
             <span className="text-zinc-400">Total TXNS</span>
-            <div className="flex gap-2">
-              <span className="text-green-500">{transactions.buys}</span>
-              <span className="text-zinc-600">/</span>
-              <span className="text-red-500">{transactions.sells}</span>
-            </div>
+            <span className="font-semibold text-white">{transactions.total}</span>
           </div>
         </div>
       </div>

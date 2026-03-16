@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LogoutConfirmDialog from '../auth/LogoutConfirmDialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { NotificationBadge, NotificationPanel } from '@/features/notifications/components';
+import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 
 const TICKERS = [
   { symbol: 'SOL/USDT',  price: '182.34',    change: '+3.21%', up: true  },
@@ -22,6 +25,7 @@ const TICKERS = [
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
+  const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
 
   const [searchOpen,        setSearchOpen]        = useState(false);
   const [avatarMenuOpen,    setAvatarMenuOpen]    = useState(false);
@@ -79,17 +83,27 @@ export default function Header() {
             <div className="flex items-center gap-2">
 
               {/* Notification Bell */}
-              <button
-                aria-label="Notifications"
-                className="relative flex items-center justify-center w-[34px] h-[34px]
-                           bg-white/[0.04] border border-white/[0.09] rounded-lg
-                           text-white/45 cursor-pointer transition-all duration-150
-                           hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15"
-              >
-                <Bell size={15} />
-                <span className="absolute top-[7px] right-[8px] w-[5px] h-[5px]
-                                 bg-red-400 rounded-full border-[1.5px] border-[#080b12]" />
-              </button>
+              <Popover open={isPanelOpen} onOpenChange={setPanelOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    aria-label="Notifications"
+                    className="relative flex items-center justify-center w-[34px] h-[34px]
+                               bg-white/[0.04] border border-white/[0.09] rounded-lg
+                               text-white/45 cursor-pointer transition-all duration-150
+                               hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15"
+                  >
+                    <Bell size={15} />
+                    <NotificationBadge count={unreadCount} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  sideOffset={8}
+                  className="p-0 border-white/10"
+                >
+                  <NotificationPanel />
+                </PopoverContent>
+              </Popover>
 
               {/* User Dropdown */}
               <div className="relative">

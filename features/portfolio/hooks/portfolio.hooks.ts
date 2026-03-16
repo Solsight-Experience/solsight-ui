@@ -98,6 +98,8 @@ export function useActivities(params: {
   type?: 'all' | 'swap' | 'transfer' | 'stake' | 'unstake';
   limit?: number;
   offset?: number;
+  from?: number;
+  to?: number;
 }) {
   return useQuery({
     queryKey: portfolioKeys.activities(params),
