@@ -136,16 +136,21 @@ export interface Holder {
   name: string | null;
   balance: number;
   balance_percent: number;
-  avg_buy_price: number;
+  last_active_ts: number;
   total_bought: number;
   total_sold: number;
-  realized_pnl: number;
+  avg_buy_price: number;
+  avg_sell_price: number;
   unrealized_pnl: number;
+  realized_pnl: number;
   total_pnl: number;
   roi_percent: number;
-  first_tx_time: number;
-  last_tx_time: number;
+  remaining_usd: number;
+  funding_label: string | null;
+  account_type: 'WALLET' | 'LP' | 'DEV' | 'BURN' | 'CEX';
   tx_count: number;
+  buy_tx_count: number;
+  sell_tx_count: number;
 }
 
 export interface HoldersResponse {

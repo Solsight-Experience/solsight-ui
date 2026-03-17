@@ -49,3 +49,4 @@ true/
 # Sisyphus agent artifacts
 .sisyphus/
 AGENTS.md
+.omc/
