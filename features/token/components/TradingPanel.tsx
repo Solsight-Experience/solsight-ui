@@ -114,6 +114,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   const abortRef = useRef<AbortController | null>(null);
   const previousBuyPayMintRef = useRef(selectedBuyPayMint);
   const previousSellReceiveMintRef = useRef(selectedSellReceiveMint);
+  const noSwapOptionsNotifiedRef = useRef(false);
+  const isViewingSolToken = token.address.toLowerCase() === COMMON_TOKENS.SOL.mint.toLowerCase();
 
   useEffect(() => {
     resetTradingPanel();
@@ -129,10 +131,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       rawQuote: null,
     });
     setCopiedMint(null);
-    setSelectedBuyPayMint(COMMON_TOKENS.SOL.mint);
-    setSelectedSellReceiveMint(COMMON_TOKENS.SOL.mint);
+    setSelectedBuyPayMint(isViewingSolToken ? '' : COMMON_TOKENS.SOL.mint);
+    setSelectedSellReceiveMint(isViewingSolToken ? '' : COMMON_TOKENS.SOL.mint);
     setSwapState({ loading: false, error: null, signature: null });
-  }, [token.address, resetTradingPanel]);
+  }, [token.address, resetTradingPanel, isViewingSolToken]);
 
   const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
   const {
@@ -233,49 +235,45 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     return Array.from(unique.values());
   }, [positionsData?.positions, selectedWallet?.balance_sol, token.address, token.logo_uri]);
 
+  const selectableBuyPayTokenOptions = useMemo(
+    () => buyPayTokenOptions.filter((option) => option.mint.toLowerCase() !== token.address.toLowerCase()),
+    [buyPayTokenOptions, token.address]
+  );
+  const selectableSellReceiveTokenOptions = selectableBuyPayTokenOptions;
+
   useEffect(() => {
     if (tradeMode !== 'buy') return;
-    if (!buyPayTokenOptions.length) return;
-    if (!buyPayTokenOptions.some((option) => option.mint === selectedBuyPayMint)) {
-      setSelectedBuyPayMint(buyPayTokenOptions[0].mint);
+    if (!selectableBuyPayTokenOptions.length) {
+      if (selectedBuyPayMint) setSelectedBuyPayMint('');
+      return;
     }
-  }, [tradeMode, buyPayTokenOptions, selectedBuyPayMint]);
+    if (isViewingSolToken && !selectedBuyPayMint) return;
+    if (!selectableBuyPayTokenOptions.some((option) => option.mint === selectedBuyPayMint)) {
+      setSelectedBuyPayMint(selectableBuyPayTokenOptions[0].mint);
+    }
+  }, [tradeMode, selectableBuyPayTokenOptions, selectedBuyPayMint, isViewingSolToken]);
 
   useEffect(() => {
     if (tradeMode !== 'sell') return;
-    if (!buyPayTokenOptions.length) return;
-    if (!buyPayTokenOptions.some((option) => option.mint === selectedSellReceiveMint)) {
-      setSelectedSellReceiveMint(buyPayTokenOptions[0].mint);
+    if (!selectableSellReceiveTokenOptions.length) {
+      if (selectedSellReceiveMint) setSelectedSellReceiveMint('');
+      return;
     }
-  }, [tradeMode, buyPayTokenOptions, selectedSellReceiveMint]);
+    if (isViewingSolToken && !selectedSellReceiveMint) return;
+    if (!selectableSellReceiveTokenOptions.some((option) => option.mint === selectedSellReceiveMint)) {
+      setSelectedSellReceiveMint(selectableSellReceiveTokenOptions[0].mint);
+    }
+  }, [tradeMode, selectableSellReceiveTokenOptions, selectedSellReceiveMint, isViewingSolToken]);
 
-  const selectedBuyPayToken = useMemo<BuyPayTokenOption>(() => {
-    return (
-      buyPayTokenOptions.find((option) => option.mint === selectedBuyPayMint) ??
-      buyPayTokenOptions[0] ?? {
-        mint: COMMON_TOKENS.SOL.mint,
-        symbol: COMMON_TOKENS.SOL.symbol,
-        logoUri:
-          'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-        decimals: COMMON_TOKENS.SOL.decimals,
-        balance: 0,
-      }
-    );
-  }, [buyPayTokenOptions, selectedBuyPayMint]);
+  const selectedBuyPayToken = useMemo<BuyPayTokenOption | null>(
+    () => selectableBuyPayTokenOptions.find((option) => option.mint === selectedBuyPayMint) ?? null,
+    [selectableBuyPayTokenOptions, selectedBuyPayMint]
+  );
 
-  const selectedSellReceiveToken = useMemo<BuyPayTokenOption>(() => {
-    return (
-      buyPayTokenOptions.find((option) => option.mint === selectedSellReceiveMint) ??
-      buyPayTokenOptions[0] ?? {
-        mint: COMMON_TOKENS.SOL.mint,
-        symbol: COMMON_TOKENS.SOL.symbol,
-        logoUri:
-          'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-        decimals: COMMON_TOKENS.SOL.decimals,
-        balance: 0,
-      }
-    );
-  }, [buyPayTokenOptions, selectedSellReceiveMint]);
+  const selectedSellReceiveToken = useMemo<BuyPayTokenOption | null>(
+    () => selectableSellReceiveTokenOptions.find((option) => option.mint === selectedSellReceiveMint) ?? null,
+    [selectableSellReceiveTokenOptions, selectedSellReceiveMint]
+  );
 
   useEffect(() => {
     if (tradeMode !== 'buy') return;
@@ -321,6 +319,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
   useEffect(() => {
     if (tradeMode !== 'buy') return;
+    if (!selectedBuyPayToken) return;
 
     const selectedMint = selectedBuyPayToken.mint;
     if (selectedMint === COMMON_TOKENS.SOL.mint) return;
@@ -343,6 +342,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
   useEffect(() => {
     if (tradeMode !== 'sell') return;
+    if (!selectedSellReceiveToken) return;
 
     const selectedMint = selectedSellReceiveToken.mint;
     if (selectedMint === COMMON_TOKENS.SOL.mint) return;
@@ -363,34 +363,35 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       .catch(() => {});
   }, [tradeMode, selectedSellReceiveToken, buyTokenDecimalsByMint]);
 
-  const payToken = tradeMode === 'buy' ? selectedBuyPayToken.symbol : token.symbol;
-  const receiveToken = tradeMode === 'buy' ? token.symbol : selectedSellReceiveToken.symbol;
-  const payTokenLogo = tradeMode === 'buy' ? selectedBuyPayToken.logoUri : token.logo_uri;
+  const payToken = tradeMode === 'buy' ? selectedBuyPayToken?.symbol ?? '' : token.symbol;
+  const receiveToken = tradeMode === 'buy' ? token.symbol : selectedSellReceiveToken?.symbol ?? '';
+  const payTokenLogo = tradeMode === 'buy' ? selectedBuyPayToken?.logoUri ?? '' : token.logo_uri;
   const receiveTokenLogo =
     tradeMode === 'buy'
       ? token.logo_uri
-      : selectedSellReceiveToken.logoUri;
+      : selectedSellReceiveToken?.logoUri ?? '';
 
   const portfolioTokenBalance = ownedTokenPosition?.balance ?? 0;
-  const payBalance = tradeMode === 'buy' ? String(selectedBuyPayToken.balance) : String(portfolioTokenBalance);
+  const payBalance =
+    tradeMode === 'buy' ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
   const receiveBalance =
-    tradeMode === 'buy' ? String(portfolioTokenBalance) : String(selectedSellReceiveToken.balance);
+    tradeMode === 'buy' ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
   const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
   const payDecimals =
     tradeMode === 'buy'
-      ? selectedBuyPayToken.decimals ??
-        buyTokenDecimalsByMint[selectedBuyPayToken.mint] ??
+      ? selectedBuyPayToken?.decimals ??
+        (selectedBuyPayToken ? buyTokenDecimalsByMint[selectedBuyPayToken.mint] : undefined) ??
         COMMON_TOKENS.SOL.decimals
       : resolvedTokenDecimals;
   const receiveDecimals =
     tradeMode === 'buy'
       ? resolvedTokenDecimals
-      : selectedSellReceiveToken.decimals ??
-        buyTokenDecimalsByMint[selectedSellReceiveToken.mint] ??
+      : selectedSellReceiveToken?.decimals ??
+        (selectedSellReceiveToken ? buyTokenDecimalsByMint[selectedSellReceiveToken.mint] : undefined) ??
         COMMON_TOKENS.SOL.decimals;
 
-  const payMint = tradeMode === 'buy' ? selectedBuyPayToken.mint : token.address;
-  const receiveMint = tradeMode === 'buy' ? token.address : selectedSellReceiveToken.mint;
+  const payMint = tradeMode === 'buy' ? selectedBuyPayToken?.mint ?? '' : token.address;
+  const receiveMint = tradeMode === 'buy' ? token.address : selectedSellReceiveToken?.mint ?? '';
   const getOptionDecimals = (option: BuyPayTokenOption): number =>
     option.decimals ??
     buyTokenDecimalsByMint[option.mint] ??
@@ -410,6 +411,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   const validation = useMemo(() => {
     if (!connected || !publicKey) return { error: null };
     if (balancesLoading || positionsError) return { error: null };
+    if (tradeMode === 'buy' && !selectedBuyPayToken) return { error: 'You cannot swap because you have insufficient funds.' };
+    if (tradeMode === 'sell' && !selectedSellReceiveToken) return { error: 'You cannot swap because you have insufficient funds.' };
 
     const payValue = parseInputNumber(payAmount);
     const receiveValue = parseInputNumber(receiveAmount);
@@ -435,11 +438,27 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     publicKey,
     balancesLoading,
     positionsError,
+    tradeMode,
+    selectedBuyPayToken,
+    selectedSellReceiveToken,
     lastEdited,
     payAmount,
     receiveAmount,
     payBalance,
   ]);
+
+  useEffect(() => {
+    const hasNoSwapOptions =
+      (tradeMode === 'buy' && selectableBuyPayTokenOptions.length === 0) ||
+      (tradeMode === 'sell' && selectableSellReceiveTokenOptions.length === 0);
+    if (!hasNoSwapOptions) {
+      noSwapOptionsNotifiedRef.current = false;
+      return;
+    }
+    if (noSwapOptionsNotifiedRef.current) return;
+    noSwapOptionsNotifiedRef.current = true;
+    toast.error('You cannot swap because you have insufficient funds.');
+  }, [tradeMode, selectableBuyPayTokenOptions.length, selectableSellReceiveTokenOptions.length]);
 
   useEffect(() => {
     if (internalUpdateRef.current) {
@@ -463,6 +482,21 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
     const sourceAmount = lastEdited === 'pay' ? payAmount : receiveAmount;
     if (!isValidAmount(sourceAmount)) {
+      setQuoteState((prev) => ({
+        ...prev,
+        loading: false,
+        error: null,
+        priceImpactPct: null,
+        otherAmountThreshold: null,
+        routeLabel: null,
+        routeDetails: [],
+        routePathTokens: [],
+        rawQuote: null,
+      }));
+      return;
+    }
+
+    if (!payMint || !receiveMint) {
       setQuoteState((prev) => ({
         ...prev,
         loading: false,
@@ -570,6 +604,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
   ]);
 
   const handleSwap = async () => {
+    if (
+      (tradeMode === 'buy' && selectableBuyPayTokenOptions.length === 0) ||
+      (tradeMode === 'sell' && selectableSellReceiveTokenOptions.length === 0)
+    ) {
+      toast.error('You cannot swap because you have insufficient funds.');
+      return;
+    }
+
     if (validation.error) {
       toast.error(validation.error);
       return;
@@ -791,10 +833,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
+                        disabled={selectableBuyPayTokenOptions.length === 0}
                         className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
                       >
-                        <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
-                        <span className="leading-4">{payToken}</span>
+                        {selectedBuyPayToken ? (
+                          <>
+                            <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
+                            <span className="leading-4">{payToken}</span>
+                          </>
+                        ) : (
+                          <span className="leading-4 text-gray-400">Select token</span>
+                        )}
                         <ChevronDown className="h-4 w-4 text-gray-400" />
                       </button>
                     </DropdownMenuTrigger>
@@ -802,7 +851,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                       align="start"
                       className="w-64 border-gray-700 bg-gray-900/95 text-gray-100"
                     >
-                      {buyPayTokenOptions.map((option) => (
+                      {selectableBuyPayTokenOptions.map((option) => (
                         <DropdownMenuItem
                           key={option.mint}
                           onSelect={() => setSelectedBuyPayMint(option.mint)}
@@ -822,6 +871,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                           {selectedBuyPayMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
                         </DropdownMenuItem>
                       ))}
+                      {selectableBuyPayTokenOptions.length === 0 && (
+                        <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                          No available tokens
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
@@ -834,7 +888,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               <div className="text-right">
                 <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
                 <div className="text-sm font-semibold text-gray-100">
-                  {formatDisplay(payBalance, payDecimals)} {payToken}
+                  {formatDisplay(payBalance, payDecimals)} {payToken || '--'}
                 </div>
               </div>
             </div>
@@ -888,10 +942,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
+                        disabled={selectableSellReceiveTokenOptions.length === 0}
                         className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
                       >
-                        <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
-                        <span className="leading-4">{receiveToken}</span>
+                        {selectedSellReceiveToken ? (
+                          <>
+                            <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
+                            <span className="leading-4">{receiveToken}</span>
+                          </>
+                        ) : (
+                          <span className="leading-4 text-gray-400">Select token</span>
+                        )}
                         <ChevronDown className="h-4 w-4 text-gray-400" />
                       </button>
                     </DropdownMenuTrigger>
@@ -899,7 +960,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                       align="start"
                       className="w-64 border-gray-700 bg-gray-900/95 text-gray-100"
                     >
-                      {buyPayTokenOptions.map((option) => (
+                      {selectableSellReceiveTokenOptions.map((option) => (
                         <DropdownMenuItem
                           key={option.mint}
                           onSelect={() => setSelectedSellReceiveMint(option.mint)}
@@ -919,6 +980,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                           {selectedSellReceiveMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
                         </DropdownMenuItem>
                       ))}
+                      {selectableSellReceiveTokenOptions.length === 0 && (
+                        <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                          No available tokens
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
@@ -931,7 +997,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
               <div className="text-right">
                 <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
                 <div className="text-sm font-semibold text-gray-100">
-                  {formatDisplay(receiveBalance, receiveDecimals)} {receiveToken}
+                  {formatDisplay(receiveBalance, receiveDecimals)} {receiveToken || '--'}
                 </div>
               </div>
             </div>
@@ -1032,7 +1098,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40'
         }`}
         onClick={orderType === 'market' ? handleSwap : handleLimitOrder}
-        disabled={swapState.loading || (orderType === 'market' && quoteState.loading) || !!validation.error}
+        disabled={
+          swapState.loading ||
+          (orderType === 'market' && quoteState.loading) ||
+          !!validation.error ||
+          (tradeMode === 'buy' && selectableBuyPayTokenOptions.length === 0) ||
+          (tradeMode === 'sell' && selectableSellReceiveTokenOptions.length === 0)
+        }
       >
         {swapState.loading ? (
           <span className="inline-flex items-center gap-2">
