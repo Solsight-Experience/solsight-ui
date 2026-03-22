@@ -215,7 +215,7 @@ export function useHolders(
     enabled: !!address,
     staleTime: 30000, // 30 seconds
   });
-  const newHolder = useHoldersStream(address);
+  const holderUpdate = useHoldersStream(address);
   const [data, setData] = useState<{ holders: Holder[] }>({ holders: [] });
 
   useEffect(() => {
@@ -223,12 +223,31 @@ export function useHolders(
   }, [initial.data]);
 
   useEffect(() => {
-    if (!newHolder) return;
+    if (!holderUpdate) return;
 
     setData((prev) => {
-      return { holders: [newHolder, ...prev.holders].slice(0, 10) };
+      const existingMap = new Map(prev.holders.map((h) => [h.address, h]));
+
+      // Remove holders that are no longer in top list
+      for (const addr of holderUpdate.removed) {
+        existingMap.delete(addr);
+      }
+
+      // Update or add changed holders
+      for (const holder of holderUpdate.changed) {
+        existingMap.set(holder.address, holder);
+      }
+
+      // Sort by balance descending and limit to configured amount
+      const limit = params?.limit ?? 100;
+      const sortedHolders = Array.from(existingMap.values())
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, limit);
+
+      return { holders: sortedHolders };
     });
-  }, [newHolder]);
+  }, [holderUpdate, params?.limit]);
+
   return { ...initial, data };
 }
 

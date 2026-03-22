@@ -83,8 +83,14 @@ export function useTopTradersStream(
   return topTraders;
 }
 
+export interface HolderUpdatePayload {
+  token: string;
+  changed: Holder[];
+  removed: string[];
+}
+
 export function useHoldersStream(address: string) {
-  const [holders, setHolders] = useState<Holder>();
+  const [holderUpdate, setHolderUpdate] = useState<HolderUpdatePayload>();
   useEffect(() => {
     const dto = {
       domain: 'holders',
@@ -93,14 +99,17 @@ export function useHoldersStream(address: string) {
     };
 
     socket.onDomainEvent(dto, (data: any) => {
-      setHolders(data.data);
+      // Backend sends: { room, data: { token, changed: Holder[], removed: string[] } }
+      if (data?.data?.changed || data?.data?.removed) {
+        setHolderUpdate(data.data);
+      }
     });
 
     return () => {
       socket.unsubscribe(dto);
     };
   }, [address]);
-  return holders;
+  return holderUpdate;
 }
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
