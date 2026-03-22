@@ -100,8 +100,8 @@ export function useHoldersStream(address: string) {
 
     socket.onDomainEvent(dto, (data: any) => {
       // Backend sends: { room, data: { token, changed: Holder[], removed: string[] } }
-      if (data?.data?.changed || data?.data?.removed) {
-        setHolderUpdate(data.data);
+      if (data?.changed || data?.removed) {
+        setHolderUpdate(data);
       }
     });
 
