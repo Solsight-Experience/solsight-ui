@@ -109,7 +109,8 @@ const Sep = () => (
 
 export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
   const { chartInterval, orderType, limitPrice } = useTokenUIStore();
-  const { initPoints, newPoint } = useChartData(tokenAddress, chartInterval);
+  const effectiveInterval = isMulti ? '4h' : chartInterval;
+  const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval, isMulti ? 40 : 100);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);

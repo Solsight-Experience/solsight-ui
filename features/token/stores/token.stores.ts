@@ -44,7 +44,7 @@ export const useTokenUIStore = create<TokenUIState>()(
   persist(
     (set, get) => ({
       // Chart state
-      chartInterval: '1m',
+      chartInterval: '10s',
       setChartInterval: (interval) => set({ chartInterval: interval }),
 
       // Trade tab state
