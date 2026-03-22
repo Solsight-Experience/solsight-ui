@@ -137,6 +137,7 @@ export interface Holder {
   balance: number;
   balance_percent: number;
   last_active_ts: number;
+  first_tx_time: number;
   total_bought: number;
   total_sold: number;
   avg_buy_price: number;

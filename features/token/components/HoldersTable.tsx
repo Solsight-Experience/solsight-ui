@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHolders } from '../hooks/token.hooks';
 import { formatNumber, formatTokenAmount, formatTimeAgo } from '../utils/token.utils';
 import type { Holder } from '../types/token.types';
+import { WalletHoverCard } from './WalletHoverCard';
 
 const FUNDING_ICONS: Record<string, string> = {
   Binance: '🔶',
@@ -53,38 +54,41 @@ const LastActiveTimer: React.FC<{ timestamp: number }> = ({ timestamp }) => {
   return <span className="text-xs text-gray-400">{display}</span>;
 };
 
-const HolderRow: React.FC<Holder & { rank: number }> = ({
-  rank,
-  address,
-  name,
-  balance,
-  balance_percent,
-  last_active_ts,
-  total_bought,
-  avg_buy_price,
-  total_sold,
-  avg_sell_price,
-  unrealized_pnl,
-  remaining_usd,
-  funding_label,
-  account_type,
-  tx_count,
-  buy_tx_count,
-  sell_tx_count,
-}) => {
+const HolderRow: React.FC<{ holder: Holder; rank: number }> = ({ holder, rank }) => {
+  const {
+    address,
+    name,
+    balance,
+    balance_percent,
+    last_active_ts,
+    total_bought,
+    avg_buy_price,
+    total_sold,
+    avg_sell_price,
+    unrealized_pnl,
+    remaining_usd,
+    funding_label,
+    account_type,
+    tx_count,
+    buy_tx_count,
+    sell_tx_count,
+  } = holder;
+
   const shortAddr = `${address.slice(0, 4)}...${address.slice(-4)}`;
 
   return (
     <tr className="border-b border-gray-700 hover:bg-gray-800/50 text-sm">
       <td className="py-3 px-3 font-semibold text-gray-400 whitespace-nowrap">#{rank}</td>
       <td className="py-3 px-3">
-        <div className="flex items-center gap-1.5">
-          <AccountTypeIcon type={account_type} />
-          <div className="flex flex-col">
-            {name && <span className="font-semibold text-white leading-none">{name}</span>}
-            <code className="text-xs text-gray-400">{shortAddr}</code>
+        <WalletHoverCard holder={holder}>
+          <div className="flex items-center gap-1.5 cursor-pointer">
+            <AccountTypeIcon type={account_type} />
+            <div className="flex flex-col">
+              {name && <span className="font-semibold text-white leading-none">{name}</span>}
+              <code className="text-xs text-gray-400 hover:text-gray-200 transition-colors">{shortAddr}</code>
+            </div>
           </div>
-        </div>
+        </WalletHoverCard>
       </td>
       <td className="py-3 px-3 whitespace-nowrap">
         <div className="flex flex-col">
@@ -175,7 +179,7 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress }) => {
         </thead>
         <tbody>
           {holdersData.holders.map((holder, index) => (
-            <HolderRow key={holder.address} rank={index + 1} {...holder} />
+            <HolderRow key={holder.address} holder={holder} rank={index + 1} />
           ))}
         </tbody>
       </table>
