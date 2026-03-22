@@ -116,10 +116,9 @@ export function useChartData(address: string, interval: string) {
     queryFn: () =>
       tokenApi.getChartData(address, {
         interval,
-        limit: 500,
+        limit: 100,
       }),
     enabled: !!address && !!interval,
-    staleTime: interval === '1m' ? 5000 : 30000,
   });
 
   const newPoint = useChartDataStream(address, interval as ChartInterval);
