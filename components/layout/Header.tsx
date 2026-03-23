@@ -10,30 +10,38 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LogoutConfirmDialog from '../auth/LogoutConfirmDialog';
+import DisconnectWalletsConfirmDialog from '../auth/DisconnectWalletsConfirmDialog';
 
 const TICKERS = [
-  { symbol: 'SOL/USDT',  price: '182.34',    change: '+3.21%', up: true  },
-  { symbol: 'BTC/USDT',  price: '67,420',    change: '+1.08%', up: true  },
-  { symbol: 'ETH/USDT',  price: '3,512.90',  change: '-0.74%', up: false },
-  { symbol: 'JUP/USDT',  price: '1.024',     change: '+5.43%', up: true  },
-  { symbol: 'BONK/USDT', price: '0.00003421',change: '-2.11%', up: false },
-  { symbol: 'RAY/USDT',  price: '4.81',      change: '+8.92%', up: true  },
+  { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
+  { symbol: "JUP/SOL", price: "0.00562", change: 5.43 },
+  { symbol: "RAY/SOL", price: "0.0264", change: 8.92 },
+  { symbol: "PYTH/SOL", price: "0.00285", change: 1.73 },
+  { symbol: "WIF/SOL", price: "0.0119", change: -0.91 },
+  { symbol: "JTO/SOL", price: "0.0189", change: 2.67 },
+  { symbol: "ORCA/SOL", price: "0.0171", change: -1.20 }
 ];
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
 
-  const [searchOpen,        setSearchOpen]        = useState(false);
-  const [avatarMenuOpen,    setAvatarMenuOpen]    = useState(false);
-  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [searchOpen,                 setSearchOpen]                 = useState(false);
+  const [avatarMenuOpen,             setAvatarMenuOpen]             = useState(false);
+  const [confirmLogoutOpen,          setConfirmLogoutOpen]          = useState(false);
+  const [confirmDisconnectWalletsOpen, setConfirmDisconnectWalletsOpen] = useState(false);
 
   const handleOpen         = useCallback(() => setSearchOpen(true), []);
   const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
+
+  const handleDisConnectWallets = useCallback(() => {
+    setConfirmDisconnectWalletsOpen(true);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
     setAvatarMenuOpen(false);
     setConfirmLogoutOpen(false);
+    setConfirmDisconnectWalletsOpen(false);
   };
 
   return (
@@ -159,11 +167,16 @@ export default function Header() {
       <style>{`@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
 
       <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+      <DisconnectWalletsConfirmDialog
+        isOpen={confirmDisconnectWalletsOpen}
+        onClose={() => setConfirmDisconnectWalletsOpen(false)}
+        onSuccess={() => handleLogout()}
+      />
       <LogoutConfirmDialog
         isOpen={confirmLogoutOpen}
         onClose={() => setConfirmLogoutOpen(false)}
         onLogout={handleLogout}
-        onDisconnectWallets={() => setConfirmLogoutOpen(false)}
+        onDisconnectWallets={() => setConfirmDisconnectWalletsOpen(true)}
       />
     </header>
   );

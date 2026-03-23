@@ -1,6 +1,6 @@
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '@/lib/constants';
-import { WalletResponseDto, CreateWalletDto } from '@/types/dto';
+import { WalletResponseDto, CreateWalletDto, GetWalletsResponseDto } from '@/types/dto';
 import { ApiResponse } from '@/types/api';
 
 export class WalletService {
@@ -27,14 +27,21 @@ export class WalletService {
 
   // Get user's wallets
   static async getUserWallets(): Promise<WalletResponseDto[]> {
-    const response = await apiClient.get<ApiResponse<WalletResponseDto[]>>(
+    const response = await apiClient.get<GetWalletsResponseDto>(
       API_ENDPOINTS.WALLETS.LIST
     );
-    return response.data;
+    // Handle new API response structure with { wallets: [...] }
+    const wallets = response?.wallets || [];
+    return Array.isArray(wallets) ? wallets : [];
   }
 
   // Disconnect wallet
   static async disconnectWallet(publicKey: string): Promise<void> {
     await apiClient.delete(PORTFOLIO_ENDPOINTS.DELETE_WALLET(publicKey));
+  }
+
+  // Disconnect all wallets
+  static async disconnectAllWallets(): Promise<void> {
+    await apiClient.delete(PORTFOLIO_ENDPOINTS.WALLETS);
   }
 }
