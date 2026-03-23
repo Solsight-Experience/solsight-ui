@@ -127,7 +127,18 @@ export const TOKEN_ENDPOINTS = {
 } as const;
 
 // Chart intervals
-export const CHART_INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d', '1w'] as const;
+export const CHART_INTERVALS = [
+  '1s',
+  '10s',
+  '30s',
+  '1m',
+  '5m',
+  '15m',
+  '1h',
+  '4h',
+  '1d',
+  '1w',
+] as const;
 export type ChartInterval = (typeof CHART_INTERVALS)[number];
 
 // Trade tabs
