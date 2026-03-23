@@ -3,6 +3,7 @@ import {
   createChart,
   ColorType,
   CandlestickSeries,
+  CandlestickData,
   LineSeries,
   AreaSeries,
   BarSeries,
@@ -18,6 +19,7 @@ import {
 } from '../../../lib/chart-config';
 import { useTokenUIStore } from '../stores/token.stores';
 import { useChartData } from '../hooks/token.hooks';
+import { usePriceRuler } from '../hooks/usePriceRuler';
 import {
   CandlestickChart,
   TrendingUp,
@@ -30,11 +32,14 @@ import {
   RectangleHorizontal,
   Circle,
   Trash2,
+  Ruler,
 } from 'lucide-react';
 
 interface TokenChartProps {
   tokenAddress: string;
   isMulti: boolean;
+  enablePriceRuler?: boolean;
+  onRulerPriceChange?: (price: number) => void;
 }
 
 type ChartType = 'candles' | 'line' | 'area' | 'bars' | 'baseline' | 'histogram';
@@ -102,32 +107,71 @@ const Sep = () => (
   <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '2px auto' }} />
 );
 
-export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti }) => {
-  const { chartInterval } = useTokenUIStore();
-  const { initPoints, newPoint } = useChartData(tokenAddress, chartInterval);
+export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
+  const { chartInterval, orderType, limitPrice } = useTokenUIStore();
+  const effectiveInterval = isMulti ? '4h' : chartInterval;
+  const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval, isMulti ? 40 : 100);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const chartRef     = useRef<any>(null);
   const seriesRef    = useRef<any>(null);
   const isInitRef    = useRef(false);
-  const dataRef      = useRef<any[]>([]);
+  const dataRef      = useRef<CandlestickData[]>([]);
 
   const [type, setType]               = useState<ChartType>('candles');
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
   const [isDrawing, setIsDrawing]     = useState(false);
   const [startPos, setStartPos]       = useState<{ x: number; y: number } | null>(null);
   const [drawings, setDrawings]       = useState<Drawing[]>([]);
+  
+  // Ref to track last synced price to prevent circular updates
+  const lastSyncedPriceRef = useRef<number | null>(null);
+
+  // Price ruler hook
+  const { rulerPrice, setRulerPrice } = usePriceRuler(chartRef, seriesRef, {
+    enabled: enablePriceRuler && orderType === 'limit',
+  });
+
+  // Notify parent when ruler price changes (from chart click)
+  useEffect(() => {
+    if (rulerPrice !== null && onRulerPriceChange) {
+      // Only notify if price actually changed to prevent circular updates
+      if (lastSyncedPriceRef.current !== rulerPrice) {
+        lastSyncedPriceRef.current = rulerPrice;
+        onRulerPriceChange(rulerPrice);
+      }
+    }
+  }, [rulerPrice, onRulerPriceChange]);
+
+  // Sync limitPrice from store to rulerPrice (when user types in input)
+  useEffect(() => {
+    if (enablePriceRuler && orderType === 'limit' && limitPrice) {
+      const price = parseFloat(limitPrice);
+      if (!isNaN(price) && price > 0) {
+        // Only update if price is different from last synced to prevent circular updates
+        if (lastSyncedPriceRef.current !== price) {
+          lastSyncedPriceRef.current = price;
+          setRulerPrice(price);
+        }
+      }
+    }
+  }, [limitPrice, enablePriceRuler, orderType, setRulerPrice]);
 
   const hasData = initPoints && initPoints.length > 0;
-  const chartH  = isMulti ? 200 : 420;
+  const chartH = isMulti ? 200 : 460;
 
   // ── Drawing helpers ─────────────────────────────────────────────────────────
   const drawShape = useCallback(
-    (ctx: CanvasRenderingContext2D, start: { x: number; y: number }, end: { x: number; y: number }, mode: DrawingMode) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      start: { x: number; y: number },
+      end: { x: number; y: number },
+      mode: DrawingMode
+    ) => {
       ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth   = 1.5;
-      ctx.fillStyle   = 'rgba(59,130,246,0.08)';
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = 'rgba(59,130,246,0.08)';
 
       if (mode === 'line') {
         ctx.beginPath();
@@ -151,14 +195,18 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
   );
 
   const redrawCanvas = useCallback(
-    (extra?: { start: { x: number; y: number }; end: { x: number; y: number }; mode: DrawingMode }) => {
+    (extra?: {
+      start: { x: number; y: number };
+      end: { x: number; y: number };
+      mode: DrawingMode;
+    }) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawings.forEach(d => drawShape(ctx, d.start, d.end, d.mode));
+      drawings.forEach((d) => drawShape(ctx, d.start, d.end, d.mode));
       if (extra) drawShape(ctx, extra.start, extra.end, extra.mode);
     },
     [drawings, drawShape]
@@ -187,7 +235,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     if (!isDrawing || !startPos || !drawingMode || drawingMode === 'pointer') return;
     e.preventDefault();
     const end = getPos(e);
-    setDrawings(prev => [...prev, { mode: drawingMode, start: startPos, end }]);
+    setDrawings((prev) => [...prev, { mode: drawingMode, start: startPos, end }]);
     setIsDrawing(false);
     setStartPos(null);
   };
@@ -201,8 +249,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
   };
 
   // ── Toggle drawing mode ─────────────────────────────────────────────────────
-  const toggleDraw = (mode: DrawingMode) =>
-    setDrawingMode(prev => (prev === mode ? null : mode));
+  const toggleDraw = (mode: DrawingMode) => setDrawingMode((prev) => (prev === mode ? null : mode));
 
   // ── Sync canvas size ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -210,7 +257,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     const container = containerRef.current;
     if (!canvas || !container) return;
     const { width, height } = container.getBoundingClientRect();
-    canvas.width  = width;
+    canvas.width = width;
     canvas.height = height;
     redrawCanvas();
   }, [drawings, redrawCanvas]);
@@ -235,10 +282,10 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     chartRef.current = chart;
     return () => {
       chart.remove();
-      chartRef.current  = null;
+      chartRef.current = null;
       seriesRef.current = null;
       isInitRef.current = false;
-      dataRef.current   = [];
+      dataRef.current = [];
     };
   }, [isMulti]);
 
@@ -252,7 +299,11 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     }
     const chart = chartRef.current;
 
-    const addSeriesCompat = (legacyMethod: string, seriesDef: any, options: Record<string, unknown>) => {
+    const addSeriesCompat = (
+      legacyMethod: string,
+      seriesDef: any,
+      options: Record<string, unknown>
+    ) => {
       if (typeof chart.addSeries === 'function') {
         return chart.addSeries(seriesDef, options);
       }
@@ -287,18 +338,18 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
       case 'bars':
         seriesRef.current = addSeriesCompat('addBarSeries', BarSeries, {
           upColor: '#22c55e',
-          downColor: '#ef4444'
+          downColor: '#ef4444',
         });
         break;
       case 'baseline':
-       seriesRef.current = addSeriesCompat('addBaselineSeries', BaselineSeries, {
+        seriesRef.current = addSeriesCompat('addBaselineSeries', BaselineSeries, {
           baseValue: { type: 'price', price: 50 },
           topLineColor: '#22c55e',
           bottomLineColor: '#ef4444',
         });
         break;
       case 'histogram':
-       seriesRef.current = addSeriesCompat('addHistogramSeries', HistogramSeries, {
+        seriesRef.current = addSeriesCompat('addHistogramSeries', HistogramSeries, {
           priceFormat: { type: 'volume' },
         });
         break;
@@ -306,12 +357,17 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     if (dataRef.current.length) {
       const d = dataRef.current;
       seriesRef.current.setData(
-        type === 'candles' ? d
-        : type === 'line'  ? toLineData(d)
-        : type === 'area'  ? toAreaData(d)
-        : type === 'bars'  ? toBarData(d)
-        : type === 'baseline' ? toBaselineData(d)
-        : toHistogramData(d)
+        type === 'candles'
+          ? d
+          : type === 'line'
+            ? toLineData(d)
+            : type === 'area'
+              ? toAreaData(d)
+              : type === 'bars'
+                ? toBarData(d)
+                : type === 'baseline'
+                  ? toBaselineData(d)
+                  : toHistogramData(d)
       );
       isInitRef.current = true;
     }
@@ -321,19 +377,24 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
   useEffect(() => {
     if (!seriesRef.current || !initPoints?.length || dataRef.current.length) return;
     dataRef.current = initPoints
-      .filter(p => p?.time)
-      .map(p => ({
+      .filter((p) => p?.time)
+      .map((p) => ({
         ...p,
         time: typeof p.time === 'string' ? Math.floor(new Date(p.time).getTime() / 1000) : p.time,
       }));
     const d = dataRef.current;
     seriesRef.current.setData(
-      type === 'candles' ? d
-      : type === 'line'  ? toLineData(d)
-      : type === 'area'  ? toAreaData(d)
-      : type === 'bars'  ? toBarData(d)
-      : type === 'baseline' ? toBaselineData(d)
-      : toHistogramData(d)
+      type === 'candles'
+        ? d
+        : type === 'line'
+          ? toLineData(d)
+          : type === 'area'
+            ? toAreaData(d)
+            : type === 'bars'
+              ? toBarData(d)
+              : type === 'baseline'
+                ? toBaselineData(d)
+                : toHistogramData(d)
     );
     isInitRef.current = true;
     chartRef.current?.timeScale().fitContent();
@@ -350,26 +411,61 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
     }
     const pt = newPoint;
     seriesRef.current.update(
-      type === 'candles' ? pt
-      : type === 'line'  ? toLineData([pt])[0]
-      : type === 'area'  ? toAreaData([pt])[0]
-      : type === 'bars'  ? toBarData([pt])[0]
-      : type === 'baseline' ? toBaselineData([pt])[0]
-      : toHistogramData([pt])[0]
+      type === 'candles'
+        ? pt
+        : type === 'line'
+          ? toLineData([pt])[0]
+          : type === 'area'
+            ? toAreaData([pt])[0]
+            : type === 'bars'
+              ? toBarData([pt])[0]
+              : type === 'baseline'
+                ? toBaselineData([pt])[0]
+                : toHistogramData([pt])[0]
     );
   }, [newPoint, type]);
 
+  // ── Chart click handler for price ruler ────────────────────────────────────
+  useEffect(() => {
+    if (!chartRef.current || !enablePriceRuler || orderType !== 'limit') return;
+
+    const handleClick = (param: any) => {
+      // Only handle clicks when not in drawing mode
+      if (drawingMode && drawingMode !== 'pointer') return;
+      
+      if (param.point && param.seriesData && seriesRef.current) {
+        const seriesData = param.seriesData.get(seriesRef.current);
+        if (seriesData) {
+          // Extract price from series data
+          const price = typeof seriesData === 'number' 
+            ? seriesData 
+            : seriesData.close || seriesData.value;
+          
+          if (price && typeof price === 'number') {
+            setRulerPrice(price);
+          }
+        }
+      }
+    };
+
+    chartRef.current.subscribeClick(handleClick);
+    
+    return () => {
+      chartRef.current?.unsubscribeClick(handleClick);
+    };
+  }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
+
   // ── Cursor ─────────────────────────────────────────────────────────────────
-  const canvasCursor = drawingMode && drawingMode !== 'pointer'
-    ? 'crosshair'
-    : drawingMode === 'pointer'
-    ? 'default'
-    : 'default';
+  const canvasCursor =
+    drawingMode && drawingMode !== 'pointer'
+      ? 'crosshair'
+      : drawingMode === 'pointer'
+        ? 'default'
+        : 'default';
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', gap: 0, width: '100%' }}>
-
+    <div style={{ display: 'flex', gap: 10, width: '100%' }}>
       {/* ── Left sidebar ── */}
       {!isMulti && (
         <div
@@ -387,20 +483,114 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
           }}
         >
           {/* Chart type group */}
-          <SideBtn active={type === 'candles'}   title="Candles"   onClick={() => setType('candles')}   variant="purple"><CandlestickChart size={15} /></SideBtn>
-          <SideBtn active={type === 'line'}      title="Line"      onClick={() => setType('line')}      variant="purple"><TrendingUp        size={15} /></SideBtn>
-          <SideBtn active={type === 'area'}      title="Area"      onClick={() => setType('area')}      variant="purple"><AreaChartIcon     size={15} /></SideBtn>
-          <SideBtn active={type === 'bars'}      title="Bars"      onClick={() => setType('bars')}      variant="purple"><BarChart3         size={15} /></SideBtn>
-          <SideBtn active={type === 'baseline'}  title="Baseline"  onClick={() => setType('baseline')}  variant="purple"><Activity          size={15} /></SideBtn>
-          <SideBtn active={type === 'histogram'} title="Histogram" onClick={() => setType('histogram')} variant="purple"><BarChart4         size={15} /></SideBtn>
+          <SideBtn
+            active={type === 'candles'}
+            title="Candles"
+            onClick={() => setType('candles')}
+            variant="purple"
+          >
+            <CandlestickChart size={15} />
+          </SideBtn>
+          <SideBtn
+            active={type === 'line'}
+            title="Line"
+            onClick={() => setType('line')}
+            variant="purple"
+          >
+            <TrendingUp size={15} />
+          </SideBtn>
+          <SideBtn
+            active={type === 'area'}
+            title="Area"
+            onClick={() => setType('area')}
+            variant="purple"
+          >
+            <AreaChartIcon size={15} />
+          </SideBtn>
+          <SideBtn
+            active={type === 'bars'}
+            title="Bars"
+            onClick={() => setType('bars')}
+            variant="purple"
+          >
+            <BarChart3 size={15} />
+          </SideBtn>
+          <SideBtn
+            active={type === 'baseline'}
+            title="Baseline"
+            onClick={() => setType('baseline')}
+            variant="purple"
+          >
+            <Activity size={15} />
+          </SideBtn>
+          <SideBtn
+            active={type === 'histogram'}
+            title="Histogram"
+            onClick={() => setType('histogram')}
+            variant="purple"
+          >
+            <BarChart4 size={15} />
+          </SideBtn>
 
           <Sep />
 
           {/* Drawing tools */}
-          <SideBtn active={drawingMode === 'pointer'}   title="Pointer"    onClick={() => toggleDraw('pointer')}   variant="purple"><MousePointer2       size={15} /></SideBtn>
-          <SideBtn active={drawingMode === 'line'}      title="Line"       onClick={() => toggleDraw('line')}      variant="purple"><Minus               size={15} /></SideBtn>
-          <SideBtn active={drawingMode === 'rectangle'} title="Rectangle"  onClick={() => toggleDraw('rectangle')} variant="purple"><RectangleHorizontal size={15} /></SideBtn>
-          <SideBtn active={drawingMode === 'circle'}    title="Circle"     onClick={() => toggleDraw('circle')}    variant="purple"><Circle              size={15} /></SideBtn>
+          <SideBtn
+            active={drawingMode === 'pointer'}
+            title="Pointer"
+            onClick={() => toggleDraw('pointer')}
+            variant="purple"
+          >
+            <MousePointer2 size={15} />
+          </SideBtn>
+          <SideBtn
+            active={drawingMode === 'line'}
+            title="Line"
+            onClick={() => toggleDraw('line')}
+            variant="purple"
+          >
+            <Minus size={15} />
+          </SideBtn>
+          <SideBtn
+            active={drawingMode === 'rectangle'}
+            title="Rectangle"
+            onClick={() => toggleDraw('rectangle')}
+            variant="purple"
+          >
+            <RectangleHorizontal size={15} />
+          </SideBtn>
+          <SideBtn
+            active={drawingMode === 'circle'}
+            title="Circle"
+            onClick={() => toggleDraw('circle')}
+            variant="purple"
+          >
+            <Circle size={15} />
+          </SideBtn>
+
+          <Sep />
+
+          {/* Price Ruler for Limit Orders */}
+          <SideBtn
+            active={enablePriceRuler && orderType === 'limit'}
+            title="Set Limit Price (Click on chart)"
+            onClick={() => {
+              if (!enablePriceRuler) return;
+              // Get current last price from data
+              const data = dataRef.current;
+              if (data.length > 0) {
+                const lastCandle = data[data.length - 1];
+                const lastPrice = lastCandle.close || lastCandle.value;
+                if (lastPrice) {
+                  setRulerPrice(lastPrice);
+                }
+              }
+            }}
+            variant="purple"
+            disabled={!enablePriceRuler || orderType !== 'limit'}
+          >
+            <Ruler size={15} />
+          </SideBtn>
 
           <Sep />
 
@@ -429,13 +619,24 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti })
         {!hasData && (
           <div
             style={{
-              position: 'absolute', inset: 0, zIndex: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'absolute',
+              inset: 0,
+              zIndex: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               background: 'linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,20,30,0.98))',
               borderRadius: 'inherit',
             }}
           >
-            <p style={{ color: 'rgba(156,163,175,0.6)', fontSize: 13, fontWeight: 500, fontFamily: 'ui-monospace,monospace' }}>
+            <p
+              style={{
+                color: 'rgba(156,163,175,0.6)',
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: 'ui-monospace,monospace',
+              }}
+            >
               No chart data available
             </p>
           </div>

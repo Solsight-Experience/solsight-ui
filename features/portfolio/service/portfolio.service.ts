@@ -113,6 +113,7 @@ export const portfolioApi = {
           symbol: item.symbol || '',
           name: item.name || '',
           logo_uri: item.logo || item.logo_uri || '',
+          decimals: typeof item.decimals === 'number' ? item.decimals : item.token_decimals,
         },
         balance: item.amount || item.balance || 0,
         avg_buy_price: item.avg_buy_price || 0,
