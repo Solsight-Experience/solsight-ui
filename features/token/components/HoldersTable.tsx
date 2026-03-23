@@ -54,7 +54,7 @@ const LastActiveTimer: React.FC<{ timestamp: number }> = ({ timestamp }) => {
   return <span className="text-xs text-gray-400">{display}</span>;
 };
 
-const HolderRow: React.FC<{ holder: Holder; rank: number }> = ({ holder, rank }) => {
+const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }> = ({ holder, rank, tokenSymbol }) => {
   const {
     address,
     name,
@@ -80,7 +80,7 @@ const HolderRow: React.FC<{ holder: Holder; rank: number }> = ({ holder, rank })
     <tr className="border-b border-gray-700 hover:bg-gray-800/50 text-sm">
       <td className="py-3 px-3 font-semibold text-gray-400 whitespace-nowrap">#{rank}</td>
       <td className="py-3 px-3">
-        <WalletHoverCard holder={holder}>
+        <WalletHoverCard holder={holder} tokenSymbol={tokenSymbol}>
           <div className="flex items-center gap-1.5 cursor-pointer">
             <AccountTypeIcon type={account_type} />
             <div className="flex flex-col">
@@ -142,9 +142,10 @@ const HolderRow: React.FC<{ holder: Holder; rank: number }> = ({ holder, rank })
 
 interface HoldersTableProps {
   tokenAddress: string;
+  tokenSymbol?: string;
 }
 
-export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress }) => {
+export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenSymbol }) => {
   const { data: holdersData, isLoading } = useHolders(tokenAddress, { limit: 100 });
 
   if (isLoading) {
@@ -179,7 +180,7 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress }) => {
         </thead>
         <tbody>
           {holdersData.holders.map((holder, index) => (
-            <HolderRow key={holder.address} holder={holder} rank={index + 1} />
+            <HolderRow key={holder.address} holder={holder} rank={index + 1} tokenSymbol={tokenSymbol} />
           ))}
         </tbody>
       </table>

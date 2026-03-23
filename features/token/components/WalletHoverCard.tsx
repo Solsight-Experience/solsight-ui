@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { formatNumber } from '../utils/token.utils';
 import type { Holder } from '../types/token.types';
+import { WalletPnlPanel } from './WalletPnlPanel';
 
 interface WalletHoverCardProps {
   holder: Holder;
   children: React.ReactNode;
+  tokenSymbol?: string;
 }
 
 const formatHolderDuration = (firstTxTime: number): string => {
@@ -22,8 +24,9 @@ const formatHolderDuration = (firstTxTime: number): string => {
   return '<1m';
 };
 
-export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, children }) => {
+export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, children, tokenSymbol }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPnlPanelOpen, setIsPnlPanelOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -43,7 +46,15 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      {children}
+      <div
+        onClick={() => {
+          setIsOpen(false);
+          setIsPnlPanelOpen(true);
+        }}
+        className="cursor-pointer"
+      >
+        {children}
+      </div>
 
       {isOpen && (
         <div className="absolute left-0 top-full mt-1 z-50 animate-in fade-in-0 zoom-in-95 duration-100">
@@ -165,6 +176,14 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
           </div>
         </div>
       )}
+
+      {/* PnL Panel Dialog */}
+      <WalletPnlPanel
+        holder={holder}
+        tokenSymbol={tokenSymbol}
+        open={isPnlPanelOpen}
+        onOpenChange={setIsPnlPanelOpen}
+      />
     </div>
   );
 };
