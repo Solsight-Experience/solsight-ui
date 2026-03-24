@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildRoutePathTokens, formatFromBaseUnits, getRouteDetails, mapQuoteError, mapSwapError, toBaseUnits } from "@/features/swap";
+import { buildRoutePathTokens, formatFromBaseUnits, getRouteDetails, isValidAmount, mapQuoteError, mapSwapError, toBaseUnits } from "@/features/swap";
 
 describe("swap core utils", () => {
     it("converts values to base units", () => {
         expect(toBaseUnits("1.23", 6)).toBe("1230000");
         expect(toBaseUnits("0.000001", 6)).toBe("1");
         expect(toBaseUnits("abc", 6)).toBeNull();
+    });
+
+    it("accepts formatted amount with thousand separators", () => {
+        expect(isValidAmount("1,234.56")).toBe(true);
     });
 
     it("formats from base units", () => {

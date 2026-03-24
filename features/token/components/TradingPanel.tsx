@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
+import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
     executeJupiterSwap,
@@ -33,6 +35,14 @@ type PhantomProvider = {
     signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
 };
 
+type BuyPayTokenOption = {
+    mint: string;
+    symbol: string;
+    logoUri: string;
+    decimals?: number;
+    balance: number;
+};
+
 export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const {
         tradeMode,
@@ -54,6 +64,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
     const [copiedMint, setCopiedMint] = useState<string | null>(null);
+    const [selectedBuyPayMint, setSelectedBuyPayMint] = useState<string>(COMMON_TOKENS.SOL.mint);
+    const [selectedSellReceiveMint, setSelectedSellReceiveMint] = useState<string>(COMMON_TOKENS.SOL.mint);
+    const [buyTokenDecimalsByMint, setBuyTokenDecimalsByMint] = useState<Record<string, number>>({});
     const [swapState, setSwapState] = useState<{
         loading: boolean;
         error: string | null;
@@ -86,19 +99,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfig = useMemo(() => getSwapApiConfig(), []);
     const internalUpdateRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
-
-    const payToken = tradeMode === "buy" ? "SOL" : token.symbol;
-    const receiveToken = tradeMode === "buy" ? token.symbol : "SOL";
-    const payTokenLogo =
-        tradeMode === "buy"
-            ? "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-            : token.logo_uri;
-    const receiveTokenLogo =
-        tradeMode === "buy"
-            ? token.logo_uri
-            : "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png";
-
-    const payBalance = tradeMode === "buy" ? "2.45" : "0.00";
+    const previousBuyPayMintRef = useRef(selectedBuyPayMint);
+    const previousSellReceiveMintRef = useRef(selectedSellReceiveMint);
+    const noSwapOptionsNotifiedRef = useRef(false);
+    const isViewingSolToken = token.address.toLowerCase() === COMMON_TOKENS.SOL.mint.toLowerCase();
 
     useEffect(() => {
         resetTradingPanel();
@@ -114,10 +118,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             rawQuote: null
         });
         setCopiedMint(null);
+        setSelectedBuyPayMint(isViewingSolToken ? "" : COMMON_TOKENS.SOL.mint);
+        setSelectedSellReceiveMint(isViewingSolToken ? "" : COMMON_TOKENS.SOL.mint);
         setSwapState({ loading: false, error: null, signature: null });
-    }, [token.address, resetTradingPanel]);
+    }, [token.address, resetTradingPanel, isViewingSolToken]);
 
     const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
+    const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
     useEffect(() => {
         if (token.decimals != null) return;
         fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
@@ -130,11 +137,232 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }, [token.address, token.decimals]);
 
     const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
-    const payDecimals = tradeMode === "buy" ? COMMON_TOKENS.SOL.decimals : resolvedTokenDecimals;
-    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : COMMON_TOKENS.SOL.decimals;
+    const selectedWalletAddress = useMemo(() => {
+        const wallets = walletsData?.wallets ?? [];
+        if (!wallets.length) return publicKey ?? "";
+        const connectedWallet = publicKey ? wallets.find((wallet) => wallet.address.toLowerCase() === publicKey.toLowerCase()) : null;
+        if (connectedWallet) return connectedWallet.address;
+        const defaultWallet = wallets.find((wallet) => wallet.is_default);
+        if (defaultWallet) return defaultWallet.address;
+        return publicKey ?? wallets[0].address;
+    }, [walletsData?.wallets, publicKey]);
 
-    const payMint = tradeMode === "buy" ? COMMON_TOKENS.SOL.mint : token.address;
-    const receiveMint = tradeMode === "buy" ? token.address : COMMON_TOKENS.SOL.mint;
+    const {
+        data: positionsData,
+        isLoading: isPositionsLoading,
+        error: positionsError,
+        refetch: refetchPositions
+    } = usePositions(selectedWalletAddress, {
+        sort_by: "value",
+        show_zero_balance: true
+    });
+
+    const refreshBalancesAfterSwap = async () => {
+        await Promise.all([refetchWallets(), refetchPositions()]);
+
+        // Backend portfolio aggregation can lag shortly after on-chain confirmation.
+        window.setTimeout(() => {
+            refetchWallets();
+            refetchPositions();
+        }, 2000);
+    };
+
+    const selectedWallet = useMemo(
+        () => walletsData?.wallets?.find((wallet) => wallet.address.toLowerCase() === selectedWalletAddress.toLowerCase()) ?? null,
+        [walletsData?.wallets, selectedWalletAddress]
+    );
+
+    const ownedTokenPosition = useMemo(
+        () => positionsData?.positions?.find((position) => position.token.address.toLowerCase() === token.address.toLowerCase()) ?? null,
+        [positionsData?.positions, token.address]
+    );
+
+    const buyPayTokenOptions = useMemo<BuyPayTokenOption[]>(() => {
+        const solOption: BuyPayTokenOption = {
+            mint: COMMON_TOKENS.SOL.mint,
+            symbol: COMMON_TOKENS.SOL.symbol,
+            logoUri: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+            decimals: COMMON_TOKENS.SOL.decimals,
+            balance: selectedWallet?.balance_sol ?? 0
+        };
+
+        const walletTokenOptions =
+            positionsData?.positions
+                ?.filter((position) => {
+                    const mint = position.token.address?.toLowerCase();
+                    return Boolean(mint) && mint !== token.address.toLowerCase() && position.balance > 0;
+                })
+                .map((position) => ({
+                    mint: position.token.address,
+                    symbol: position.token.symbol || position.token.name || position.token.address.slice(0, 8),
+                    logoUri: position.token.logo_uri || token.logo_uri,
+                    decimals: position.token.decimals,
+                    balance: position.balance
+                })) ?? [];
+
+        const unique = new Map<string, BuyPayTokenOption>();
+        [solOption, ...walletTokenOptions].forEach((option) => {
+            const key = option.mint.toLowerCase();
+            if (!unique.has(key)) unique.set(key, option);
+        });
+
+        return Array.from(unique.values());
+    }, [positionsData?.positions, selectedWallet?.balance_sol, token.address, token.logo_uri]);
+
+    const selectableBuyPayTokenOptions = useMemo(
+        () => buyPayTokenOptions.filter((option) => option.mint.toLowerCase() !== token.address.toLowerCase()),
+        [buyPayTokenOptions, token.address]
+    );
+    const selectableSellReceiveTokenOptions = selectableBuyPayTokenOptions;
+
+    useEffect(() => {
+        if (tradeMode !== "buy") return;
+        if (!selectableBuyPayTokenOptions.length) {
+            if (selectedBuyPayMint) setSelectedBuyPayMint("");
+            return;
+        }
+        if (isViewingSolToken && !selectedBuyPayMint) return;
+        if (!selectableBuyPayTokenOptions.some((option) => option.mint === selectedBuyPayMint)) {
+            setSelectedBuyPayMint(selectableBuyPayTokenOptions[0].mint);
+        }
+    }, [tradeMode, selectableBuyPayTokenOptions, selectedBuyPayMint, isViewingSolToken]);
+
+    useEffect(() => {
+        if (tradeMode !== "sell") return;
+        if (!selectableSellReceiveTokenOptions.length) {
+            if (selectedSellReceiveMint) setSelectedSellReceiveMint("");
+            return;
+        }
+        if (isViewingSolToken && !selectedSellReceiveMint) return;
+        if (!selectableSellReceiveTokenOptions.some((option) => option.mint === selectedSellReceiveMint)) {
+            setSelectedSellReceiveMint(selectableSellReceiveTokenOptions[0].mint);
+        }
+    }, [tradeMode, selectableSellReceiveTokenOptions, selectedSellReceiveMint, isViewingSolToken]);
+
+    const selectedBuyPayToken = useMemo<BuyPayTokenOption | null>(
+        () => selectableBuyPayTokenOptions.find((option) => option.mint === selectedBuyPayMint) ?? null,
+        [selectableBuyPayTokenOptions, selectedBuyPayMint]
+    );
+
+    const selectedSellReceiveToken = useMemo<BuyPayTokenOption | null>(
+        () => selectableSellReceiveTokenOptions.find((option) => option.mint === selectedSellReceiveMint) ?? null,
+        [selectableSellReceiveTokenOptions, selectedSellReceiveMint]
+    );
+
+    useEffect(() => {
+        if (tradeMode !== "buy") return;
+        if (selectedBuyPayMint === previousBuyPayMintRef.current) return;
+
+        previousBuyPayMintRef.current = selectedBuyPayMint;
+        setLastEdited(null);
+        setPayAmount("");
+        setReceiveAmount("");
+        setQuoteState((prev) => ({
+            ...prev,
+            loading: false,
+            error: null,
+            priceImpactPct: null,
+            otherAmountThreshold: null,
+            routeLabel: null,
+            routeDetails: [],
+            routePathTokens: [],
+            rawQuote: null
+        }));
+    }, [tradeMode, selectedBuyPayMint, setPayAmount, setReceiveAmount]);
+
+    useEffect(() => {
+        if (tradeMode !== "sell") return;
+        if (selectedSellReceiveMint === previousSellReceiveMintRef.current) return;
+
+        previousSellReceiveMintRef.current = selectedSellReceiveMint;
+        setLastEdited(null);
+        setPayAmount("");
+        setReceiveAmount("");
+        setQuoteState((prev) => ({
+            ...prev,
+            loading: false,
+            error: null,
+            priceImpactPct: null,
+            otherAmountThreshold: null,
+            routeLabel: null,
+            routeDetails: [],
+            routePathTokens: [],
+            rawQuote: null
+        }));
+    }, [tradeMode, selectedSellReceiveMint, setPayAmount, setReceiveAmount]);
+
+    useEffect(() => {
+        if (tradeMode !== "buy") return;
+        if (!selectedBuyPayToken) return;
+
+        const selectedMint = selectedBuyPayToken.mint;
+        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
+        if (selectedBuyPayToken.decimals != null) return;
+        if (buyTokenDecimalsByMint[selectedMint] != null) return;
+
+        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
+            .then((r) => r.json())
+            .then((data: Array<{ id: string; decimals: number }>) => {
+                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
+                if (found && typeof found.decimals === "number") {
+                    setBuyTokenDecimalsByMint((prev) => ({
+                        ...prev,
+                        [selectedMint]: found.decimals
+                    }));
+                }
+            })
+            .catch(() => {});
+    }, [tradeMode, selectedBuyPayToken, buyTokenDecimalsByMint]);
+
+    useEffect(() => {
+        if (tradeMode !== "sell") return;
+        if (!selectedSellReceiveToken) return;
+
+        const selectedMint = selectedSellReceiveToken.mint;
+        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
+        if (selectedSellReceiveToken.decimals != null) return;
+        if (buyTokenDecimalsByMint[selectedMint] != null) return;
+
+        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
+            .then((r) => r.json())
+            .then((data: Array<{ id: string; decimals: number }>) => {
+                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
+                if (found && typeof found.decimals === "number") {
+                    setBuyTokenDecimalsByMint((prev) => ({
+                        ...prev,
+                        [selectedMint]: found.decimals
+                    }));
+                }
+            })
+            .catch(() => {});
+    }, [tradeMode, selectedSellReceiveToken, buyTokenDecimalsByMint]);
+
+    const payToken = tradeMode === "buy" ? (selectedBuyPayToken?.symbol ?? "") : token.symbol;
+    const receiveToken = tradeMode === "buy" ? token.symbol : (selectedSellReceiveToken?.symbol ?? "");
+    const payTokenLogo = tradeMode === "buy" ? (selectedBuyPayToken?.logoUri ?? "") : token.logo_uri;
+    const receiveTokenLogo = tradeMode === "buy" ? token.logo_uri : (selectedSellReceiveToken?.logoUri ?? "");
+
+    const portfolioTokenBalance = ownedTokenPosition?.balance ?? 0;
+    const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
+    const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
+    const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
+    const payDecimals =
+        tradeMode === "buy"
+            ? (selectedBuyPayToken?.decimals ??
+              (selectedBuyPayToken ? buyTokenDecimalsByMint[selectedBuyPayToken.mint] : undefined) ??
+              COMMON_TOKENS.SOL.decimals)
+            : resolvedTokenDecimals;
+    const receiveDecimals =
+        tradeMode === "buy"
+            ? resolvedTokenDecimals
+            : (selectedSellReceiveToken?.decimals ??
+              (selectedSellReceiveToken ? buyTokenDecimalsByMint[selectedSellReceiveToken.mint] : undefined) ??
+              COMMON_TOKENS.SOL.decimals);
+
+    const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
+    const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
+    const getOptionDecimals = (option: BuyPayTokenOption): number =>
+        option.decimals ?? buyTokenDecimalsByMint[option.mint] ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -145,6 +373,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }, [quoteState.otherAmountThreshold, lastEdited, payDecimals, receiveDecimals]);
 
     const validation = useMemo(() => {
+        if (!connected || !publicKey) return { error: null };
+        if (balancesLoading || positionsError) return { error: null };
+        if (tradeMode === "buy" && !selectedBuyPayToken) return { error: "You cannot swap because you have insufficient funds." };
+        if (tradeMode === "sell" && !selectedSellReceiveToken) return { error: "You cannot swap because you have insufficient funds." };
+
         const payValue = parseInputNumber(payAmount);
         const receiveValue = parseInputNumber(receiveAmount);
         const payBalanceValue = parseInputNumber(payBalance);
@@ -164,7 +397,31 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         }
 
         return { error: null };
-    }, [lastEdited, payAmount, receiveAmount, payBalance]);
+    }, [
+        connected,
+        publicKey,
+        balancesLoading,
+        positionsError,
+        tradeMode,
+        selectedBuyPayToken,
+        selectedSellReceiveToken,
+        lastEdited,
+        payAmount,
+        receiveAmount,
+        payBalance
+    ]);
+
+    useEffect(() => {
+        const hasNoSwapOptions =
+            (tradeMode === "buy" && selectableBuyPayTokenOptions.length === 0) || (tradeMode === "sell" && selectableSellReceiveTokenOptions.length === 0);
+        if (!hasNoSwapOptions) {
+            noSwapOptionsNotifiedRef.current = false;
+            return;
+        }
+        if (noSwapOptionsNotifiedRef.current) return;
+        noSwapOptionsNotifiedRef.current = true;
+        toast.error("You cannot swap because you have insufficient funds.");
+    }, [tradeMode, selectableBuyPayTokenOptions.length, selectableSellReceiveTokenOptions.length]);
 
     useEffect(() => {
         if (internalUpdateRef.current) {
@@ -188,6 +445,21 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
         const sourceAmount = lastEdited === "pay" ? payAmount : receiveAmount;
         if (!isValidAmount(sourceAmount)) {
+            setQuoteState((prev) => ({
+                ...prev,
+                loading: false,
+                error: null,
+                priceImpactPct: null,
+                otherAmountThreshold: null,
+                routeLabel: null,
+                routeDetails: [],
+                routePathTokens: [],
+                rawQuote: null
+            }));
+            return;
+        }
+
+        if (!payMint || !receiveMint) {
             setQuoteState((prev) => ({
                 ...prev,
                 loading: false,
@@ -293,8 +565,18 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     ]);
 
     const handleSwap = async () => {
+        if ((tradeMode === "buy" && selectableBuyPayTokenOptions.length === 0) || (tradeMode === "sell" && selectableSellReceiveTokenOptions.length === 0)) {
+            toast.error("You cannot swap because you have insufficient funds.");
+            return;
+        }
+
         if (validation.error) {
             toast.error(validation.error);
+            return;
+        }
+
+        if (quoteState.loading && !quoteState.rawQuote) {
+            toast.info("Fetching quote, please try again in a moment.");
             return;
         }
 
@@ -329,9 +611,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             );
 
             setSwapState({ loading: false, error: null, signature });
+            await refreshBalancesAfterSwap();
             toast.success("Swap submitted!");
         } catch (error) {
             const message = error instanceof Error ? error.message : "Swap failed";
+            const isUserRejected = /user rejected|rejected the request|denied|cancelled/i.test(message);
+            if (isUserRejected) {
+                setSwapState({ loading: false, error: null, signature: null });
+                toast.info("Transaction was cancelled in wallet.");
+                return;
+            }
             setSwapState({ loading: false, error: message, signature: null });
             toast.error(message);
         }
@@ -481,71 +770,180 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 </button>
             </div>
 
-            <div className="mb-4">
-                <Label className="text-sm text-gray-400 mb-2 font-semibold">{tradeMode === "buy" ? "From" : "Sell"}</Label>
-                <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
-                            <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
-                            <span className="font-semibold text-gray-100">{payToken}</span>
+            <div className="mb-4 rounded-lg space-y-4">
+                <div>
+                    <Label className="text-sm text-gray-400 mb-2 font-semibold">{tradeMode === "buy" ? "From" : "Sell"}</Label>
+                    <div className="rounded-xl p-3 bg-gray-800/70 backdrop-blur border  border-gray-600 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2 bg-gray-700/70 px-3 py-2 rounded-lg border border-gray-600/60">
+                                {tradeMode === "buy" ? (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                disabled={selectableBuyPayTokenOptions.length === 0}
+                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
+                                            >
+                                                {selectedBuyPayToken ? (
+                                                    <>
+                                                        <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
+                                                        <span className="leading-4">{payToken}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="leading-4 text-gray-400">Select token</span>
+                                                )}
+                                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-64 border-gray-700 bg-gray-900/95 text-gray-100">
+                                            {selectableBuyPayTokenOptions.map((option) => (
+                                                <DropdownMenuItem
+                                                    key={option.mint}
+                                                    onSelect={() => setSelectedBuyPayMint(option.mint)}
+                                                    className="flex items-center gap-3 px-2 py-2"
+                                                >
+                                                    <img src={option.logoUri} className="w-5 h-5 rounded-full" alt={option.symbol} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
+                                                        <div className="text-xs text-gray-400">
+                                                            Balance: {formatDisplay(String(option.balance), getOptionDecimals(option))}
+                                                        </div>
+                                                    </div>
+                                                    {selectedBuyPayMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
+                                                </DropdownMenuItem>
+                                            ))}
+                                            {selectableBuyPayTokenOptions.length === 0 && (
+                                                <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                                                    No available tokens
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                ) : (
+                                    <>
+                                        <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
+                                        <span className="font-semibold text-gray-100 tracking-wide">{payToken}</span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
+                                <div className="text-sm font-semibold text-gray-100">
+                                    {formatDisplay(payBalance, payDecimals)} {payToken || "--"}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <input
-                        type="text"
-                        value={payAmount}
-                        onChange={(e) => {
-                            setLastEdited("pay");
-                            setPayAmount(sanitizeInput(e.target.value, payDecimals));
-                        }}
-                        placeholder="0.00"
-                        className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
-                        onBlur={() => setPayAmount(formatInputValue(payAmount, payDecimals))}
-                    />
-                    <div className="mt-2 text-xs text-gray-500">Enter one field and the other updates from quote.</div>
-                </div>
-            </div>
-
-            {orderType === "limit" && (
-                <div className="mb-4">
-                    <Label className="text-sm text-gray-400 mb-2 font-semibold">
-                        Limit Price ({receiveToken} per {payToken})
-                    </Label>
-                    <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50">
                         <input
                             type="text"
-                            value={limitPrice}
+                            value={payAmount}
                             onChange={(e) => {
-                                setLimitPrice(sanitizeInput(e.target.value, receiveDecimals));
+                                setLastEdited("pay");
+                                setPayAmount(sanitizeInput(e.target.value, payDecimals));
                             }}
                             placeholder="0.00"
-                            className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
-                            onBlur={() => setLimitPrice(formatInputValue(limitPrice, receiveDecimals))}
+                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-base font-bold text-white outline-none placeholder-gray-600 focus:border-gray-500"
+                            onBlur={() => setPayAmount(formatInputValue(payAmount, payDecimals))}
                         />
-                        <div className="mt-2 text-xs text-yellow-500">Order executes when price reaches this level</div>
+                        <div className="mt-2 text-xs text-gray-400">Enter one field and the other updates from quote.</div>
                     </div>
                 </div>
-            )}
 
-            <div className="mb-4">
-                <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
-                <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-gray-700">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 bg-gray-700/80 px-3 py-2 rounded-lg hover:bg-gray-600/80 transition-colors">
-                            <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
-                            <span className="font-semibold text-gray-100">{receiveToken}</span>
+                {orderType === "limit" && (
+                    <div className="mb-4">
+                        <Label className="text-sm text-gray-400 mb-2 font-semibold">
+                            Limit Price ({receiveToken} per {payToken})
+                        </Label>
+                        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50">
+                            <input
+                                type="text"
+                                value={limitPrice}
+                                onChange={(e) => {
+                                    setLimitPrice(sanitizeInput(e.target.value, receiveDecimals));
+                                }}
+                                placeholder="0.00"
+                                className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
+                                onBlur={() => setLimitPrice(formatInputValue(limitPrice, receiveDecimals))}
+                            />
+                            <div className="mt-2 text-xs text-yellow-500">Order executes when price reaches this level</div>
                         </div>
                     </div>
-                    <input
-                        type="text"
-                        value={receiveAmount}
-                        onChange={(e) => {
-                            setLastEdited("receive");
-                            setReceiveAmount(sanitizeInput(e.target.value, receiveDecimals));
-                        }}
-                        placeholder="0.00"
-                        className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
-                        onBlur={() => setReceiveAmount(formatInputValue(receiveAmount, receiveDecimals))}
-                    />
+                )}
+
+                <div>
+                    <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
+                    <div className="rounded-xl p-3 backdrop-blur shadow-sm bg-gray-800/70 border  border-gray-600">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2 bg-gray-700/70 px-3 py-2 rounded-lg border border-gray-600/60">
+                                {tradeMode === "sell" ? (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                disabled={selectableSellReceiveTokenOptions.length === 0}
+                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
+                                            >
+                                                {selectedSellReceiveToken ? (
+                                                    <>
+                                                        <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
+                                                        <span className="leading-4">{receiveToken}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="leading-4 text-gray-400">Select token</span>
+                                                )}
+                                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-64 border-gray-700 bg-gray-900/95 text-gray-100">
+                                            {selectableSellReceiveTokenOptions.map((option) => (
+                                                <DropdownMenuItem
+                                                    key={option.mint}
+                                                    onSelect={() => setSelectedSellReceiveMint(option.mint)}
+                                                    className="flex items-center gap-3 px-2 py-2"
+                                                >
+                                                    <img src={option.logoUri} className="w-5 h-5 rounded-full" alt={option.symbol} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
+                                                        <div className="text-xs text-gray-400">
+                                                            Balance: {formatDisplay(String(option.balance), getOptionDecimals(option))}
+                                                        </div>
+                                                    </div>
+                                                    {selectedSellReceiveMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
+                                                </DropdownMenuItem>
+                                            ))}
+                                            {selectableSellReceiveTokenOptions.length === 0 && (
+                                                <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                                                    No available tokens
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                ) : (
+                                    <>
+                                        <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
+                                        <span className="font-semibold text-gray-100 tracking-wide">{receiveToken}</span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
+                                <div className="text-sm font-semibold text-gray-100">
+                                    {formatDisplay(receiveBalance, receiveDecimals)} {receiveToken || "--"}
+                                </div>
+                            </div>
+                        </div>
+                        <input
+                            type="text"
+                            value={receiveAmount}
+                            onChange={(e) => {
+                                setLastEdited("receive");
+                                setReceiveAmount(sanitizeInput(e.target.value, receiveDecimals));
+                            }}
+                            placeholder="0.00"
+                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-base font-bold text-white outline-none placeholder-gray-600 focus:border-gray-500"
+                            onBlur={() => setReceiveAmount(formatInputValue(receiveAmount, receiveDecimals))}
+                        />
+                        <div className="mt-1 text-xs text-gray-500">Estimated from current route and slippage.</div>
+                    </div>
                 </div>
             </div>
 
@@ -626,7 +1024,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40"
                 }`}
                 onClick={orderType === "market" ? handleSwap : handleLimitOrder}
-                disabled={swapState.loading || (orderType === "market" && quoteState.loading) || !!validation.error}
+                disabled={
+                    swapState.loading ||
+                    (orderType === "market" && quoteState.loading) ||
+                    !!validation.error ||
+                    (tradeMode === "buy" && selectableBuyPayTokenOptions.length === 0) ||
+                    (tradeMode === "sell" && selectableSellReceiveTokenOptions.length === 0)
+                }
             >
                 {swapState.loading ? (
                     <span className="inline-flex items-center gap-2">

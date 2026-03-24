@@ -33,6 +33,7 @@ export interface TokenInfo {
     symbol: string;
     name: string;
     logo_uri: string;
+    decimals?: number;
 }
 
 export interface WalletSummary {

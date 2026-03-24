@@ -12,7 +12,7 @@ type RouteStep = {
 };
 
 export function isValidAmount(value: string): boolean {
-    const trimmed = value.trim();
+    const trimmed = value.replace(/,/g, "").trim();
     if (!trimmed) return false;
     const numeric = Number(trimmed);
     return Number.isFinite(numeric) && numeric > 0;
