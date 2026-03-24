@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { createChart, ColorType, AreaSeries, UTCTimestamp } from 'lightweight-charts';
+import { createChart, AreaSeries, UTCTimestamp } from 'lightweight-charts';
+import { pnlChartOptions, getPnlSeriesOptions } from '@/lib/chart-config';
 
 interface PnlDataPoint {
   time: UTCTimestamp;
@@ -29,65 +30,20 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({
     return data[data.length - 1].value >= data[0].value;
   }, [data]);
 
-  // Chart colors based on profitability
-  const chartColors = useMemo(() => ({
-    lineColor: isProfitable ? '#22c55e' : '#ef4444',
-    topColor: isProfitable ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-    bottomColor: isProfitable ? 'rgba(34, 197, 94, 0.0)' : 'rgba(239, 68, 68, 0.0)',
-  }), [isProfitable]);
-
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return;
 
     // Create chart only once
     if (!chartRef.current) {
       chartRef.current = createChart(containerRef.current, {
-        layout: {
-          background: { type: ColorType.Solid, color: 'transparent' },
-          textColor: '#6b7280',
-          fontSize: 10,
-        },
-        grid: {
-          vertLines: { visible: false },
-          horzLines: { color: 'rgba(255, 255, 255, 0.05)', style: 1 },
-        },
+        ...pnlChartOptions,
         width: containerRef.current.clientWidth,
         height,
-        rightPriceScale: {
-          visible: true,
-          borderVisible: false,
-          scaleMargins: { top: 0.1, bottom: 0.1 },
-        },
-        timeScale: {
-          visible: true,
-          borderVisible: false,
-          timeVisible: false,
-          secondsVisible: false,
-        },
-        crosshair: {
-          vertLine: {
-            color: 'rgba(255, 255, 255, 0.2)',
-            width: 1,
-            style: 2,
-            labelVisible: false,
-          },
-          horzLine: {
-            color: 'rgba(255, 255, 255, 0.2)',
-            width: 1,
-            style: 2,
-            labelVisible: true,
-          },
-        },
-        handleScroll: false,
-        handleScale: false,
       });
 
-      // Add area series
+      // Add area series with dynamic colors based on profitability
       seriesRef.current = chartRef.current.addSeries(AreaSeries, {
-        lineColor: chartColors.lineColor,
-        topColor: chartColors.topColor,
-        bottomColor: chartColors.bottomColor,
-        lineWidth: 2,
+        ...getPnlSeriesOptions(isProfitable),
         priceFormat: {
           type: 'custom',
           formatter: (price: number) => {
@@ -105,12 +61,8 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({
     if (seriesRef.current) {
       seriesRef.current.setData(data);
 
-      // Update colors
-      seriesRef.current.applyOptions({
-        lineColor: chartColors.lineColor,
-        topColor: chartColors.topColor,
-        bottomColor: chartColors.bottomColor,
-      });
+      // Update colors based on profitability
+      seriesRef.current.applyOptions(getPnlSeriesOptions(isProfitable));
 
       // Fit content
       chartRef.current?.timeScale().fitContent();
@@ -127,7 +79,7 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [data, chartColors, height]);
+  }, [data, isProfitable, height]);
 
   // Cleanup on unmount
   useEffect(() => {

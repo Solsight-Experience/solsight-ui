@@ -1,7 +1,56 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Activity, AlertTriangle } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
+import { createChart, AreaSeries, UTCTimestamp } from 'lightweight-charts';
+import { miniChartOptions, areaSeriesPresets } from '@/lib/chart-config';
 import { usePortfolioOverview, usePnlChart } from '../hooks/portfolio.hooks';
+
+// Mini PnL chart component using lightweight-charts
+const PnlLineChart: React.FC<{ data: { time: UTCTimestamp; value: number }[] }> = ({ data }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || data.length === 0) return;
+
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+    }
+
+    const chart = createChart(containerRef.current, {
+      ...miniChartOptions,
+      width: containerRef.current.clientWidth,
+      height: 128,
+    });
+
+    chartRef.current = chart;
+
+    const series = chart.addSeries(AreaSeries, areaSeriesPresets.purple);
+    series.setData(data);
+    chart.timeScale().fitContent();
+
+    const handleResize = () => {
+      if (containerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+    };
+  }, [data]);
+
+  if (data.length === 0) {
+    return <div className="h-full flex items-center justify-center text-gray-500 text-sm">No data</div>;
+  }
+
+  return <div ref={containerRef} className="w-full h-full" />;
+};
 
 export const PortfolioDashboard: React.FC = () => {
   const { data: overview, isLoading: overviewLoading, error: overviewError } = usePortfolioOverview();
@@ -99,81 +148,12 @@ export const PortfolioDashboard: React.FC = () => {
     timestamp
       ? new Date(timestamp).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })
       : '--/--';
-  const chartLabels = pnlData.chart_data.map((point) => formatDateLabel(point.timestamp));
-  const dateMarkers = chartLabels.slice(-7);
-  // PNL Chart Data
-  const pnlChartData = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: 'PNL',
-        data: pnlData.chart_data.map((point) => point.pnl),
-        borderColor: '#A855F7',
-        backgroundColor: 'rgba(168, 85, 247, 0.1)',
-        borderWidth: 3,
-        fill: false,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#A855F7',
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-      },
-    ],
-  };
 
-  const pnlChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: true,
-        mode: 'index' as const,
-        intersect: false,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#A855F7',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: false,
-        callbacks: {
-          label: (context: any) => `$${context.parsed.y.toLocaleString()}`,
-          title: (items: any[]) => items?.[0]?.label || '',
-        },
-      },
-    },
-    scales: {
-      x: {
-        display: true,
-        grid: {
-          display: false,
-        },
-        ticks: {
-          autoSkip: false,
-          maxTicksLimit: 7,
-          color: '#71717a',
-          font: {
-            size: 10,
-          },
-        },
-      },
-      y: {
-        display: false,
-        grid: {
-          display: false,
-        },
-      },
-    },
-    interaction: {
-      mode: 'nearest' as const,
-      axis: 'x' as const,
-      intersect: false,
-    },
-  };
+  // Prepare chart data for lightweight-charts
+  const chartData = pnlData.chart_data.map((point) => ({
+    time: Math.floor((point.timestamp || Date.now()) / 1000) as import('lightweight-charts').UTCTimestamp,
+    value: point.pnl,
+  }));
 
   const assetColors = ['#3B82F6', '#F97316', '#A855F7', '#10B981', '#F59E0B'];
 
@@ -253,7 +233,7 @@ export const PortfolioDashboard: React.FC = () => {
 
         {/* Chart */}
         <div className="h-32 mb-4">
-          <Line data={pnlChartData} options={pnlChartOptions} />
+          <PnlLineChart data={chartData} />
         </div>
 
         {/* Stats */}
