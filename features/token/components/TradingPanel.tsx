@@ -109,6 +109,20 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     rawQuote: null,
   });
 
+  const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
+
+  // Fetch SOL price in USD
+  useEffect(() => {
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.solana?.usd) {
+          setSolPriceUsd(data.solana.usd);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch SOL price:', err));
+  }, []);
+
   const swapConfig = useMemo(() => getSwapApiConfig(), []);
   const internalUpdateRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -460,7 +474,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     toast.error('You cannot swap because you have insufficient funds.');
   }, [tradeMode, selectableBuyPayTokenOptions.length, selectableSellReceiveTokenOptions.length]);
 
+  // When switching tabs between Limit and Market, force recalculation
   useEffect(() => {
+    // Force recalculation by setting internal flag
+    internalUpdateRef.current = false;
+    
+    if (orderType === 'market') {
+      // Clear limit price when switching back to market (optional, but ensures clean state)
+      // and ensure lastEdited is set so quote re-runs
+      if (payAmount) setLastEdited('pay');
+      else if (receiveAmount) setLastEdited('receive');
+    } else if (orderType === 'limit') {
+      // It will auto recalculate in the limit effect since dependency `orderType` is passed
+      if (payAmount) setLastEdited('pay');
+      else if (receiveAmount) setLastEdited('receive');
+    }
+    // Note: Do not add payAmount/receiveAmount to dependencies to avoid infinite loops when they change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderType]);
+
+  useEffect(() => {
+    if (orderType === 'limit') return;
+
     if (internalUpdateRef.current) {
       internalUpdateRef.current = false;
       return;
@@ -493,6 +528,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         routePathTokens: [],
         rawQuote: null,
       }));
+      // Sync empty state to the other field
+      if (lastEdited === 'pay' && receiveAmount !== '') setReceiveAmount('');
+      if (lastEdited === 'receive' && payAmount !== '') setPayAmount('');
       return;
     }
 
@@ -601,6 +639,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     setReceiveAmount,
     payToken,
     receiveToken,
+    orderType,
   ]);
 
   const handleSwap = async () => {
@@ -748,23 +787,65 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
   // Calculate amounts based on limit price
   useEffect(() => {
-    if (orderType !== 'limit' || !limitPrice || !payAmount) return;
+    if (orderType !== 'limit' || !limitPrice || !solPriceUsd) return;
     
-    const price = parseInputNumber(limitPrice);
-    const amount = parseInputNumber(payAmount);
+    // The user inputs limitPrice in USD per token.
+    // However, Jupiter limit orders are executed in token amounts (e.g. sol vs SomeToken).
+    // So we need to calculate the relative price between pay token and receive token.
+    // For simplicity, we assume one side is SOL or priced against SOL.
+    // If not, we still need cross price. But here limitPrice is just USD.
     
-    if (price <= 0 || amount <= 0) return;
+    // What we really need is: how many receive tokens per pay token.
+    // Let's assume we are trading SOL vs Token.
+    // If tradeMode === 'buy', payToken is SOL, receiveToken is Token. 
+    // They input `limitPrice` as USD per Token. They spend `payAmount` (SOL).
+    // 1 Token = `limitPrice` USD. 
+    // 1 SOL = `solPriceUsd` USD.
+    // So 1 Token = (limitPrice / solPriceUsd) SOL.
+    // Number of tokens received = payAmount (in SOL) / (limitPrice / solPriceUsd) = payAmount * solPriceUsd / limitPrice.
+
+    const priceUsd = parseInputNumber(limitPrice);
+    if (priceUsd <= 0) return;
+
+    // This logic assumes we are always pairing with SOL as the quote currency
+    const isPaySol = payMint === COMMON_TOKENS.SOL.mint;
+    const isReceiveSol = receiveMint === COMMON_TOKENS.SOL.mint;
     
-    if (tradeMode === 'buy') {
-      // Buying: receiveAmount = payAmount / limitPrice
-      const calculated = amount / price;
-      setReceiveAmount(formatInputValue(calculated.toString(), receiveDecimals));
+    // Fallback simple relation if it's not a SOL pair (might not be accurate for Token-Token without USD value of pay token)
+    const effectiveSolPrice = solPriceUsd || 1; 
+
+    if (lastEdited === 'receive') {
+      const amountReceive = parseInputNumber(receiveAmount);
+      if (amountReceive > 0) {
+        let calculatedPay = 0;
+        if (tradeMode === 'buy') {
+          calculatedPay = (amountReceive * priceUsd) / effectiveSolPrice;
+        } else {
+          calculatedPay = (amountReceive * effectiveSolPrice) / priceUsd;
+        }
+        
+        const newPay = formatInputValue(calculatedPay.toString(), payDecimals);
+        if (newPay !== payAmount) setPayAmount(newPay);
+      } else {
+        if (payAmount !== '') setPayAmount('');
+      }
     } else {
-      // Selling: receiveAmount = payAmount * limitPrice
-      const calculated = amount * price;
-      setReceiveAmount(formatInputValue(calculated.toString(), receiveDecimals));
+      const amountPay = parseInputNumber(payAmount);
+      if (amountPay > 0) {
+        let calculatedReceive = 0;
+        if (tradeMode === 'buy') {
+          calculatedReceive = (amountPay * effectiveSolPrice) / priceUsd;
+        } else {
+          calculatedReceive = (amountPay * priceUsd) / effectiveSolPrice;
+        }
+
+        const newReceive = formatInputValue(calculatedReceive.toString(), receiveDecimals);
+        if (newReceive !== receiveAmount) setReceiveAmount(newReceive);
+      } else {
+        if (receiveAmount !== '') setReceiveAmount('');
+      }
     }
-  }, [limitPrice, payAmount, orderType, tradeMode, receiveDecimals, setReceiveAmount]);
+  }, [limitPrice, payAmount, receiveAmount, orderType, receiveDecimals, payDecimals, lastEdited, setPayAmount, setReceiveAmount, solPriceUsd, tradeMode, payMint, receiveMint]);
 
   return (
     <div className={`rounded-xl p-4 bg-gray-900/80 backdrop-blur border-2 transition-all duration-300 ${
@@ -912,23 +993,35 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       {orderType === 'limit' && (
         <div className="mb-4">
           <Label className="text-sm text-gray-400 mb-2 font-semibold">
-            Limit Price ({receiveToken} per {payToken})
+            Limit Price (USD per {tradeMode === 'buy' ? receiveToken : payToken})
           </Label>
-          <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50">
+          <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50 flex items-center">
+            <span className="text-gray-400 mr-2">$</span>
             <input
               type="text"
               value={limitPrice}
               onChange={(e) => {
-                setLimitPrice(sanitizeInput(e.target.value, receiveDecimals));
+                setLimitPrice(sanitizeInput(e.target.value, 15));
               }}
               placeholder="0.00"
               className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
-              onBlur={() => setLimitPrice(formatInputValue(limitPrice, receiveDecimals))}
+              onBlur={() => setLimitPrice(formatInputValue(limitPrice, 15))}
             />
-            <div className="mt-2 text-xs text-yellow-500">
-              Order executes when price reaches this level
-            </div>
+            {token.price && (
+              <button
+                type="button"
+                onClick={() => setLimitPrice(token.price.toString())}
+                className="ml-2 text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-cyan-400 font-semibold whitespace-nowrap transition-colors"
+                title="Use current market price"
+              >
+                Current Price
+              </button>
+            )}
           </div>
+            <div className="mt-2 text-xs text-yellow-500">
+              {/* Order executes when price reaches this USD value <br/>  */}
+              SOL price: ${solPriceUsd?.toFixed(2) || '--'}
+            </div>
         </div>
       )}
 
@@ -1036,6 +1129,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
       </div>
 
       {/* Quote Summary */}
+      {orderType === 'market' && (
       <div className="mb-4 text-sm bg-gray-800/50 rounded-lg p-3 border border-gray-700 space-y-2">
         <div className="flex items-center justify-between text-gray-300">
           <span className="text-gray-400">Price Impact</span>
@@ -1069,12 +1163,25 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         )}
         {quoteState.loading && <div className="mt-2 text-xs text-yellow-400 font-medium">Fetching quote...</div>}
         {quoteState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {quoteState.error}</div>}
+        
         {validation.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
         {swapState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
         {swapState.signature && (
-          <div className="mt-2 text-xs text-green-400">Swap submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
+          <div className="mt-2 text-xs text-green-400">Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
         )}
       </div>
+      )}
+
+      {/* Error/Success messages for Limit Order (since they were moved out of the Quote Summary) */}
+      {orderType === 'limit' && (
+        <div className="mb-4 text-sm space-y-2">
+          {validation.error && <div className="text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
+          {swapState.error && <div className="text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
+          {swapState.signature && (
+            <div className="text-xs text-green-400">Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}</div>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-2 mb-4">
         {['0.1', '0.5', '1', 'MAX'].map((amount) => (
