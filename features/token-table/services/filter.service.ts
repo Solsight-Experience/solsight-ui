@@ -1,13 +1,5 @@
-import { apiClient } from '@/lib/api-client';
-import {
-    TokenFilterRequest,
-    TokenFilterResponse,
-    PoolFilterRequest,
-    PoolFilterResponse,
-    SortBy,
-    PoolSortBy,
-    SortOrder,
-} from '@/types/filter';
+import { apiClient } from "@/lib/api-client";
+import { TokenFilterRequest, TokenFilterResponse, PoolFilterRequest, PoolFilterResponse, SortBy, PoolSortBy, SortOrder } from "@/types/filter";
 
 export interface CategoryOverview {
     name: string;
@@ -44,18 +36,15 @@ class FilterService {
     /**
      * Filter tokens with advanced criteria
      */
-    async filterTokens(
-        body: TokenFilterRequest,
-        params?: TokenFilterParams
-    ): Promise<TokenFilterResponse> {
+    async filterTokens(body: TokenFilterRequest, params?: TokenFilterParams): Promise<TokenFilterResponse> {
         const queryParams = new URLSearchParams();
 
-        if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
-        if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
-        if (params?.offset) queryParams.append('offset', params.offset.toString());
+        if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+        if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
+        if (params?.limit) queryParams.append("limit", params.limit.toString());
+        if (params?.offset) queryParams.append("offset", params.offset.toString());
 
-        const url = `/api/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `/api/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
         return apiClient.post<TokenFilterResponse>(url, body);
     }
@@ -63,18 +52,15 @@ class FilterService {
     /**
      * Filter pools with advanced criteria
      */
-    async filterPools(
-        body: PoolFilterRequest,
-        params?: PoolFilterParams
-    ): Promise<PoolFilterResponse> {
+    async filterPools(body: PoolFilterRequest, params?: PoolFilterParams): Promise<PoolFilterResponse> {
         const queryParams = new URLSearchParams();
 
-        if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
-        if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
-        if (params?.offset) queryParams.append('offset', params.offset.toString());
+        if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+        if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
+        if (params?.limit) queryParams.append("limit", params.limit.toString());
+        if (params?.offset) queryParams.append("offset", params.offset.toString());
 
-        const url = `/api/pools/filter${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `/api/pools/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
         return apiClient.post<PoolFilterResponse>(url, body);
     }
@@ -83,7 +69,7 @@ class FilterService {
      * Get all available categories
      */
     async getCategories(): Promise<CategoriesResponse> {
-        return apiClient.get<CategoriesResponse>('/api/discovery/categories');
+        return apiClient.get<CategoriesResponse>("/api/discovery/categories");
     }
 }
 

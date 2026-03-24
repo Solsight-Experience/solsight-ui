@@ -1,27 +1,28 @@
-'use client';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import SocialAuthButtons from './social-auth-buttons';
-import { loginApi } from '../../features/auth/authservice';
+"use client";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import SocialAuthButtons from "./social-auth-buttons";
+import { loginApi } from "../../features/auth/authservice";
+import { getErrorMessage } from "@/lib/error-utils";
 
 export default function SignInForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const redirectTo = searchParams.get('redirect') || '/';
+    const redirectTo = searchParams.get("redirect") || "/";
     const { login } = useAuth();
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError('');
+        setError("");
 
         try {
             const data = await loginApi({ email, password });
@@ -33,9 +34,8 @@ export default function SignInForm() {
 
             // Redirect về trang chủ
             router.push(redirectTo);
-
-        } catch (err: any) {
-            setError(err.message || 'Login Failed');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, "Login Failed"));
         } finally {
             setIsLoading(false);
         }
@@ -44,17 +44,11 @@ export default function SignInForm() {
     return (
         <div className="relative z-10 w-full max-w-md backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-purple-500/20">
             <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
-                    Welcome Back
-                </h1>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">Welcome Back</h1>
                 <p className="text-slate-400 text-sm">Sign in to continue</p>
             </div>
 
-            {error && (
-                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
-                    {error}
-                </div>
-            )}
+            {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
@@ -83,7 +77,7 @@ export default function SignInForm() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                             id="password"
-                            type={showPassword ? 'text' : 'password'}
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -115,7 +109,7 @@ export default function SignInForm() {
                     disabled={isLoading}
                     className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-3.5 rounded-xl transition-all"
                 >
-                    {isLoading ? 'Signing in...' : 'Sign In'}
+                    {isLoading ? "Signing in..." : "Sign In"}
                 </button>
             </form>
 

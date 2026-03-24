@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle } from "lucide-react";
 
 interface Props {
     children: ReactNode;
@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('Error boundary caught an error:', error, errorInfo);
+        console.error("Error boundary caught an error:", error, errorInfo);
     }
 
     handleReset = () => {
@@ -52,16 +52,12 @@ export class ErrorBoundary extends Component<Props, State> {
                                 <AlertTriangle className="h-5 w-5 text-destructive" />
                                 <CardTitle>Something went wrong</CardTitle>
                             </div>
-                            <CardDescription>
-                                An unexpected error occurred. Please try again.
-                            </CardDescription>
+                            <CardDescription>An unexpected error occurred. Please try again.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {process.env.NODE_ENV === 'development' && this.state.error && (
+                            {process.env.NODE_ENV === "development" && this.state.error && (
                                 <div className="p-4 bg-destructive/10 rounded-md">
-                                    <p className="text-sm font-mono text-destructive">
-                                        {this.state.error.message}
-                                    </p>
+                                    <p className="text-sm font-mono text-destructive">{this.state.error.message}</p>
                                 </div>
                             )}
                             <Button onClick={this.handleReset} className="w-full">

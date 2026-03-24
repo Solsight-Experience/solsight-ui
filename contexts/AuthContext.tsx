@@ -1,8 +1,8 @@
 // contexts/AuthContext.tsx
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 interface User {
     id: string;
@@ -29,15 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Load user từ localStorage khi component mount
     useEffect(() => {
-        const savedUser = localStorage.getItem('user');
+        const savedUser = localStorage.getItem("user");
         if (savedUser) {
             try {
                 const parsedUser = JSON.parse(savedUser);
                 setUser(parsedUser);
                 setIsAuthenticated(true);
             } catch (error) {
-                console.error('Failed to parse saved user:', error);
-                localStorage.removeItem('user');
+                console.error("Failed to parse saved user:", error);
+                localStorage.removeItem("user");
             }
         }
         setIsLoading(false);
@@ -47,14 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(user);
         setIsAuthenticated(true);
         // Lưu user vào localStorage
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem("user", JSON.stringify(user));
     };
 
     const logout = async () => {
         try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include', // để gửi cookie lên BE
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include" // để gửi cookie lên BE
             });
         } catch (err) {
             console.error("Logout API error:", err);
@@ -63,10 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Xóa state và localStorage
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('user');
+        localStorage.removeItem("user");
 
         // Điều hướng
-        router.push('/');
+        router.push("/");
     };
 
     return (
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 login,
                 logout,
-                setUser,
+                setUser
             }}
         >
             {children}
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 }

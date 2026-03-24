@@ -1,5 +1,5 @@
-import { Button } from '../ui/button';
-import { LogOut, Unplug, X } from 'lucide-react';
+import { Button } from "../ui/button";
+import { LogOut, Unplug, X } from "lucide-react";
 
 interface LogoutConfirmDialogProps {
     isOpen: boolean;
@@ -8,22 +8,14 @@ interface LogoutConfirmDialogProps {
     onDisconnectWallets: () => void;
 }
 
-const LogoutConfirmDialog = ({
-    isOpen,
-    onClose,
-    onLogout,
-    onDisconnectWallets,
-}: LogoutConfirmDialogProps) => {
+const LogoutConfirmDialog = ({ isOpen, onClose, onLogout, onDisconnectWallets }: LogoutConfirmDialogProps) => {
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/40 backdrop-blur-sm">
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-purple-500/50 text-white p-8 rounded-3xl shadow-2xl w-[480px] max-w-[90vw] relative animate-in fade-in zoom-in-95 duration-200">
                 {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-                >
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
                     <X size={20} />
                 </button>
 
@@ -40,9 +32,7 @@ const LogoutConfirmDialog = ({
                 </h2>
 
                 {/* Description */}
-                <p className="mb-8 text-center text-gray-300 text-sm">
-                    You're about to leave. Would you like to disconnect your wallets or just log out?
-                </p>
+                <p className="mb-8 text-center text-gray-300 text-sm">You&apos;re about to leave. Would you like to disconnect your wallets or just log out?</p>
 
                 {/* Action buttons */}
                 <div className="flex flex-col gap-3">

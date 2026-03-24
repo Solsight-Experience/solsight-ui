@@ -1,14 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { callOAuthLoginApi } from '@/features/auth/authservice';
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { callOAuthLoginApi } from "@/features/auth/authservice";
 
 declare global {
     interface Window {
-        google?: any;
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (config: { client_id: string; callback: (response: GoogleCredentialResponse) => void }) => void;
+                    renderButton: (element: HTMLElement, config: Record<string, unknown>) => void;
+                };
+            };
+        };
     }
+}
+
+interface GoogleCredentialResponse {
+    credential?: string;
 }
 
 export default function SocialAuthButtons() {
@@ -17,11 +28,11 @@ export default function SocialAuthButtons() {
     const googleButtonRef = useRef<HTMLDivElement>(null);
     const isInitialized = useRef(false);
 
-    const handleCredentialResponse = async (response: any) => {
+    const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
         try {
             if (!response || !response.credential) {
-                console.error('Google Sign-In did not return a credential', response);
-                alert('Google login failed. No credential returned.');
+                console.error("Google Sign-In did not return a credential", response);
+                alert("Google login failed. No credential returned.");
                 return;
             }
 
@@ -36,10 +47,10 @@ export default function SocialAuthButtons() {
             }
 
             // Redirect về trang chủ
-            router.push('/');
+            router.push("/");
         } catch (error) {
-            console.error('Google login failed:', error);
-            alert('Google login failed. Please try again.');
+            console.error("Google login failed:", error);
+            alert("Google login failed. Please try again.");
         }
     };
 
@@ -51,7 +62,7 @@ export default function SocialAuthButtons() {
 
             const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
             if (!clientId) {
-                console.error('NEXT_PUBLIC_GOOGLE_CLIENT_ID not found');
+                console.error("NEXT_PUBLIC_GOOGLE_CLIENT_ID not found");
                 return;
             }
 
@@ -59,32 +70,29 @@ export default function SocialAuthButtons() {
                 // Initialize Google Sign-In
                 window.google.accounts.id.initialize({
                     client_id: clientId,
-                    callback: handleCredentialResponse,
+                    callback: handleCredentialResponse
                 });
 
                 // Render button
-                window.google.accounts.id.renderButton(
-                    googleButtonRef.current,
-                    {
-                        theme: 'outline',
-                        size: 'large',
-                        width: googleButtonRef.current.offsetWidth,
-                        text: 'signin_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                    }
-                );
+                window.google.accounts.id.renderButton(googleButtonRef.current, {
+                    theme: "outline",
+                    size: "large",
+                    width: googleButtonRef.current.offsetWidth,
+                    text: "signin_with",
+                    shape: "rectangular",
+                    logo_alignment: "left"
+                });
 
                 isInitialized.current = true;
-                console.log('Google Sign-In initialized');
+                console.log("Google Sign-In initialized");
             } catch (error) {
-                console.error('Failed to initialize Google Sign-In:', error);
+                console.error("Failed to initialize Google Sign-In:", error);
             }
         };
 
         // Load Google SDK
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -103,12 +111,7 @@ export default function SocialAuthButtons() {
     return (
         <div className="space-y-3">
             {/* Google Sign-In Button */}
-            <div
-                ref={googleButtonRef}
-                className="w-full flex items-center justify-center"
-                style={{ minHeight: '44px' }}
-            />
-
+            <div ref={googleButtonRef} className="w-full flex items-center justify-center" style={{ minHeight: "44px" }} />
         </div>
     );
 }

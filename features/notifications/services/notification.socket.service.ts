@@ -1,31 +1,31 @@
-import { SocketManager } from '@/lib/socket-client';
-import { Notification } from '../types/notification.types';
+import { SocketManager } from "@/lib/socket-client";
+import { Notification } from "../types/notification.types";
 
 export class NotificationSocketManager extends SocketManager {
-  private static instance: NotificationSocketManager;
+    private static instance: NotificationSocketManager;
 
-  private constructor() {
-    super();
-  }
-
-  static getInstance(): NotificationSocketManager {
-    if (!this.instance) {
-      this.instance = new NotificationSocketManager();
+    private constructor() {
+        super();
     }
-    return this.instance;
-  }
 
-  subscribe(userId: string): void {
-    this.connect();
-    this.emit('notification:subscribe', { userId });
-  }
+    static getInstance(): NotificationSocketManager {
+        if (!this.instance) {
+            this.instance = new NotificationSocketManager();
+        }
+        return this.instance;
+    }
 
-  unsubscribe(userId: string): void {
-    this.emit('notification:unsubscribe', { userId });
-    this.offKey(`notifications:${userId}`);
-  }
+    subscribe(userId: string): void {
+        this.connect();
+        this.emit("notification:subscribe", { userId });
+    }
 
-  onNotification(userId: string, handler: (data: Notification) => void): void {
-    this.on('notification', handler, `notifications:${userId}`);
-  }
+    unsubscribe(userId: string): void {
+        this.emit("notification:unsubscribe", { userId });
+        this.offKey(`notifications:${userId}`);
+    }
+
+    onNotification(userId: string, handler: (data: Notification) => void): void {
+        this.on("notification", handler, `notifications:${userId}`);
+    }
 }
