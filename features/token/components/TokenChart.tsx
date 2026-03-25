@@ -633,8 +633,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
               style={{
                 color: 'rgba(156,163,175,0.6)',
                 fontSize: 13,
-                fontWeight: 500,
-                fontFamily: 'ui-monospace,monospace',
+                fontWeight: 500
               }}
             >
               No chart data available
