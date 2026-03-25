@@ -1,8 +1,12 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import type { AISummaryOptions } from '@/lib/mock/aiSummary';
 import { aiSummaryApi } from '@/features/token/services/ai-summary.services';
 import type { AISummaryResponse } from '@/features/token/services/ai-summary.services';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface AISummaryLoaderProps {
   isLoading: boolean;
@@ -34,11 +38,26 @@ export const AISummaryLoader: React.FC<AISummaryLoaderProps> = ({ isLoading }) =
 
 interface AISummaryContentProps {
   content: string;
-  onRegenerate?: () => void;
+  generatedAt: string;
+  tokenName: string;
 }
 
-export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, onRegenerate }) => {
+export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, generatedAt, tokenName }) => {
   const paragraphs = content.split('\n\n').filter(p => p.trim());
+
+  // Format date to "Updated Mar 20, 2026" format
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return `Updated ${date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })}`;
+    } catch {
+      return 'Updated recently';
+    }
+  };
 
   // Parse markdown bold syntax (**text**)
   const parseMarkdownBold = (text: string) => {
@@ -53,22 +72,15 @@ export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, onR
   };
 
   return (
-    <div className="space-y-3 text-sm text-gray-300">
+    <div className="space-y-4 text-sm text-gray-300">
       {paragraphs.map((paragraph, index) => (
         <p key={index} className="leading-relaxed">
           {parseMarkdownBold(paragraph)}
         </p>
       ))}
 
-      <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-        <span className="text-xs text-gray-500">Generated just now</span>
-        <button
-          onClick={onRegenerate}
-          className="text-xs px-2 py-1 rounded text-gray-500 hover:text-gray-400 hover:bg-gray-800 transition-colors"
-          title="Regenerate"
-        >
-          Regenerate
-        </button>
+      <div className="pt-3 border-t border-gray-700">
+        <span className="text-xs text-gray-500">{formatDate(generatedAt)} • AI summary about {tokenName}</span>
       </div>
     </div>
   );
@@ -78,16 +90,16 @@ interface AISummaryPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   tokenAddress: string;
-  tokenName?: string;
-  options?: AISummaryOptions;
+  tokenName: string;
+  tokenSymbol: string;
 }
 
 export const AISummaryPanel: React.FC<AISummaryPanelProps> = ({ 
   isOpen, 
   onToggle, 
   tokenAddress,
-  tokenName = 'Token',
-  options,
+  tokenName,
+  tokenSymbol,
 }) => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [summary, setSummary] = React.useState<AISummaryResponse | null>(null);
@@ -100,7 +112,7 @@ export const AISummaryPanel: React.FC<AISummaryPanelProps> = ({
 
       // Call the real API endpoint
       aiSummaryApi
-        .generateSummary(tokenAddress, options)
+        .generateSummary(tokenAddress, tokenName, tokenSymbol)
         .then((result) => {
           setSummary(result);
           setIsLoading(false);
@@ -111,53 +123,41 @@ export const AISummaryPanel: React.FC<AISummaryPanelProps> = ({
           setIsLoading(false);
         });
     }
-  }, [isOpen, summary, tokenAddress, options]);
-
-  // Clear summary when options change to regenerate with new options
-  React.useEffect(() => {
-    setSummary(null);
-    setError(null);
-  }, [options]);
+  }, [isOpen, summary, tokenAddress, tokenName, tokenSymbol]);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="overflow-hidden transition-all duration-300"
-      style={{
-        maxHeight: isOpen ? '1200px' : '0px',
-        opacity: isOpen ? 1 : 0,
-      }}
-    >
-      <div className="border border-gray-700 rounded-lg p-4 bg-gray-900/50 mb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-200">AI Summary</h3>
-          </div>
-          <button
-            onClick={onToggle}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-sm"
-          >
-            ✕
-          </button>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onToggle();
+    }}>
+      <DialogContent 
+        className="max-w-[600px] border border-gray-700 bg-gray-900/60 backdrop-blur-xl shadow-2xl p-6 rounded-2xl [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0"
+        showCloseButton={true}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50">
+          <Sparkles size={18} className="text-gray-300" />
+          <DialogTitle className="text-base font-semibold text-gray-100">Token Summary</DialogTitle>
         </div>
 
         {/* Content */}
-        {isLoading ? (
-          <AISummaryLoader isLoading={isLoading} />
-        ) : error ? (
-          <div className="text-sm text-red-400 p-2">
-            <p>{error}</p>
-          </div>
-        ) : summary ? (
-          <AISummaryContent 
-            content={summary.summary} 
-            onRegenerate={() => setSummary(null)}
-          />
-        ) : null}
-      </div>
-    </div>
+        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          {isLoading ? (
+            <AISummaryLoader isLoading={isLoading} />
+          ) : error ? (
+            <div className="text-sm text-red-400 p-2">
+              <p>{error}</p>
+            </div>
+          ) : summary ? (
+            <AISummaryContent 
+              content={summary.summary} 
+              generatedAt={summary.generatedAt}
+              tokenName={tokenName}
+            />
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
