@@ -1,5 +1,5 @@
-import { Button } from '../ui/button';
-import { LogOut, Unplug, X } from 'lucide-react';
+import { Button } from "../ui/button";
+import { LogOut, Unplug, X } from "lucide-react";
 
 interface LogoutConfirmDialogProps {
     isOpen: boolean;
@@ -8,12 +8,7 @@ interface LogoutConfirmDialogProps {
     onDisconnectWallets: () => void;
 }
 
-const LogoutConfirmDialog = ({
-    isOpen,
-    onClose,
-    onLogout,
-    onDisconnectWallets,
-}: LogoutConfirmDialogProps) => {
+const LogoutConfirmDialog = ({ isOpen, onClose, onLogout, onDisconnectWallets }: LogoutConfirmDialogProps) => {
     if (!isOpen) return null;
 
     const handleDisconnectWallets = () => {

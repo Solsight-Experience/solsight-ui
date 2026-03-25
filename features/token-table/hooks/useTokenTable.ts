@@ -1,17 +1,17 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from '@tanstack/react-table';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { TimeFilterValue } from '../components/TimeFilters';
-import { TokenTableTabOption } from '../components/TokenTabs';
-import { SortOption, SortDirection } from '../components/SortPanel';
-import { createColumns } from '../config/columns';
-import type { TokenTableData } from '../config/types';
-import { TokenDiscoveryService, SortBy, TimeFrame } from '../services/token-discovery.service';
-import { transformTokenOverviews } from '../utils/transform';
-import { queryKeys } from '@/lib/react-query-keys';
-import { apiClient } from '@/lib/api-client';
-import { USER_ENDPOINTS } from '@/lib/constants';
-import type { PoolFilterResponse, TokenFilterResponse } from '@/types/filter';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from "@tanstack/react-table";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { TimeFilterValue } from "../components/TimeFilters";
+import { TokenTableTabOption } from "../components/TokenTabs";
+import { SortOption, SortDirection } from "../components/SortPanel";
+import { createColumns } from "../config/columns";
+import type { TokenTableData } from "../config/types";
+import { TokenDiscoveryService, SortBy, TimeFrame } from "../services/token-discovery.service";
+import { transformTokenOverviews } from "../utils/transform";
+import { queryKeys } from "@/lib/react-query-keys";
+import { apiClient } from "@/lib/api-client";
+import { USER_ENDPOINTS } from "@/lib/constants";
+import type { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -27,14 +27,14 @@ export interface TokenTableFilters {
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
-        timeFilter: '1m',
-        activeTab: 'TRENDING',
-        quickBuyAmount: '0.1',
-        categorySearch: '',
-        sortOption: 'volumes',
-        sortDirection: 'none',
+        timeFilter: "1m",
+        activeTab: "TRENDING",
+        quickBuyAmount: "0.1",
+        categorySearch: "",
+        sortOption: "volumes",
+        sortDirection: "none",
         favouriteIds: new Set(),
-        filteredData: undefined,
+        filteredData: undefined
     });
 
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -47,11 +47,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 const response = await apiClient.get<Array<{ token_address: string }>>(USER_ENDPOINTS.FAVORITES);
                 return response;
             } catch (error) {
-                console.error('Failed to fetch favorites:', error);
+                console.error("Failed to fetch favorites:", error);
                 return [];
             }
         },
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+        staleTime: 5 * 60 * 1000 // Cache for 5 minutes
     });
 
     // Update local favorites when backend data changes
@@ -76,9 +76,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         onMutate: async ({ tokenId, isFavorite }) => {
             // Optimistic update
             await queryClient.cancelQueries({ queryKey: queryKeys.user.favorites() });
-            
+
             const previousFavorites = queryClient.getQueryData(queryKeys.user.favorites());
-            
+
             // Update local state immediately
             setFilters((prev) => {
                 const newFavourites = new Set(prev.favouriteIds);
@@ -89,7 +89,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 }
                 return { ...prev, favouriteIds: newFavourites };
             });
-            
+
             return { previousFavorites };
         },
         onError: (err, variables, context) => {
@@ -97,18 +97,21 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             if (context?.previousFavorites) {
                 queryClient.setQueryData(queryKeys.user.favorites(), context.previousFavorites);
             }
-            console.error('Failed to toggle favorite:', err);
+            console.error("Failed to toggle favorite:", err);
         },
         onSettled: () => {
             // Refetch to ensure sync with backend
             queryClient.invalidateQueries({ queryKey: queryKeys.user.favorites() });
-        },
+        }
     });
 
-    const toggleFavourite = useCallback((tokenId: string) => {
-        const isFavorite = filters.favouriteIds.has(tokenId);
-        toggleFavoriteMutation.mutate({ tokenId, isFavorite });
-    }, [filters.favouriteIds, toggleFavoriteMutation]);
+    const toggleFavourite = useCallback(
+        (tokenId: string) => {
+            const isFavorite = filters.favouriteIds.has(tokenId);
+            toggleFavoriteMutation.mutate({ tokenId, isFavorite });
+        },
+        [filters.favouriteIds, toggleFavoriteMutation]
+    );
 
     // Memoize columns
     const columns = useMemo(
@@ -119,66 +122,70 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     // Map time filter to API TimeFrame
     const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => {
         switch (timeFilter) {
-            case '1h':
-                return '1h';
-            case '1m':
-            case '5m':
-            case '30m':
+            case "1h":
+                return "1h";
+            case "1m":
+            case "5m":
+            case "30m":
             default:
-                return '24h';
+                return "24h";
         }
     };
 
     // Map sort option to API SortBy
     const mapSortOptionToSortBy = (sortOption: SortOption): SortBy => {
         switch (sortOption) {
-            case 'volumes':
-                return 'volume_24h';
-            case 'txns':
-                return 'txns_24h';
+            case "volumes":
+                return "volume_24h";
+            case "txns":
+                return "txns_24h";
             default:
-                return 'volume_24h';
+                return "volume_24h";
         }
     };
 
     // Fetch tokens based on active tab
-    const { data: apiData, isLoading, error } = useQuery({
+    const {
+        data: apiData,
+        isLoading,
+        error
+    } = useQuery({
         queryKey: queryKeys.tokens.trending({
             tab: filters.activeTab,
             timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-            sortBy: mapSortOptionToSortBy(filters.sortOption),
+            sortBy: mapSortOptionToSortBy(filters.sortOption)
         }),
         queryFn: async () => {
             const timeFrame = mapTimeFilterToTimeFrame(filters.timeFilter);
-            
+
             switch (filters.activeTab) {
-                case 'TRENDING':
+                case "TRENDING":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        sort_by: 'volume_24h',
-                        limit: 20,
+                        sort_by: "volume_24h",
+                        limit: 20
                     });
-                
-                case 'TOP':
+
+                case "TOP":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: mapSortOptionToSortBy(filters.sortOption),
-                        limit: 20,
+                        limit: 20
                     });
-                
-                case 'CATEGORIES':
-                case 'FAVOURITES':
+
+                case "CATEGORIES":
+                case "FAVOURITES":
                 default:
                     // For categories and favourites, still fetch trending data
                     // and filter client-side
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        limit: 20,
+                        limit: 20
                     });
             }
         },
         staleTime: 30000, // 30 seconds
-        refetchInterval: 60000, // Refetch every minute
+        refetchInterval: 60000 // Refetch every minute
     });
 
     // Process and filter data
@@ -193,41 +200,39 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         let transformedData = transformTokenOverviews(apiData.tokens);
 
         // Filter by favourites
-        if (filters.activeTab === 'FAVOURITES') {
-            console.log('Filtering favorites - Total tokens:', transformedData.length);
-            console.log('Favorite IDs:', Array.from(filters.favouriteIds));
+        if (filters.activeTab === "FAVOURITES") {
+            console.log("Filtering favorites - Total tokens:", transformedData.length);
+            console.log("Favorite IDs:", Array.from(filters.favouriteIds));
             transformedData = transformedData.filter((token) => {
                 const isFavorite = filters.favouriteIds.has(token.id);
                 if (isFavorite) {
-                    console.log('Found favorite token:', token.id, token.token.ticker);
+                    console.log("Found favorite token:", token.id, token.token.ticker);
                 }
                 return isFavorite;
             });
-            console.log('Filtered favorites count:', transformedData.length);
+            console.log("Filtered favorites count:", transformedData.length);
         }
 
         // Filter by category search
-        if (filters.categorySearch && filters.activeTab === 'CATEGORIES') {
-            transformedData = transformedData.filter((token) =>
-                token.token.category.toLowerCase().includes(filters.categorySearch.toLowerCase())
-            );
+        if (filters.categorySearch && filters.activeTab === "CATEGORIES") {
+            transformedData = transformedData.filter((token) => token.token.category.toLowerCase().includes(filters.categorySearch.toLowerCase()));
         }
 
         // Apply custom sorting for Top tab
-        if (filters.activeTab === 'TOP' && filters.sortDirection !== 'none') {
+        if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
             transformedData.sort((a, b) => {
                 let aValue = 0;
                 let bValue = 0;
 
-                if (filters.sortOption === 'volumes') {
+                if (filters.sortOption === "volumes") {
                     aValue = a.volume24h;
                     bValue = b.volume24h;
-                } else if (filters.sortOption === 'txns') {
+                } else if (filters.sortOption === "txns") {
                     aValue = a.transactions.buyCount + a.transactions.sellCount;
                     bValue = b.transactions.buyCount + b.transactions.sellCount;
                 }
 
-                return filters.sortDirection === 'desc' ? bValue - aValue : aValue - bValue;
+                return filters.sortDirection === "desc" ? bValue - aValue : aValue - bValue;
             });
         }
 
@@ -236,13 +241,13 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     // Add function to apply filter results
     const applyFilterResults = useCallback((filterResponse: TokenFilterResponse | PoolFilterResponse) => {
-        if ('tokens' in filterResponse) {
+        if ("tokens" in filterResponse) {
             // Transform the filtered tokens to match our table format
             const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
-            setFilters(prev => ({ ...prev, filteredData: transformedFilteredData }));
-        } else if ('pools' in filterResponse) {
+            setFilters((prev) => ({ ...prev, filteredData: transformedFilteredData }));
+        } else if ("pools" in filterResponse) {
             // Handle pool filtering if needed
-            console.log('Pool filtering not yet implemented');
+            console.log("Pool filtering not yet implemented");
         }
     }, []);
 
@@ -250,11 +255,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         data,
         columns,
         state: {
-            sorting,
+            sorting
         },
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
+        getSortedRowModel: getSortedRowModel()
     });
 
     const setTimeFilter = useCallback((timeFilter: TimeFilterValue) => {
@@ -278,20 +283,20 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             if (prev.sortOption === option) {
                 // Cycle through: none -> asc -> desc -> none
                 const directionCycle: Record<SortDirection, SortDirection> = {
-                    none: 'asc',
-                    asc: 'desc',
-                    desc: 'none',
+                    none: "asc",
+                    asc: "desc",
+                    desc: "none"
                 };
                 return {
                     ...prev,
-                    sortDirection: directionCycle[prev.sortDirection],
+                    sortDirection: directionCycle[prev.sortDirection]
                 };
             } else {
                 // New option, start with asc
                 return {
                     ...prev,
                     sortOption: option,
-                    sortDirection: 'asc',
+                    sortDirection: "asc"
                 };
             }
         });
@@ -299,14 +304,14 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const resetFilters = useCallback(() => {
         setFilters({
-            timeFilter: '1m',
-            activeTab: 'TRENDING',
-            quickBuyAmount: '0.1',
-            categorySearch: '',
-            sortOption: 'volumes',
-            sortDirection: 'none',
+            timeFilter: "1m",
+            activeTab: "TRENDING",
+            quickBuyAmount: "0.1",
+            categorySearch: "",
+            sortOption: "volumes",
+            sortDirection: "none",
             favouriteIds: new Set(),
-            filteredData: undefined,
+            filteredData: undefined
         });
     }, []);
 
@@ -322,6 +327,6 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         resetFilters,
         applyFilterResults,
         isLoading,
-        error,
+        error
     };
 }

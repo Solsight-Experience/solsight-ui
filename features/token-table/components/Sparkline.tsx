@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { memo, useId, useMemo } from 'react';
-import { TokenTableData } from '../config/types';
+import { memo, useId, useMemo } from "react";
+import { TokenTableData } from "../config/types";
 
 interface SparklineProps {
-    points: TokenTableData['token']['priceHistory'];
+    points: TokenTableData["token"]["priceHistory"];
     width?: number;
     height?: number;
 }
@@ -17,11 +17,7 @@ const PADDING = 4;
  * Sparkline Component
  * Displays a mini chart showing price trend over time
  */
-const Sparkline = memo<SparklineProps>(function Sparkline({ 
-    points, 
-    width = DEFAULT_WIDTH, 
-    height = DEFAULT_HEIGHT 
-}) {
+const Sparkline = memo<SparklineProps>(function Sparkline({ points, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT }) {
     const gradientBaseId = useId();
 
     const chartData = useMemo(() => {
@@ -35,24 +31,15 @@ const Sparkline = memo<SparklineProps>(function Sparkline({
         const trendIsPositive = points[points.length - 1] >= points[0];
 
         const coordinates = points.map((value, index) => {
-            const x =
-                points.length === 1
-                    ? width / 2
-                    : (index / (points.length - 1)) * (width - PADDING * 2) + PADDING;
+            const x = points.length === 1 ? width / 2 : (index / (points.length - 1)) * (width - PADDING * 2) + PADDING;
             const y = height - PADDING - ((value - min) / range) * (height - PADDING * 2);
             return [x, y] as [number, number];
         });
 
-        const path = coordinates
-            .map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`)
-            .join(' ');
+        const path = coordinates.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
 
-        const strokeColor = trendIsPositive 
-            ? 'rgba(74, 222, 128, 0.95)' 
-            : 'rgba(248, 113, 113, 0.95)';
-        const fillColor = trendIsPositive 
-            ? 'rgba(74, 222, 128, 0.12)' 
-            : 'rgba(248, 113, 113, 0.12)';
+        const strokeColor = trendIsPositive ? "rgba(74, 222, 128, 0.95)" : "rgba(248, 113, 113, 0.95)";
+        const fillColor = trendIsPositive ? "rgba(74, 222, 128, 0.12)" : "rgba(248, 113, 113, 0.12)";
 
         const lastPoint = coordinates[coordinates.length - 1];
         const firstPoint = coordinates[0];
@@ -63,7 +50,7 @@ const Sparkline = memo<SparklineProps>(function Sparkline({
             strokeColor,
             fillColor,
             lastPoint,
-            firstPoint,
+            firstPoint
         };
     }, [points, width, height]);
 
@@ -72,12 +59,12 @@ const Sparkline = memo<SparklineProps>(function Sparkline({
     }
 
     const { path, trendIsPositive, strokeColor, fillColor, lastPoint, firstPoint } = chartData;
-    const gradientId = `${gradientBaseId}-${trendIsPositive ? 'positive' : 'negative'}`;
+    const gradientId = `${gradientBaseId}-${trendIsPositive ? "positive" : "negative"}`;
 
     return (
         <svg
             role="img"
-            aria-label={`Price trend ${trendIsPositive ? 'up' : 'down'}`}
+            aria-label={`Price trend ${trendIsPositive ? "up" : "down"}`}
             viewBox={`0 0 ${width} ${height}`}
             className="h-20 w-28 text-muted-foreground"
         >

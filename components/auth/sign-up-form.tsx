@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import SocialAuthButtons from './social-auth-buttons';
-import { signupApi } from '@/features/auth/authservice';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import SocialAuthButtons from "./social-auth-buttons";
+import { signupApi } from "@/features/auth/authservice";
 
 interface SignUpFormProps {
     onToggle: () => void;
@@ -12,20 +12,20 @@ interface SignUpFormProps {
 
 export default function SignUpForm({ onToggle }: SignUpFormProps) {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError('');
+        setError("");
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError("Passwords do not match");
             setIsLoading(false);
             return;
         }
@@ -35,9 +35,10 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
 
             // Sau khi đăng ký thành công, toggle về login
             onToggle();
-        } catch (err: any) {
-            console.error('Signup failed:', err);
-            setError(err.response?.data?.message || 'Sign up failed');
+        } catch (err: unknown) {
+            console.error("Signup failed:", err);
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || "Sign up failed");
         } finally {
             setIsLoading(false);
         }
@@ -47,18 +48,12 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
         <div className="relative z-10 w-full max-w-md backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-purple-500/20">
             {/* form header */}
             <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
-                    Create Account
-                </h1>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">Create Account</h1>
                 <p className="text-slate-400 text-sm">Sign up to start using the app</p>
             </div>
 
             {/* error */}
-            {error && (
-                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
-                    {error}
-                </div>
-            )}
+            {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">{error}</div>}
 
             {/* form */}
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -90,7 +85,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                             id="password"
-                            type={showPassword ? 'text' : 'password'}
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -116,7 +111,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                             id="confirmPassword"
-                            type={showPassword ? 'text' : 'password'}
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -131,7 +126,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     disabled={isLoading}
                     className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-3.5 rounded-xl transition-all"
                 >
-                    {isLoading ? 'Signing up...' : 'Sign Up'}
+                    {isLoading ? "Signing up..." : "Sign Up"}
                 </button>
             </form>
 

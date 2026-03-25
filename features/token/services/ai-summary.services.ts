@@ -2,10 +2,10 @@ import { apiClient } from '@/lib/api-client';
 import { TOKEN_ENDPOINTS } from '@/lib/constants';
 
 export interface TokenData {
-  name: string;
-  symbol: string;
-  price: number;
-  priceChange24h: number;
+    name: string;
+    symbol: string;
+    price: number;
+    priceChange24h: number;
 }
 
 export interface AISummaryRequest {
@@ -42,10 +42,7 @@ export const aiSummaryApi = {
       symbol,
     };
 
-    const response = await apiClient.post<AISummaryResponse>(
-      TOKEN_ENDPOINTS.AI_SUMMARY,
-      requestBody
-    );
-    return response;
-  },
+        const response = await apiClient.post<AISummaryResponse>(TOKEN_ENDPOINTS.AI_SUMMARY, requestBody);
+        return response;
+    }
 };

@@ -1,8 +1,8 @@
-import React from 'react';
-import { Sparkles } from 'lucide-react';
+import React from "react";
+import { Sparkles } from "lucide-react";
 
 interface AISummaryButtonProps {
-  onClick: () => void;
+    onClick: () => void;
 }
 
 export const AISummaryButton: React.FC<AISummaryButtonProps> = ({ onClick }) => {
