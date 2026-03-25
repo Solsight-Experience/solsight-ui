@@ -60,8 +60,8 @@ export const MultiChartToolbar: React.FC<MultiChartToolbarProps> = ({
         </div>
 
         {!canAddMore && (
-          <div className="mt-3 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/30 rounded px-3 py-2">
-            ⚠️ Maximum {maxCharts} charts allowed
+          <div className="mt-3 text-s text-purple-500  border-purple-500/30 rounded px-3 py-2">
+            Maximum {maxCharts} charts allowed
           </div>
         )}
       </div>

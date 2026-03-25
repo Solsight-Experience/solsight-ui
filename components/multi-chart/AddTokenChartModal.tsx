@@ -121,8 +121,8 @@ export const AddTokenChartModal: React.FC<AddTokenChartModalProps> = ({
         </DialogDescription>
 
         {!canAddMore && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded px-3 py-2 text-xs text-amber-500">
-            ⚠️ Maximum {maxCharts} charts reached
+          <div className="bg-amber-500/10 border  rounded px-3 py-2 text-xs text-purple-500">
+            Maximum {maxCharts} charts reached
           </div>
         )}
 
