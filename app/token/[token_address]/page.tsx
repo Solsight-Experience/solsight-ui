@@ -1,18 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { useTokenDetail } from "@/features/token/hooks/token.hooks";
-import { TokenHeader, TokenStats, TokenChart, TradingPanel, TokenTabs, AISummaryButton, AISummaryPanel } from "@/features/token/components";
-import { DEFAULT_AI_OPTIONS } from "@/lib/mock/aiSummary";
-import { useTokenUIStore } from "@/features/token/stores/token.stores";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import { useTokenDetail } from '@/features/token/hooks/token.hooks';
+import {
+  TokenHeader,
+  TokenStats,
+  TokenChart,
+  TradingPanel,
+  TokenTabs,
+  AISummaryButton,
+  AISummaryPanel,
+} from '@/features/token/components';
+import { useTokenUIStore } from '@/features/token/stores/token.stores';
 
 export default function TokenDetailPage() {
-    const params = useParams();
-    const tokenAddress = params?.token_address as string;
-    const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
-    const [aiOptions] = useState(DEFAULT_AI_OPTIONS);
-    const [enablePriceRuler, setEnablePriceRuler] = useState(false);
+  const params = useParams();
+  const tokenAddress = params?.token_address as string;
+  const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
+  const [enablePriceRuler, setEnablePriceRuler] = useState(false);
 
     const { data: token, isLoading, error } = useTokenDetail(tokenAddress);
     const { setLimitPrice, orderType } = useTokenUIStore();
@@ -60,25 +66,22 @@ export default function TokenDetailPage() {
         );
     }
 
-    return (
-        <div>
-            {/* Header */}
-            <TokenHeader token={token} aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(!isAISummaryOpen)} />} />
-            {isAISummaryOpen && (
-                <div className="max-w-7xl mx-auto px-4 pt-4 space-y-2">
-                    {/* <AISummaryOptions
-          options={aiOptions}
-          onOptionsChange={setAiOptions}
-        /> */}
-                    <AISummaryPanel
-                        isOpen={isAISummaryOpen}
-                        onToggle={() => setIsAISummaryOpen(!isAISummaryOpen)}
-                        tokenAddress={tokenAddress}
-                        tokenName={token.name}
-                        options={aiOptions}
-                    />
-                </div>
-            )}
+  return (
+    <div>
+      {/* Header */}
+      <TokenHeader
+        token={token}
+        aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(true)} />}
+      />
+      {isAISummaryOpen && token && (
+        <AISummaryPanel 
+          isOpen={isAISummaryOpen} 
+          onToggle={() => setIsAISummaryOpen(false)}
+          tokenAddress={tokenAddress}
+          tokenName={token.name}
+          tokenSymbol={token.symbol}
+        />
+      )}
 
             {/* Stats Bar */}
             <TokenStats token={token} />

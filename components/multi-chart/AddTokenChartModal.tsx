@@ -102,13 +102,59 @@ export const AddTokenChartModal: React.FC<AddTokenChartModalProps> = ({ isOpen, 
                 onClose();
                 break;
         }
-    };
+        break;
+      case 'Escape':
+        e.preventDefault();
+        onClose();
+        break;
+    }
+  };
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-slate-950 border border-slate-700">
-                <DialogTitle className="text-slate-100">Add Token Chart</DialogTitle>
-                <DialogDescription className="text-slate-400">Search for a token to add it to your dashboard</DialogDescription>
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md bg-slate-950 border border-slate-700">
+        <DialogTitle className="text-slate-100">Add Token Chart</DialogTitle>
+        <DialogDescription className="text-slate-400">
+          Search for a token to add it to your dashboard
+        </DialogDescription>
+
+        {!canAddMore && (
+          <div className="bg-amber-500/10 border  rounded px-3 py-2 text-xs text-purple-500">
+            Maximum {maxCharts} charts reached
+          </div>
+        )}
+
+        {canAddMore && (
+          <div className="space-y-3">
+            {/* Search Input */}
+            <InputGroup>
+              <InputGroupInput
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search token symbol, name, or address..."
+                className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
+                autoFocus
+                disabled={!canAddMore}
+              />
+              <InputGroupAddon align="inline-end">
+                {isLoading ? (
+                  <RotateCw className="w-4 h-4 text-slate-500 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4 text-slate-500" />
+                )}
+              </InputGroupAddon>
+            </InputGroup>
+
+            {/* Results */}
+            {searchQuery.trim().length > 0 && (
+              <div className="border border-slate-700 rounded-lg bg-slate-900/50 max-h-60 overflow-y-auto">
+                {isLoading && (
+                  <div className="flex items-center justify-center py-4 text-slate-400">
+                    <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                    <span className="text-sm">Searching...</span>
+                  </div>
+                )}
 
                 {!canAddMore && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded px-3 py-2 text-xs text-amber-500">

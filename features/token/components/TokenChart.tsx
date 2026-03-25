@@ -413,115 +413,57 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                         setRulerPrice(price);
                     }
                 }
-            }
-        };
+              }
+            }}
+            variant="purple"
+            disabled={!enablePriceRuler || orderType !== 'limit'}
+          >
+            <Ruler size={15} />
+          </SideBtn>
 
-        chartRef.current.subscribeClick(handleClick);
+          <Sep />
 
-        return () => {
-            chartRef.current?.unsubscribeClick(handleClick);
-        };
-    }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
+          <SideBtn
+            active={false}
+            title="Clear drawings"
+            onClick={clearDrawings}
+            disabled={drawings.length === 0}
+          >
+            <Trash2 size={15} />
+          </SideBtn>
+        </div>
+      )}
 
-    // ── Cursor ─────────────────────────────────────────────────────────────────
-    const canvasCursor = drawingMode && drawingMode !== "pointer" ? "crosshair" : drawingMode === "pointer" ? "default" : "default";
-
-    // ── Render ─────────────────────────────────────────────────────────────────
-    return (
-        <div style={{ display: "flex", gap: 10, width: "100%" }}>
-            {/* ── Left sidebar ── */}
-            {!isMulti && (
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "8px 6px",
-                        width: 44,
-                        flexShrink: 0,
-                        background: "rgba(255,255,255,0.02)",
-                        borderRight: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: "8px 0 0 8px"
-                    }}
-                >
-                    {/* Chart type group */}
-                    <SideBtn active={type === "candles"} title="Candles" onClick={() => setType("candles")} variant="purple">
-                        <CandlestickChart size={15} />
-                    </SideBtn>
-                    <SideBtn active={type === "line"} title="Line" onClick={() => setType("line")} variant="purple">
-                        <TrendingUp size={15} />
-                    </SideBtn>
-                    <SideBtn active={type === "area"} title="Area" onClick={() => setType("area")} variant="purple">
-                        <AreaChartIcon size={15} />
-                    </SideBtn>
-                    <SideBtn active={type === "bars"} title="Bars" onClick={() => setType("bars")} variant="purple">
-                        <BarChart3 size={15} />
-                    </SideBtn>
-                    <SideBtn active={type === "baseline"} title="Baseline" onClick={() => setType("baseline")} variant="purple">
-                        <Activity size={15} />
-                    </SideBtn>
-                    <SideBtn active={type === "histogram"} title="Histogram" onClick={() => setType("histogram")} variant="purple">
-                        <BarChart4 size={15} />
-                    </SideBtn>
-
-                    <Sep />
-
-                    {/* Drawing tools */}
-                    <SideBtn active={drawingMode === "pointer"} title="Pointer" onClick={() => toggleDraw("pointer")} variant="purple">
-                        <MousePointer2 size={15} />
-                    </SideBtn>
-                    <SideBtn active={drawingMode === "line"} title="Line" onClick={() => toggleDraw("line")} variant="purple">
-                        <Minus size={15} />
-                    </SideBtn>
-                    <SideBtn active={drawingMode === "rectangle"} title="Rectangle" onClick={() => toggleDraw("rectangle")} variant="purple">
-                        <RectangleHorizontal size={15} />
-                    </SideBtn>
-                    <SideBtn active={drawingMode === "circle"} title="Circle" onClick={() => toggleDraw("circle")} variant="purple">
-                        <Circle size={15} />
-                    </SideBtn>
-
-                    <Sep />
-
-                    {/* Price Ruler for Limit Orders */}
-                    <SideBtn
-                        active={enablePriceRuler && orderType === "limit"}
-                        title="Set Limit Price (Click on chart)"
-                        onClick={() => {
-                            if (!enablePriceRuler) return;
-                            // Get current last price from data
-                            const data = dataRef.current;
-                            if (data.length > 0) {
-                                const lastCandle = data[data.length - 1];
-                                const lastPrice = lastCandle.close || lastCandle.value;
-                                if (lastPrice) {
-                                    setRulerPrice(lastPrice);
-                                }
-                            }
-                        }}
-                        variant="purple"
-                        disabled={!enablePriceRuler || orderType !== "limit"}
-                    >
-                        <Ruler size={15} />
-                    </SideBtn>
-
-                    <Sep />
-
-                    <SideBtn active={false} title="Clear drawings" onClick={clearDrawings} disabled={drawings.length === 0}>
-                        <Trash2 size={15} />
-                    </SideBtn>
-                </div>
-            )}
-
-            {/* ── Chart + canvas ── */}
-            <div
-                style={{
-                    position: "relative",
-                    flex: 1,
-                    height: chartH,
-                    borderRadius: isMulti ? 8 : "0 8px 8px 0",
-                    overflow: "hidden"
-                }}
+      {/* ── Chart + canvas ── */}
+      <div
+        style={{
+          position: 'relative',
+          flex: 1,
+          height: chartH,
+          borderRadius: isMulti ? 8 : '0 8px 8px 0',
+          overflow: 'hidden',
+        }}
+      >
+        {/* No-data overlay */}
+        {!hasData && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,20,30,0.98))',
+              borderRadius: 'inherit',
+            }}
+          >
+            <p
+              style={{
+                color: 'rgba(156,163,175,0.6)',
+                fontSize: 13,
+                fontWeight: 500
+              }}
             >
                 {/* No-data overlay */}
                 {!hasData && (

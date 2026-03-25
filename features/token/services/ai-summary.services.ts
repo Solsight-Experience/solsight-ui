@@ -1,6 +1,5 @@
-import { apiClient } from "@/lib/api-client";
-import { TOKEN_ENDPOINTS } from "@/lib/constants";
-import type { AISummaryOptions } from "@/lib/mock/aiSummary";
+import { apiClient } from '@/lib/api-client';
+import { TOKEN_ENDPOINTS } from '@/lib/constants';
 
 export interface TokenData {
     name: string;
@@ -9,45 +8,39 @@ export interface TokenData {
     priceChange24h: number;
 }
 
+export interface AISummaryRequest {
+  address: string;
+  name: string;
+  symbol: string;
+}
+
 export interface AISummaryResponse {
-    address: string;
-    summary: string;
-    generatedAt: string;
-    model: string;
-    cached: boolean;
-    tokenData: TokenData;
+  address: string;
+  summary: string;
+  generatedAt: string;
+  model: string;
+  cached: boolean;
+  tokenData?: TokenData;
 }
 
 export const aiSummaryApi = {
-    /**
-     * Generate AI summary for a token with optional analysis options
-     * @param address - Token address
-     * @param options - Analysis options (all default to false if not specified)
-     * @returns AI summary response with generated content
-     */
-    generateSummary: async (address: string, options?: Partial<AISummaryOptions>): Promise<AISummaryResponse> => {
-        const requestBody: { address: string; forceRefresh?: boolean } = {
-            address
-        };
-
-        if (options?.forceRefresh !== undefined) {
-            requestBody.forceRefresh = options.forceRefresh;
-        }
-
-        const response = await apiClient.post<AISummaryResponse>(TOKEN_ENDPOINTS.AI_SUMMARY, requestBody);
-        return response;
-    },
-
-    /**
-     * Generate AI summary with all default options
-     * @param address - Token address
-     * @returns AI summary response with generated content
-     */
-    generateSummaryWithDefaults: async (address: string): Promise<AISummaryResponse> => {
-        const requestBody = {
-            address,
-            forceRefresh: false
-        };
+  /**
+   * Generate AI summary for a token
+   * @param address - Token address
+   * @param name - Token name
+   * @param symbol - Token symbol
+   * @returns AI summary response with generated content
+   */
+  generateSummary: async (
+    address: string,
+    name: string,
+    symbol: string
+  ): Promise<AISummaryResponse> => {
+    const requestBody: AISummaryRequest = {
+      address,
+      name,
+      symbol,
+    };
 
         const response = await apiClient.post<AISummaryResponse>(TOKEN_ENDPOINTS.AI_SUMMARY, requestBody);
         return response;
