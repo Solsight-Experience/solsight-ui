@@ -1,29 +1,22 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { flexRender } from '@tanstack/react-table';
-import { useRouter } from 'next/navigation';
-import { TokenTabs } from './TokenTabs';
-import { TimeFilters } from './TimeFilters';
-import { FilterButton } from './FilterButton';
-import { QuickBuyInput } from './QuickBuyInput';
-import { RightPanelFilter } from './RightPanelFilter';
-import { SortPanel } from './SortPanel';
-import { CategorySearch } from './CategorySearch';
-import { EmptyState } from './EmptyState';
-import { CategoryTable } from './CategoryTable';
-import { useTokenTable } from '../hooks/useTokenTable';
-import { PoolFilterResponse, TokenFilterResponse } from '@/types/filter';
-import type { TokenTableData } from '../config/types';
-import { QuickBuyReviewModal } from './QuickBuyReviewModal';
+import { useCallback, useEffect, useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { flexRender } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
+import { TokenTabs } from "./TokenTabs";
+import { TimeFilters } from "./TimeFilters";
+import { FilterButton } from "./FilterButton";
+import { QuickBuyInput } from "./QuickBuyInput";
+import { RightPanelFilter } from "./RightPanelFilter";
+import { SortPanel } from "./SortPanel";
+import { CategorySearch } from "./CategorySearch";
+import { EmptyState } from "./EmptyState";
+import { CategoryTable } from "./CategoryTable";
+import { useTokenTable } from "../hooks/useTokenTable";
+import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+import type { TokenTableData } from "../config/types";
+import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
 
 /**
  * TokenTable Component
@@ -49,7 +42,7 @@ export default function TokenTable() {
         resetFilters,
         applyFilterResults,
         isLoading,
-        error,
+        error
     } = useTokenTable(handleQuickBuy);
 
     // Debug log for favorites
@@ -60,66 +53,60 @@ export default function TokenTable() {
     // Render different right panel content based on active tab
     const renderRightPanel = () => {
         switch (filters.activeTab) {
-            case 'TOP':
+            case "TOP":
                 return (
                     <RightPanelFilter>
-                        <TimeFilters
-                            activeFilter={filters.timeFilter}
-                            onFilterChange={setTimeFilter}
-                        />
+                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <SortPanel
                             sortState={{
                                 option: filters.sortOption,
-                                direction: filters.sortDirection,
+                                direction: filters.sortDirection
                             }}
                             onSortChange={toggleSort}
                         />
-                        <FilterButton 
-                            onReset={() => { resetFilters(); }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
+                        <FilterButton
+                            onReset={() => {
+                                resetFilters();
+                            }}
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }}
                         />
-                        <QuickBuyInput
-                            value={filters.quickBuyAmount}
-                            onChange={setQuickBuyAmount}
-                        />
+                        <QuickBuyInput value={filters.quickBuyAmount} onChange={setQuickBuyAmount} />
                     </RightPanelFilter>
                 );
 
-            case 'CATEGORIES':
+            case "CATEGORIES":
                 return (
                     <RightPanelFilter>
-                        <TimeFilters
-                            activeFilter={filters.timeFilter}
-                            onFilterChange={setTimeFilter}
-                        />
-                        <CategorySearch
-                            value={filters.categorySearch}
-                            onChange={setCategorySearch}
-                        />
-                        <FilterButton 
-                            onReset={() => { resetFilters(); }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
+                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
+                        <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
+                        <FilterButton
+                            onReset={() => {
+                                resetFilters();
+                            }}
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }}
                         />
                     </RightPanelFilter>
                 );
 
-            case 'FAVOURITES':
-            case 'TRENDING':
+            case "FAVOURITES":
+            case "TRENDING":
             default:
                 return (
                     <RightPanelFilter>
-                        <TimeFilters
-                            activeFilter={filters.timeFilter}
-                            onFilterChange={setTimeFilter}
+                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
+                        <FilterButton
+                            onReset={() => {
+                                resetFilters();
+                            }}
+                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                                applyFilterResults(res);
+                            }}
                         />
-                        <FilterButton 
-                            onReset={() => { resetFilters(); }} 
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => { applyFilterResults(res); }} 
-                        />
-                        <QuickBuyInput
-                            value={filters.quickBuyAmount}
-                            onChange={setQuickBuyAmount}
-                        />
+                        <QuickBuyInput value={filters.quickBuyAmount} onChange={setQuickBuyAmount} />
                     </RightPanelFilter>
                 );
         }
@@ -128,7 +115,7 @@ export default function TokenTable() {
     const hasData = table.getRowModel().rows.length > 0;
 
     // Render CategoryTable for Categories tab
-    if (filters.activeTab === 'CATEGORIES') {
+    if (filters.activeTab === "CATEGORIES") {
         return (
             <>
                 <div className="flex justify-between items-center mb-3">
@@ -147,33 +134,32 @@ export default function TokenTable() {
                 {renderRightPanel()}
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
-                            shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]">
+            <div
+                className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
+                            shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]"
+            >
                 {error ? (
-                    <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : 'Unknown error'}`} />
+                    <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />
                 ) : isLoading ? (
                     <LoadingSkeleton />
-                ) : !hasData && filters.activeTab === 'FAVOURITES' ? (
+                ) : !hasData && filters.activeTab === "FAVOURITES" ? (
                     <EmptyState message="No favorite tokens yet. Click the star icon on any token to add it to your favorites!" />
                 ) : hasData ? (
-                    <div className="overflow-y-auto max-h-[calc(100vh-250px)]
-                                    [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.25)_transparent]">
+                    <div
+                        className="overflow-y-auto max-h-[calc(100vh-250px)]
+                                    [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.25)_transparent]"
+                    >
                         <Table>
                             <TableHeader>
                                 {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow
-                                        key={headerGroup.id}
-                                        className="border-b border-white/[0.06] hover:bg-transparent"
-                                    >
+                                    <TableRow key={headerGroup.id} className="border-b border-white/[0.06] hover:bg-transparent">
                                         {headerGroup.headers.map((header) => (
                                             <TableHead
                                                 key={header.id}
                                                 className="h-9 px-4 bg-white/[0.02]
                                                            text-xs font-semibold uppercase tracking-wider text-white/50"
                                             >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(header.column.columnDef.header, header.getContext())}
+                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                             </TableHead>
                                         ))}
                                     </TableRow>
@@ -183,20 +169,17 @@ export default function TokenTable() {
                                 {table.getRowModel().rows.map((row, idx) => (
                                     <TableRow
                                         key={row.id}
-                                        data-state={row.getIsSelected() && 'selected'}
+                                        data-state={row.getIsSelected() && "selected"}
                                         onClick={() => handleRowClick(row.original.id)}
                                         className={[
-                                            'cursor-pointer border-b border-white/[0.04]',
-                                            'transition-all duration-150',
-                                            'hover:bg-purple-500/[0.06] hover:border-purple-500/20',
-                                            idx % 2 !== 0 ? 'bg-white/[0.01]' : 'bg-transparent',
-                                        ].join(' ')}
+                                            "cursor-pointer border-b border-white/[0.04]",
+                                            "transition-all duration-150",
+                                            "hover:bg-purple-500/[0.06] hover:border-purple-500/20",
+                                            idx % 2 !== 0 ? "bg-white/[0.01]" : "bg-transparent"
+                                        ].join(" ")}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell
-                                                key={cell.id}
-                                                className="px-4 py-3 text-sm font-medium text-white/80"
-                                            >
+                                            <TableCell key={cell.id} className="px-4 py-3 text-sm font-medium text-white/80">
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
                                         ))}
@@ -209,12 +192,7 @@ export default function TokenTable() {
                     <EmptyState message="Oops, it's empty!" />
                 )}
             </div>
-            <QuickBuyReviewModal
-                open={quickBuyModalOpen}
-                onOpenChange={setQuickBuyModalOpen}
-                token={quickBuyToken}
-                amountSol={filters.quickBuyAmount}
-            />
+            <QuickBuyReviewModal open={quickBuyModalOpen} onOpenChange={setQuickBuyModalOpen} token={quickBuyToken} amountSol={filters.quickBuyAmount} />
         </>
     );
 }
@@ -246,7 +224,7 @@ function LoadingSkeleton() {
                             style={{
                                 width: w,
                                 backgroundColor: `rgba(255,255,255,${0.04 + (j % 2) * 0.02})`,
-                                animationDelay: `${i * 50 + j * 25}ms`,
+                                animationDelay: `${i * 50 + j * 25}ms`
                             }}
                         />
                     ))}

@@ -1,47 +1,45 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 // Danh sách các route cần bảo vệ
-const protectedRoutes = ['/portfolio', '/profile', '/token'];
+const protectedRoutes = ["/portfolio", "/profile", "/token"];
 
 // Danh sách các route public
-const publicRoutes = ['/', '/authentication'];
+const publicRoutes = ["/", "/authentication"];
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Lấy token từ cookie
-  const token = request.cookies.get('auth_token')?.value;
-  const isAuthenticated = !!token;
+    const { pathname } = request.nextUrl;
 
-  // Kiểm tra nếu là protected route và chưa login
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
-  );
+    // Lấy token từ cookie
+    const token = request.cookies.get("auth_token")?.value;
+    const isAuthenticated = !!token;
 
-  if (isProtectedRoute && !isAuthenticated) {
-    const url = new URL('/authentication', request.url);
-    url.searchParams.set('redirect', pathname); // Lưu URL để redirect sau khi login
-    return NextResponse.redirect(url);
-  }
+    // Kiểm tra nếu là protected route và chưa login
+    const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
-  // Nếu đã login và đang ở trang authentication, redirect về home
-  if (isAuthenticated && pathname === '/authentication') {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+    if (isProtectedRoute && !isAuthenticated) {
+        const url = new URL("/authentication", request.url);
+        url.searchParams.set("redirect", pathname); // Lưu URL để redirect sau khi login
+        return NextResponse.redirect(url);
+    }
 
-  return NextResponse.next();
+    // Nếu đã login và đang ở trang authentication, redirect về home
+    if (isAuthenticated && pathname === "/authentication") {
+        return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+    matcher: [
+        /*
+         * Match all request paths except for the ones starting with:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         */
+        "/((?!api|_next/static|_next/image|favicon.ico).*)"
+    ]
 };

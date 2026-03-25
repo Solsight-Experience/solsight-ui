@@ -9,31 +9,31 @@ import {
 } from '@/components/ui/dialog';
 
 interface AISummaryLoaderProps {
-  isLoading: boolean;
+    isLoading: boolean;
 }
 
 export const AISummaryLoader: React.FC<AISummaryLoaderProps> = ({ isLoading }) => {
-  if (!isLoading) return null;
+    if (!isLoading) return null;
 
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <span>Generating...</span>
-        <div className="flex gap-0.5">
-          <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce"></div>
-          <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-          <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>Generating...</span>
+                <div className="flex gap-0.5">
+                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce"></div>
+                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                </div>
+            </div>
+
+            {/* Skeleton Lines */}
+            <div className="space-y-2">
+                <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
+                <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
+                <div className="h-2.5 bg-gray-800 rounded w-5/6 animate-pulse"></div>
+            </div>
         </div>
-      </div>
-
-      {/* Skeleton Lines */}
-      <div className="space-y-2">
-        <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
-        <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
-        <div className="h-2.5 bg-gray-800 rounded w-5/6 animate-pulse"></div>
-      </div>
-    </div>
-  );
+    );
 };
 
 interface AISummaryContentProps {

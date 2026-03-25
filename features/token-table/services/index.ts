@@ -1,1 +1,1 @@
-export * from './token-discovery.service';
+export * from "./token-discovery.service";

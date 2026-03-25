@@ -1,55 +1,55 @@
-import { io, Socket } from 'socket.io-client';
+import { io, Socket } from "socket.io-client";
 
-export type EventHandler = (...args: any[]) => void;
+export type EventHandler = (...args: unknown[]) => void;
 
 export class SocketManager {
-  protected socket: Socket;
-  protected events = new Map<string, Array<{ event: string; handler: EventHandler }>>();
+    protected socket: Socket;
+    protected events = new Map<string, Array<{ event: string; handler: EventHandler }>>();
 
-  protected constructor() {
-    this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-      autoConnect: false,
-    });
-  }
-
-  protected connect() {
-    if (!this.socket.connected) {
-      this.socket.connect();
+    protected constructor() {
+        this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+            transports: ["websocket", "polling"],
+            withCredentials: true,
+            autoConnect: false
+        });
     }
-  }
 
-  on(event: string, handler: EventHandler, key?: string) {
-    this.connect();
-    this.socket.on(event, handler);
+    protected connect() {
+        if (!this.socket.connected) {
+            this.socket.connect();
+        }
+    }
 
-    if (!key) return;
+    on(event: string, handler: EventHandler, key?: string) {
+        this.connect();
+        this.socket.on(event, handler);
 
-    const list = this.events.get(key) ?? [];
-    list.push({ event, handler });
-    this.events.set(key, list);
-  }
+        if (!key) return;
 
-  offKey(key: string) {
-    const list = this.events.get(key);
-    if (!list) return;
+        const list = this.events.get(key) ?? [];
+        list.push({ event, handler });
+        this.events.set(key, list);
+    }
 
-    list.forEach(({ event, handler }) => {
-      this.socket.off(event, handler);
-    });
+    offKey(key: string) {
+        const list = this.events.get(key);
+        if (!list) return;
 
-    this.events.delete(key);
-  }
+        list.forEach(({ event, handler }) => {
+            this.socket.off(event, handler);
+        });
 
-  emit(event: string, data?: any) {
-    this.connect();
-    this.socket.emit(event, data);
-  }
+        this.events.delete(key);
+    }
 
-  disconnect() {
-    this.events.forEach((_, key) => this.offKey(key));
-    this.socket.disconnect();
-    this.events.clear();
-  }
+    emit(event: string, data?: unknown) {
+        this.connect();
+        this.socket.emit(event, data);
+    }
+
+    disconnect() {
+        this.events.forEach((_, key) => this.offKey(key));
+        this.socket.disconnect();
+        this.events.clear();
+    }
 }

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { MultiChartToolbar } from './MultiChartToolbar';
@@ -47,36 +47,36 @@ export const MultiChartPage: React.FC = () => {
     setCharts((prev) => {
       if (prev.length >= MAX_CHARTS) return prev;
 
-      // Prevent duplicate tokens
-      if (prev.some((chart) => chart.address === tokenAddress)) {
-        return prev;
-      }
+            // Prevent duplicate tokens
+            if (prev.some((chart) => chart.address === tokenAddress)) {
+                return prev;
+            }
 
-      const newChart: TokenChartItem = {
-        id: `${tokenAddress}-${Date.now()}`,
-        address: tokenAddress,
-        symbol: symbol || 'Unknown',
-      };
+            const newChart: TokenChartItem = {
+                id: `${tokenAddress}-${Date.now()}`,
+                address: tokenAddress,
+                symbol: symbol || "Unknown"
+            };
 
-      return [...prev, newChart];
-    });
+            return [...prev, newChart];
+        });
 
-    setIsAddModalOpen(false);
-  }, []);
+        setIsAddModalOpen(false);
+    }, []);
 
-  const handleRemoveChart = useCallback((id: string) => {
-    setCharts((prev) => prev.filter((chart) => chart.id !== id));
-  }, []);
+    const handleRemoveChart = useCallback((id: string) => {
+        setCharts((prev) => prev.filter((chart) => chart.id !== id));
+    }, []);
 
-  const handleClearAll = useCallback(() => {
-    if (confirm('Are you sure you want to remove all charts?')) {
-      setCharts([]);
-    }
-  }, []);
+    const handleClearAll = useCallback(() => {
+        if (confirm("Are you sure you want to remove all charts?")) {
+            setCharts([]);
+        }
+    }, []);
 
-  const handleReorderCharts = useCallback((reorderedCharts: TokenChartItem[]) => {
-    setCharts(reorderedCharts);
-  }, []);
+    const handleReorderCharts = useCallback((reorderedCharts: TokenChartItem[]) => {
+        setCharts(reorderedCharts);
+    }, []);
 
   return (
     <div className="min-h-screen">
@@ -136,24 +136,15 @@ export const MultiChartPage: React.FC = () => {
                 Add Your First Chart
               </button>
             </div>
-          </div>
-        ) : (
-          <ChartsGrid
-            charts={charts}
-            onRemoveChart={handleRemoveChart}
-            onReorderCharts={handleReorderCharts}
-          />
-        )}
-      </div>
 
-      {/* Add Token Modal */}
-      <AddTokenChartModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddChart={handleAddChart}
-        maxCharts={MAX_CHARTS}
-        currentCharts={charts.length}
-      />
-    </div>
-  );
+            {/* Add Token Modal */}
+            <AddTokenChartModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddChart={handleAddChart}
+                maxCharts={MAX_CHARTS}
+                currentCharts={charts.length}
+            />
+        </div>
+    );
 };

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { filterService, TokenFilterParams, PoolFilterParams } from '../services/filter.service';
-import { TokenFilterRequest, TokenFilterResponse, PoolFilterRequest, PoolFilterResponse } from '@/types/filter';
-import { toast } from 'sonner';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { filterService, TokenFilterParams, PoolFilterParams } from "../services/filter.service";
+import { TokenFilterRequest, TokenFilterResponse, PoolFilterRequest, PoolFilterResponse } from "@/types/filter";
+import { toast } from "sonner";
 
 /**
  * Hook to fetch categories
@@ -11,10 +11,10 @@ import { toast } from 'sonner';
  */
 export function useCategories() {
     return useQuery({
-        queryKey: ['categories'],
+        queryKey: ["categories"],
         queryFn: () => filterService.getCategories(),
         staleTime: Infinity,
-        gcTime: Infinity,
+        gcTime: Infinity
     });
 }
 
@@ -23,21 +23,20 @@ export function useCategories() {
  */
 export function useApplyTokenFilter() {
     return useMutation({
-        mutationFn: ({ body, params }: { body: TokenFilterRequest; params?: TokenFilterParams }) =>
-            filterService.filterTokens(body, params),
+        mutationFn: ({ body, params }: { body: TokenFilterRequest; params?: TokenFilterParams }) => filterService.filterTokens(body, params),
         onSuccess: () => {
-            toast.success('Filters applied successfully');
+            toast.success("Filters applied successfully");
         },
         onError: (error: unknown) => {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const resp = (error as any).response;
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
                 if (resp?.data?.message) {
                     toast.error(resp.data.message);
                     return;
                 }
             }
-            toast.error('Failed to apply filters');
-        },
+            toast.error("Failed to apply filters");
+        }
     });
 }
 
@@ -46,21 +45,20 @@ export function useApplyTokenFilter() {
  */
 export function useApplyPoolFilter() {
     return useMutation({
-        mutationFn: ({ body, params }: { body: PoolFilterRequest; params?: PoolFilterParams }) =>
-            filterService.filterPools(body, params),
+        mutationFn: ({ body, params }: { body: PoolFilterRequest; params?: PoolFilterParams }) => filterService.filterPools(body, params),
         onSuccess: () => {
-            toast.success('Filters applied successfully');
+            toast.success("Filters applied successfully");
         },
         onError: (error: unknown) => {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const resp = (error as any).response;
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
                 if (resp?.data?.message) {
                     toast.error(resp.data.message);
                     return;
                 }
             }
-            toast.error('Failed to apply filters');
-        },
+            toast.error("Failed to apply filters");
+        }
     });
 }
 
@@ -70,15 +68,7 @@ export function useApplyPoolFilter() {
  */
 export function useSearchWithFilters() {
     const searchTokens = useMutation({
-        mutationFn: ({ 
-            searchQuery, 
-            filters, 
-            params 
-        }: { 
-            searchQuery?: string; 
-            filters?: TokenFilterRequest; 
-            params?: TokenFilterParams 
-        }) => {
+        mutationFn: ({ searchQuery, filters, params }: { searchQuery?: string; filters?: TokenFilterRequest; params?: TokenFilterParams }) => {
             const body: TokenFilterRequest = { ...filters };
             if (searchQuery?.trim()) {
                 body.search_query = searchQuery.trim();
@@ -86,27 +76,19 @@ export function useSearchWithFilters() {
             return filterService.filterTokens(body, params);
         },
         onError: (error: unknown) => {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const resp = (error as any).response;
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
                 if (resp?.data?.message) {
                     toast.error(resp.data.message);
                     return;
                 }
             }
-            toast.error('Search failed');
-        },
+            toast.error("Search failed");
+        }
     });
 
     const searchPools = useMutation({
-        mutationFn: ({ 
-            searchQuery, 
-            filters, 
-            params 
-        }: { 
-            searchQuery?: string; 
-            filters?: PoolFilterRequest; 
-            params?: PoolFilterParams 
-        }) => {
+        mutationFn: ({ searchQuery, filters, params }: { searchQuery?: string; filters?: PoolFilterRequest; params?: PoolFilterParams }) => {
             const body: PoolFilterRequest = { ...filters };
             if (searchQuery?.trim()) {
                 body.search_query = searchQuery.trim();
@@ -114,15 +96,15 @@ export function useSearchWithFilters() {
             return filterService.filterPools(body, params);
         },
         onError: (error: unknown) => {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const resp = (error as any).response;
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
                 if (resp?.data?.message) {
                     toast.error(resp.data.message);
                     return;
                 }
             }
-            toast.error('Search failed');
-        },
+            toast.error("Search failed");
+        }
     });
 
     return {
@@ -131,7 +113,7 @@ export function useSearchWithFilters() {
         isSearchingTokens: searchTokens.isPending,
         isSearchingPools: searchPools.isPending,
         tokenSearchError: searchTokens.error,
-        poolSearchError: searchPools.error,
+        poolSearchError: searchPools.error
     };
 }
 
@@ -171,6 +153,6 @@ export function useTokenFilter() {
         isSearchingTokens: search.isSearchingTokens,
         isSearchingPools: search.isSearchingPools,
         tokenSearchError: search.tokenSearchError,
-        poolSearchError: search.poolSearchError,
+        poolSearchError: search.poolSearchError
     };
 }

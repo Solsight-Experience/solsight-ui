@@ -1,9 +1,9 @@
-import { memo } from 'react';
-import { TokenTableData } from '../config/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { memo } from "react";
+import { TokenTableData } from "../config/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TokenCellProps {
-    token: TokenTableData['token'];
+    token: TokenTableData["token"];
 }
 
 /**

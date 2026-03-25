@@ -62,7 +62,7 @@ flaxh-trade-ui/
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm 8+
 - Phantom Wallet browser extension
 - Running [flaxh-trade-api](../flaxh-trade-api) backend
@@ -102,14 +102,17 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 ## 🎯 Usage
 
 ### 1. **Landing Page** (`/`)
+
 - Marketing page with features overview
 - Call-to-action buttons to get started
 
 ### 2. **Dashboard** (`/dashboard`)
+
 - Overview of available features
 - Navigation to transfer functionality
 
 ### 3. **Transfer Page** (`/dashboard/transfer`)
+
 - Connect Phantom wallet
 - View SOL balance
 - Send SOL to recipient address

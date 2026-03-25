@@ -1,5 +1,5 @@
 // Defines the possible categories a token can belong to
-export type TokenCategory = 'MEME' | 'GameFi' | 'Infrastructure' | 'AI' | 'DeFi';
+export type TokenCategory = "MEME" | "GameFi" | "Infrastructure" | "AI" | "DeFi";
 
 export type TokenTableData = {
     id: string;
@@ -29,7 +29,7 @@ export type TokenTableData = {
     audit: Array<{
         label: string;
         value: string;
-        trend: 'up' | 'down' | 'neutral';
+        trend: "up" | "down" | "neutral";
     }>;
 };
 
