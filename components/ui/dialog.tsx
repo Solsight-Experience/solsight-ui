@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -85,4 +86,131 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
     return <DialogPrimitive.Description data-slot="dialog-description" className={cn("text-muted-foreground text-sm", className)} {...props} />;
 }
 
-export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };
+// --- Compositions ---
+
+interface ConfirmDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: React.ReactNode;
+    description?: React.ReactNode;
+    children?: React.ReactNode;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    variant?: "default" | "destructive";
+    isPending?: boolean;
+    onConfirm: () => void;
+    onCancel?: () => void;
+}
+
+function ConfirmDialog({
+    open,
+    onOpenChange,
+    title,
+    description,
+    children,
+    confirmLabel = "Confirm",
+    cancelLabel = "Cancel",
+    variant = "default",
+    isPending = false,
+    onConfirm,
+    onCancel
+}: ConfirmDialogProps) {
+    const handleCancel = () => {
+        onCancel?.();
+        onOpenChange(false);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    {description && <DialogDescription>{description}</DialogDescription>}
+                </DialogHeader>
+                {children && <div className="py-2">{children}</div>}
+                <DialogFooter>
+                    <Button variant="outline" onClick={handleCancel} disabled={isPending} type="button">
+                        {cancelLabel}
+                    </Button>
+                    <Button
+                        onClick={onConfirm}
+                        disabled={isPending}
+                        type="button"
+                        className={variant === "destructive" ? "bg-red-600 hover:bg-red-700" : undefined}
+                    >
+                        {isPending ? "Loading..." : confirmLabel}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface DialogFormProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: React.ReactNode;
+    description?: React.ReactNode;
+    children: React.ReactNode;
+    submitLabel?: string;
+    cancelLabel?: string;
+    isPending?: boolean;
+    onSubmit: () => void;
+    onCancel?: () => void;
+    className?: string;
+}
+
+function DialogForm({
+    open,
+    onOpenChange,
+    title,
+    description,
+    children,
+    submitLabel = "Submit",
+    cancelLabel = "Cancel",
+    isPending = false,
+    onSubmit,
+    onCancel,
+    className
+}: DialogFormProps) {
+    const handleCancel = () => {
+        onCancel?.();
+        onOpenChange(false);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className={className}>
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    {description && <DialogDescription>{description}</DialogDescription>}
+                </DialogHeader>
+                <div className="py-2">{children}</div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={handleCancel} disabled={isPending} type="button">
+                        {cancelLabel}
+                    </Button>
+                    <Button onClick={onSubmit} disabled={isPending} type="button">
+                        {isPending ? "Loading..." : submitLabel}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+    DialogTrigger,
+    ConfirmDialog,
+    DialogForm
+};
+export type { ConfirmDialogProps, DialogFormProps };

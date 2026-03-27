@@ -39,4 +39,65 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     return <div data-slot="card-footer" className={cn("flex items-center px-6 [.border-t]:pt-6", className)} {...props} />;
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };
+// --- Compositions ---
+
+interface StatCardProps {
+    label: string;
+    value: React.ReactNode;
+    change?: number;
+    isUpdating?: boolean;
+    icon?: React.ReactNode;
+    className?: string;
+}
+
+function StatCard({ label, value, change, isUpdating, icon, className }: StatCardProps) {
+    const isPositive = change !== undefined && change >= 0;
+    return (
+        <div
+            data-slot="stat-card"
+            className={cn(
+                "flex flex-col rounded-xl border p-4 transition-all duration-300",
+                isUpdating ? "border-purple-500 bg-black shadow-lg shadow-purple-500/20" : "border-border bg-card hover:border-purple-500",
+                "hover:shadow-md hover:shadow-purple-500/10",
+                className
+            )}
+        >
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+                {icon && <span className="text-muted-foreground">{icon}</span>}
+            </div>
+            <span className={cn("text-lg font-bold transition-all duration-300", isUpdating ? "scale-105" : "scale-100")}>{value}</span>
+            {change !== undefined && (
+                <div className="flex items-center gap-1 mt-2">
+                    <span className={cn("text-sm font-semibold", isPositive ? "text-emerald-400" : "text-rose-400")}>
+                        {isPositive ? "+" : ""}
+                        {change.toFixed(2)}%
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+}
+
+interface PageCardProps {
+    title: React.ReactNode;
+    action?: React.ReactNode;
+    children: React.ReactNode;
+    className?: string;
+    contentClassName?: string;
+}
+
+function PageCard({ title, action, children, className, contentClassName }: PageCardProps) {
+    return (
+        <Card className={className}>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                {action && <CardAction>{action}</CardAction>}
+            </CardHeader>
+            <CardContent className={contentClassName}>{children}</CardContent>
+        </Card>
+    );
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent, StatCard, PageCard };
+export type { StatCardProps, PageCardProps };

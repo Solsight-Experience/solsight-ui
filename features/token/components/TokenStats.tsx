@@ -1,49 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { StatCard } from "@/components/ui/card";
 import { formatNumber } from "../utils/token.utils";
 import type { TokenDetail } from "../types/token.types";
 
 interface TokenStatsProps {
     token: TokenDetail | null | undefined;
 }
-
-const PriceChangeIndicator: React.FC<{ value: number }> = ({ value }) => {
-    const isPositive = value >= 0;
-    return (
-        <div className="flex items-center gap-1 mt-2">
-            <span className={`flex items-center gap-1  font-semibold transition-all duration-300 ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
-                {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                {isPositive ? "+" : ""}
-                {value.toFixed(2)}%
-            </span>
-        </div>
-    );
-};
-
-interface StatCardProps {
-    label: string;
-    value: string;
-    change?: number;
-    isUpdating?: boolean;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ label, value, change, isUpdating }) => {
-    return (
-        <div
-            className={`
-        flex flex-col border rounded-xl p-4 transition-all duration-300
-        ${isUpdating ? "border-purple-500 bg-black shadow-lg shadow-purple-500/20" : "border-purple-600 bg-black hover:border-purple-500"}
-        hover:shadow-md hover:shadow-purple-500/10
-      `}
-        >
-            <span className="text-xs font-medium text-purple-400 uppercase tracking-wide mb-2">{label}</span>
-            <span className={`text-lg sm:text-xl font-bold text-purple-300 transition-all duration-300 ${isUpdating ? "scale-105" : "scale-100"}`}>
-                {value}
-            </span>
-            {change !== undefined && <PriceChangeIndicator value={change} />}
-        </div>
-    );
-};
 
 export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
     const [updatingLabels, setUpdatingLabels] = useState<Set<string>>(new Set());

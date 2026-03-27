@@ -1,32 +1,20 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import { useTokenDetail } from '@/features/token/hooks/token.hooks';
-import {
-  TokenHeader,
-  TokenStats,
-  TokenChart,
-  TradingPanel,
-  TokenTabs,
-  AISummaryButton,
-  AISummaryPanel,
-} from '@/features/token/components';
-import { useTokenUIStore } from '@/features/token/stores/token.stores';
+import React, { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { useTokenDetail } from "@/features/token/hooks/token.hooks";
+import { TokenHeader, TokenStats, TokenChart, TradingPanel, TokenTabs, AISummaryButton, AISummaryPanel } from "@/features/token/components";
+import { useTokenUIStore } from "@/features/token/stores/token.stores";
 
 export default function TokenDetailPage() {
-  const params = useParams();
-  const tokenAddress = params?.token_address as string;
-  const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
-  const [enablePriceRuler, setEnablePriceRuler] = useState(false);
+    const params = useParams();
+    const tokenAddress = params?.token_address as string;
+    const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
 
     const { data: token, isLoading, error } = useTokenDetail(tokenAddress);
-    const { setLimitPrice, orderType } = useTokenUIStore();
+    const { chartInterval, orderType, limitPrice, setLimitPrice, currentTradeTab, setCurrentTradeTab, isFavorite, toggleFavorite } = useTokenUIStore();
 
-    // Enable price ruler when limit order is selected
-    useEffect(() => {
-        setEnablePriceRuler(orderType === "limit");
-    }, [orderType]);
+    const enablePriceRuler = orderType === "limit";
 
     // Handle ruler price change from chart
     const handleRulerPriceChange = useCallback(
@@ -66,22 +54,24 @@ export default function TokenDetailPage() {
         );
     }
 
-  return (
-    <div>
-      {/* Header */}
-      <TokenHeader
-        token={token}
-        aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(true)} />}
-      />
-      {isAISummaryOpen && token && (
-        <AISummaryPanel 
-          isOpen={isAISummaryOpen} 
-          onToggle={() => setIsAISummaryOpen(false)}
-          tokenAddress={tokenAddress}
-          tokenName={token.name}
-          tokenSymbol={token.symbol}
-        />
-      )}
+    return (
+        <div>
+            {/* Header */}
+            <TokenHeader
+                token={token}
+                aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(true)} />}
+                isFavorite={isFavorite(token.address)}
+                onToggleFavorite={toggleFavorite}
+            />
+            {isAISummaryOpen && token && (
+                <AISummaryPanel
+                    isOpen={isAISummaryOpen}
+                    onToggle={() => setIsAISummaryOpen(false)}
+                    tokenAddress={tokenAddress}
+                    tokenName={token.name}
+                    tokenSymbol={token.symbol}
+                />
+            )}
 
             {/* Stats Bar */}
             <TokenStats token={token} />
@@ -97,11 +87,14 @@ export default function TokenDetailPage() {
                             isMulti={false}
                             enablePriceRuler={enablePriceRuler}
                             onRulerPriceChange={handleRulerPriceChange}
+                            chartInterval={chartInterval}
+                            orderType={orderType}
+                            limitPrice={limitPrice}
                         />
                     </div>
                     {/* Tabs */}
                     <div className="grow max-h-[500px] border border-gray-700 rounded-lg bg-gray-900/50 overflow-auto">
-                        <TokenTabs tokenAddress={tokenAddress} />
+                        <TokenTabs tokenAddress={tokenAddress} currentTradeTab={currentTradeTab} onTabChange={setCurrentTradeTab} />
                     </div>
                 </div>
 

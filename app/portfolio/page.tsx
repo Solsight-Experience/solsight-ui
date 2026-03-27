@@ -12,12 +12,12 @@ import { usePortfolioUIStore } from "@/features/portfolio/stores/portfolioUIStor
 import "@/lib/chart-config";
 
 export default function PortfolioPage() {
-    const { currentTab, setCurrentTab } = usePortfolioUIStore();
+    const { currentTab, setCurrentTab, filters, setFilters, collapsedWallets, toggleWalletCollapse } = usePortfolioUIStore();
 
     return (
         <div className="grid grid-cols-[320px_1fr] min-h-screen">
             {/* Left Sidebar */}
-            <PortfolioSidebar />
+            <PortfolioSidebar currentTab={currentTab} filters={filters} setFilters={setFilters} />
 
             {/* Right Content */}
             <div className="p-4 flex flex-col gap-4">
@@ -41,11 +41,11 @@ export default function PortfolioPage() {
                         </TabsList>
 
                         <TabsContent value="position">
-                            <PositionsTab />
+                            <PositionsTab collapsedWallets={collapsedWallets} toggleWalletCollapse={toggleWalletCollapse} />
                         </TabsContent>
 
                         <TabsContent value="activity">
-                            <ActivityTab />
+                            <ActivityTab filters={filters} />
                         </TabsContent>
                     </Tabs>
                 </div>

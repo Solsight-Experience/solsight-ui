@@ -1,6 +1,5 @@
 import React from "react";
 import { Shield, Star, Copy } from "lucide-react";
-import { useTokenUIStore } from "../stores/token.stores";
 import { useToggleFavorite } from "../hooks/token.hooks";
 import { copyToClipboard } from "../utils/token.utils";
 import type { TokenDetail } from "../types/token.types";
@@ -8,15 +7,16 @@ import type { TokenDetail } from "../types/token.types";
 interface TokenHeaderProps {
     token: TokenDetail;
     aiSummaryButton?: React.ReactNode;
+    isFavorite: boolean;
+    onToggleFavorite: (address: string) => void;
 }
 
-export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton }) => {
-    const { isFavorite, toggleFavorite } = useTokenUIStore();
+export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton, isFavorite, onToggleFavorite }) => {
     const toggleFavoriteMutation = useToggleFavorite();
-    const isTokenFavorite = isFavorite(token.address);
+    const isTokenFavorite = isFavorite;
 
     const handleFavoriteClick = () => {
-        toggleFavorite(token.address);
+        onToggleFavorite(token.address);
         toggleFavoriteMutation.mutate({
             address: token.address,
             isFavorite: isTokenFavorite

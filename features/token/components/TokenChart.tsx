@@ -11,7 +11,6 @@ import {
     HistogramSeries
 } from "lightweight-charts";
 import { toLineData, toAreaData, toBarData, toHistogramData, toBaselineData } from "../../../lib/chart-config";
-import { useTokenUIStore } from "../stores/token.stores";
 import { useChartData } from "../hooks/token.hooks";
 import { usePriceRuler } from "../hooks/usePriceRuler";
 import {
@@ -28,12 +27,18 @@ import {
     Trash2,
     Ruler
 } from "lucide-react";
+import type { ChartInterval } from "@/lib/constants";
+import type { OrderType } from "../types/token.types";
 
 interface TokenChartProps {
     tokenAddress: string;
     isMulti: boolean;
     enablePriceRuler?: boolean;
     onRulerPriceChange?: (price: number) => void;
+    chartInterval?: ChartInterval;
+    orderType?: OrderType;
+    limitPrice?: string;
+    onLimitPriceChange?: (price: string) => void;
 }
 
 type ChartType = "candles" | "line" | "area" | "bars" | "baseline" | "histogram";
@@ -93,8 +98,16 @@ const SideBtn: React.FC<{
 // ── Separator ─────────────────────────────────────────────────────────────────
 const Sep = () => <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", margin: "2px auto" }} />;
 
-export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
-    const { chartInterval, orderType, limitPrice } = useTokenUIStore();
+export const TokenChart: React.FC<TokenChartProps> = ({
+    tokenAddress,
+    isMulti,
+    enablePriceRuler = false,
+    onRulerPriceChange,
+    chartInterval = "10s",
+    orderType = "market",
+    limitPrice = "0.00",
+    onLimitPriceChange
+}) => {
     const effectiveInterval = isMulti ? "4h" : chartInterval;
     const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval, isMulti ? 40 : 100);
 
@@ -122,7 +135,6 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     // Notify parent when ruler price changes (from chart click)
     useEffect(() => {
         if (rulerPrice !== null && onRulerPriceChange) {
-            // Only notify if price actually changed to prevent circular updates
             if (lastSyncedPriceRef.current !== rulerPrice) {
                 lastSyncedPriceRef.current = rulerPrice;
                 onRulerPriceChange(rulerPrice);
@@ -130,12 +142,11 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         }
     }, [rulerPrice, onRulerPriceChange]);
 
-    // Sync limitPrice from store to rulerPrice (when user types in input)
+    // Sync limitPrice prop to rulerPrice (when user types in input)
     useEffect(() => {
         if (enablePriceRuler && orderType === "limit" && limitPrice) {
             const price = parseFloat(limitPrice);
             if (!isNaN(price) && price > 0) {
-                // Only update if price is different from last synced to prevent circular updates
                 if (lastSyncedPriceRef.current !== price) {
                     lastSyncedPriceRef.current = price;
                     setRulerPrice(price);
@@ -143,6 +154,15 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             }
         }
     }, [limitPrice, enablePriceRuler, orderType, setRulerPrice]);
+
+    // Keep onLimitPriceChange in sync (prop-driven alternative to store)
+    useEffect(() => {
+        if (rulerPrice !== null && onLimitPriceChange) {
+            if (lastSyncedPriceRef.current === rulerPrice) {
+                onLimitPriceChange(rulerPrice.toString());
+            }
+        }
+    }, [rulerPrice, onLimitPriceChange]);
 
     const hasData = initPoints && initPoints.length > 0;
     const chartH = isMulti ? 200 : 460;
@@ -399,71 +419,126 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     useEffect(() => {
         if (!chartRef.current || !enablePriceRuler || orderType !== "limit") return;
 
-        const handleClick = (param: { point?: { x: number; y: number }; seriesData?: Map<unknown, unknown> }) => {
-            // Only handle clicks when not in drawing mode
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const handleClick = (param: any) => {
             if (drawingMode && drawingMode !== "pointer") return;
 
             if (param.point && param.seriesData && seriesRef.current) {
                 const seriesData = param.seriesData.get(seriesRef.current);
                 if (seriesData) {
-                    // Extract price from series data
                     const price = typeof seriesData === "number" ? seriesData : seriesData.close || seriesData.value;
-
                     if (price && typeof price === "number") {
                         setRulerPrice(price);
                     }
                 }
-              }
-            }}
-            variant="purple"
-            disabled={!enablePriceRuler || orderType !== 'limit'}
-          >
-            <Ruler size={15} />
-          </SideBtn>
+            }
+        };
 
-          <Sep />
+        chartRef.current.subscribeClick(handleClick);
 
-          <SideBtn
-            active={false}
-            title="Clear drawings"
-            onClick={clearDrawings}
-            disabled={drawings.length === 0}
-          >
-            <Trash2 size={15} />
-          </SideBtn>
-        </div>
-      )}
+        return () => {
+            chartRef.current?.unsubscribeClick(handleClick);
+        };
+    }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
 
-      {/* ── Chart + canvas ── */}
-      <div
-        style={{
-          position: 'relative',
-          flex: 1,
-          height: chartH,
-          borderRadius: isMulti ? 8 : '0 8px 8px 0',
-          overflow: 'hidden',
-        }}
-      >
-        {/* No-data overlay */}
-        {!hasData && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,20,30,0.98))',
-              borderRadius: 'inherit',
-            }}
-          >
-            <p
-              style={{
-                color: 'rgba(156,163,175,0.6)',
-                fontSize: 13,
-                fontWeight: 500
-              }}
+    // ── Cursor ─────────────────────────────────────────────────────────────────
+    const canvasCursor = drawingMode && drawingMode !== "pointer" ? "crosshair" : "default";
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    return (
+        <div style={{ display: "flex", gap: 10, width: "100%" }}>
+            {/* ── Left sidebar ── */}
+            {!isMulti && (
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "8px 6px",
+                        width: 44,
+                        flexShrink: 0,
+                        background: "rgba(255,255,255,0.02)",
+                        borderRight: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: "8px 0 0 8px"
+                    }}
+                >
+                    {/* Chart type group */}
+                    <SideBtn active={type === "candles"} title="Candles" onClick={() => setType("candles")} variant="purple">
+                        <CandlestickChart size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "line"} title="Line" onClick={() => setType("line")} variant="purple">
+                        <TrendingUp size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "area"} title="Area" onClick={() => setType("area")} variant="purple">
+                        <AreaChartIcon size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "bars"} title="Bars" onClick={() => setType("bars")} variant="purple">
+                        <BarChart3 size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "baseline"} title="Baseline" onClick={() => setType("baseline")} variant="purple">
+                        <Activity size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "histogram"} title="Histogram" onClick={() => setType("histogram")} variant="purple">
+                        <BarChart4 size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    {/* Drawing tools */}
+                    <SideBtn active={drawingMode === "pointer"} title="Pointer" onClick={() => toggleDraw("pointer")} variant="purple">
+                        <MousePointer2 size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "line"} title="Line" onClick={() => toggleDraw("line")} variant="purple">
+                        <Minus size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "rectangle"} title="Rectangle" onClick={() => toggleDraw("rectangle")} variant="purple">
+                        <RectangleHorizontal size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "circle"} title="Circle" onClick={() => toggleDraw("circle")} variant="purple">
+                        <Circle size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    {/* Price Ruler for Limit Orders */}
+                    <SideBtn
+                        active={enablePriceRuler && orderType === "limit"}
+                        title="Set Limit Price (Click on chart)"
+                        onClick={() => {
+                            if (!enablePriceRuler) return;
+                            const data = dataRef.current;
+                            if (data.length > 0) {
+                                const lastCandle = data[data.length - 1];
+                                const lastPrice = lastCandle.close || lastCandle.value;
+                                if (lastPrice) {
+                                    setRulerPrice(lastPrice);
+                                }
+                            }
+                        }}
+                        variant="purple"
+                        disabled={!enablePriceRuler || orderType !== "limit"}
+                    >
+                        <Ruler size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    <SideBtn active={false} title="Clear drawings" onClick={clearDrawings} disabled={drawings.length === 0}>
+                        <Trash2 size={15} />
+                    </SideBtn>
+                </div>
+            )}
+
+            {/* ── Chart + canvas ── */}
+            <div
+                style={{
+                    position: "relative",
+                    flex: 1,
+                    height: chartH,
+                    borderRadius: isMulti ? 8 : "0 8px 8px 0",
+                    overflow: "hidden"
+                }}
             >
                 {/* No-data overlay */}
                 {!hasData && (
@@ -509,7 +584,6 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                             width: "100%",
                             height: "100%",
                             cursor: canvasCursor,
-                            // Only intercept pointer events when a drawing tool is selected
                             pointerEvents: drawingMode && drawingMode !== "pointer" ? "all" : "none",
                             zIndex: 5
                         }}

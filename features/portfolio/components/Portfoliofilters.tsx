@@ -4,12 +4,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/TimePicker";
 import Toggle from "@/components/ui/Toggle";
-import { usePortfolioUIStore } from "../stores/portfolioUIStore";
 import { DateTimePicker24h } from "./DateTimePicker";
 
-export const PortfolioFilters: React.FC = () => {
-    const { currentTab, filters, setFilters } = usePortfolioUIStore();
+interface PortfolioFiltersProps {
+    currentTab: "position" | "activity";
+    filters: { timeFrom: string; timeTo: string };
+    setFilters: (filters: { timeFrom?: string; timeTo?: string }) => void;
+}
 
+export const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ currentTab, filters, setFilters }) => {
     if (currentTab === "position") {
         return (
             <div className="flex flex-col gap-4">

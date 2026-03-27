@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ExternalLink, Search, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { useActivities } from "../hooks/portfolio.hooks";
-import { usePortfolioUIStore } from "../stores/portfolioUIStore";
 import type { Activity } from "../types/portfolio.types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -132,12 +131,15 @@ const ActivityRow: React.FC<ActivityRowProps> = ({ timestamp, tx_hash, token_in,
     );
 };
 
-export const ActivityTab: React.FC = () => {
+interface ActivityTabProps {
+    filters: { timeFrom: string; timeTo: string };
+}
+
+export const ActivityTab: React.FC<ActivityTabProps> = ({ filters }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { filters } = usePortfolioUIStore();
     const fromTs = filters.timeFrom ? Math.floor(new Date(filters.timeFrom).getTime() / 1000) : undefined;
     const toTs = filters.timeTo ? Math.floor(new Date(filters.timeTo).getTime() / 1000) : undefined;
 

@@ -2,9 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useTokenUIStore } from "@/features/token/stores/token.stores";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/dialog";
 
 interface TradeConfirmDialogProps {
     data: {
@@ -15,46 +13,39 @@ interface TradeConfirmDialogProps {
     open: boolean;
     onConfirm: () => void;
     onCancel: () => void;
+    onSetPayAmount: (amount: string) => void;
 }
 
-export const TradeConfirmDialog: React.FC<TradeConfirmDialogProps> = ({ data, open, onConfirm, onCancel }) => {
+export const TradeConfirmDialog: React.FC<TradeConfirmDialogProps> = ({ data, open, onConfirm, onCancel, onSetPayAmount }) => {
     const router = useRouter();
 
     const handleConfirm = React.useCallback(() => {
-        useTokenUIStore.getState().setPayAmount(data.amount);
+        onSetPayAmount(data.amount);
         router.push("/token/" + data.outputMint);
         onConfirm();
-    }, [data.amount, data.outputMint, onConfirm, router]);
+    }, [data.amount, data.outputMint, onConfirm, onSetPayAmount, router]);
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-            <DialogContent data-testid="trade-confirm-dialog">
-                <DialogHeader>
-                    <DialogTitle>Confirm Trade</DialogTitle>
-                </DialogHeader>
-
-                <div className="grid gap-2">
-                    <div className="text-sm text-muted-foreground">You are about to trade:</div>
-                    <div className="flex items-center justify-between">
-                        <div className="font-medium">Amount</div>
-                        <div className="font-mono">{data.amount}</div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <div className="font-medium">To</div>
-                        <div className="truncate text-right">{data.outputMint}</div>
-                    </div>
+        <ConfirmDialog
+            open={open}
+            onOpenChange={(isOpen) => !isOpen && onCancel()}
+            title="Confirm Trade"
+            confirmLabel="Confirm"
+            onConfirm={handleConfirm}
+            onCancel={onCancel}
+        >
+            <div className="grid gap-2" data-testid="trade-confirm-dialog">
+                <div className="text-sm text-muted-foreground">You are about to trade:</div>
+                <div className="flex items-center justify-between">
+                    <div className="font-medium">Amount</div>
+                    <div className="font-mono">{data.amount}</div>
                 </div>
-
-                <DialogFooter>
-                    <Button variant="outline" onClick={onCancel} type="button">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleConfirm} type="button">
-                        Confirm
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                <div className="flex items-center justify-between">
+                    <div className="font-medium">To</div>
+                    <div className="truncate text-right">{data.outputMint}</div>
+                </div>
+            </div>
+        </ConfirmDialog>
     );
 };
 

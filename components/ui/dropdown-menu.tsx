@@ -172,6 +172,48 @@ function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<ty
     );
 }
 
+// --- Compositions ---
+
+interface ActionItem {
+    label: string;
+    icon?: React.ReactNode;
+    onClick: () => void;
+    variant?: "default" | "destructive";
+    disabled?: boolean;
+    className?: string;
+}
+
+interface ActionDropdownMenuProps {
+    trigger: React.ReactNode;
+    actions: ActionItem[];
+    align?: React.ComponentProps<typeof DropdownMenuContent>["align"];
+    contentClassName?: string;
+}
+
+function ActionDropdownMenu({ trigger, actions, align = "start", contentClassName }: ActionDropdownMenuProps) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+            <DropdownMenuContent align={align} className={contentClassName}>
+                <DropdownMenuGroup>
+                    {actions.map((action, index) => (
+                        <DropdownMenuItem
+                            key={index}
+                            onClick={action.onClick}
+                            disabled={action.disabled}
+                            variant={action.variant}
+                            className={cn("flex items-center gap-2", action.className)}
+                        >
+                            {action.icon}
+                            {action.label}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 export {
     DropdownMenu,
     DropdownMenuPortal,
@@ -187,5 +229,7 @@ export {
     DropdownMenuShortcut,
     DropdownMenuSub,
     DropdownMenuSubTrigger,
-    DropdownMenuSubContent
+    DropdownMenuSubContent,
+    ActionDropdownMenu
 };
+export type { ActionItem, ActionDropdownMenuProps };

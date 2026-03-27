@@ -1,7 +1,6 @@
 import React from "react";
 import { ChevronDown, ChevronUp, Copy, Check, ExternalLink, AlertTriangle } from "lucide-react";
 import { useWallets, usePositions } from "../hooks/portfolio.hooks";
-import { usePortfolioUIStore } from "../stores/portfolioUIStore";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -102,9 +101,13 @@ const WalletPositions: React.FC<{ walletAddress: string; walletName: string }> =
     );
 };
 
-export const PositionsTab: React.FC = () => {
+interface PositionsTabProps {
+    collapsedWallets: Record<string, boolean>;
+    toggleWalletCollapse: (walletAddress: string) => void;
+}
+
+export const PositionsTab: React.FC<PositionsTabProps> = ({ collapsedWallets, toggleWalletCollapse }) => {
     const { data: walletsData, isLoading, error } = useWallets();
-    const { collapsedWallets, toggleWalletCollapse } = usePortfolioUIStore();
     const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
     const handleCopyAddress = (address: string) => {
