@@ -9,12 +9,13 @@ interface TokenStatsProps {
 
 const PriceChangeIndicator: React.FC<{ value: number }> = ({ value }) => {
     const isPositive = value >= 0;
+    const numValue = Number(value);
     return (
         <div className="flex items-center gap-1 mt-2">
             <span className={`flex items-center gap-1  font-semibold transition-all duration-300 ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
                 {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                 {isPositive ? "+" : ""}
-                {value.toFixed(2)}%
+                {numValue.toFixed(2)}%
             </span>
         </div>
     );
@@ -85,7 +86,7 @@ export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
     const stats = [
         {
             label: "Price",
-            value: `$${token.price.toFixed(4)}`,
+            value: `$${Number(token.price).toFixed(4)}`,
             change: token.price_change?.["24h"]
         },
         {
@@ -114,7 +115,7 @@ export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
         },
         {
             label: "24h Tx",
-            value: token.txns?.["24h"]?.total ? `${(token.txns["24h"].total / 1000).toFixed(2)}K` : "-",
+            value: token.txns?.["24h"]?.total ? `${(Number(token.txns["24h"].total) / 1000).toFixed(2)}K` : "-",
             change: token.txns_change_24h
         }
     ];

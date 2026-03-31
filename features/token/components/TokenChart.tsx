@@ -8,7 +8,12 @@ import {
     AreaSeries,
     BarSeries,
     BaselineSeries,
-    HistogramSeries
+    HistogramSeries,
+    type IChartApi,
+    type ISeriesApi,
+    type MouseEventParams,
+    type SeriesType,
+    type Time
 } from "lightweight-charts";
 import { toLineData, toAreaData, toBarData, toHistogramData, toBaselineData } from "../../../lib/chart-config";
 import { useTokenUIStore } from "../stores/token.stores";
@@ -100,8 +105,8 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
 
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
-    const seriesRef = useRef<ReturnType<ReturnType<typeof createChart>["addSeries"]> | null>(null);
+    const chartRef = useRef<IChartApi | null>(null);
+    const seriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
     const isInitRef = useRef(false);
     const dataRef = useRef<CandlestickData[]>([]);
 
@@ -261,7 +266,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             isInitRef.current = false;
             dataRef.current = [];
         };
-    }, [isMulti]);
+    }, [chartH]);
 
     // ── Switch chart type ───────────────────────────────────────────────────────
     useEffect(() => {
@@ -273,12 +278,18 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         }
         const chart = chartRef.current;
 
-        const addSeriesCompat = (legacyMethod: string, seriesDef: unknown, options: Record<string, unknown>) => {
+        const addSeriesCompat = (
+            legacyMethod: "addCandlestickSeries" | "addLineSeries" | "addAreaSeries" | "addBarSeries" | "addBaselineSeries" | "addHistogramSeries",
+            seriesDef: Parameters<IChartApi["addSeries"]>[0],
+            options: Record<string, unknown>
+        ): ISeriesApi<SeriesType> => {
             if (typeof chart.addSeries === "function") {
                 return chart.addSeries(seriesDef, options);
             }
-            if (typeof chart[legacyMethod] === "function") {
-                return chart[legacyMethod](options);
+            const legacyChart = chart as unknown as Record<string, ((opts: Record<string, unknown>) => ISeriesApi<SeriesType>) | undefined>;
+            const legacyMethodFn = legacyChart[legacyMethod];
+            if (typeof legacyMethodFn === "function") {
+                return legacyMethodFn(options);
             }
             throw new Error(`Unsupported lightweight-charts API: ${legacyMethod}`);
         };
@@ -399,7 +410,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     useEffect(() => {
         if (!chartRef.current || !enablePriceRuler || orderType !== "limit") return;
 
-        const handleClick = (param: { point?: { x: number; y: number }; seriesData?: Map<unknown, unknown> }) => {
+        const handleClick = (param: MouseEventParams<Time>) => {
             // Only handle clicks when not in drawing mode
             if (drawingMode && drawingMode !== "pointer") return;
 
@@ -407,63 +418,131 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                 const seriesData = param.seriesData.get(seriesRef.current);
                 if (seriesData) {
                     // Extract price from series data
-                    const price = typeof seriesData === "number" ? seriesData : seriesData.close || seriesData.value;
+                    const price =
+                        typeof seriesData === "number"
+                            ? seriesData
+                            : typeof seriesData === "object" && seriesData !== null
+                              ? (() => {
+                                    const maybePriceData = seriesData as { close?: unknown; value?: unknown };
+                                    if (typeof maybePriceData.close === "number") return maybePriceData.close;
+                                    if (typeof maybePriceData.value === "number") return maybePriceData.value;
+                                    return null;
+                                })()
+                              : null;
 
-                    if (price && typeof price === "number") {
+                    if (typeof price === "number") {
                         setRulerPrice(price);
                     }
                 }
-              }
-            }}
-            variant="purple"
-            disabled={!enablePriceRuler || orderType !== 'limit'}
-          >
-            <Ruler size={15} />
-          </SideBtn>
+            }
+        };
 
-          <Sep />
+        chartRef.current.subscribeClick(handleClick);
 
-          <SideBtn
-            active={false}
-            title="Clear drawings"
-            onClick={clearDrawings}
-            disabled={drawings.length === 0}
-          >
-            <Trash2 size={15} />
-          </SideBtn>
-        </div>
-      )}
+        return () => {
+            chartRef.current?.unsubscribeClick(handleClick);
+        };
+    }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
 
-      {/* ── Chart + canvas ── */}
-      <div
-        style={{
-          position: 'relative',
-          flex: 1,
-          height: chartH,
-          borderRadius: isMulti ? 8 : '0 8px 8px 0',
-          overflow: 'hidden',
-        }}
-      >
-        {/* No-data overlay */}
-        {!hasData && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,20,30,0.98))',
-              borderRadius: 'inherit',
-            }}
-          >
-            <p
-              style={{
-                color: 'rgba(156,163,175,0.6)',
-                fontSize: 13,
-                fontWeight: 500
-              }}
+    // ── Cursor ─────────────────────────────────────────────────────────────────
+    const canvasCursor = drawingMode && drawingMode !== "pointer" ? "crosshair" : drawingMode === "pointer" ? "default" : "default";
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    return (
+        <div style={{ display: "flex", gap: 10, width: "100%" }}>
+            {/* ── Left sidebar ── */}
+            {!isMulti && (
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "8px 6px",
+                        width: 44,
+                        flexShrink: 0,
+                        background: "rgba(255,255,255,0.02)",
+                        borderRight: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: "8px 0 0 8px"
+                    }}
+                >
+                    {/* Chart type group */}
+                    <SideBtn active={type === "candles"} title="Candles" onClick={() => setType("candles")} variant="purple">
+                        <CandlestickChart size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "line"} title="Line" onClick={() => setType("line")} variant="purple">
+                        <TrendingUp size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "area"} title="Area" onClick={() => setType("area")} variant="purple">
+                        <AreaChartIcon size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "bars"} title="Bars" onClick={() => setType("bars")} variant="purple">
+                        <BarChart3 size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "baseline"} title="Baseline" onClick={() => setType("baseline")} variant="purple">
+                        <Activity size={15} />
+                    </SideBtn>
+                    <SideBtn active={type === "histogram"} title="Histogram" onClick={() => setType("histogram")} variant="purple">
+                        <BarChart4 size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    {/* Drawing tools */}
+                    <SideBtn active={drawingMode === "pointer"} title="Pointer" onClick={() => toggleDraw("pointer")} variant="purple">
+                        <MousePointer2 size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "line"} title="Line" onClick={() => toggleDraw("line")} variant="purple">
+                        <Minus size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "rectangle"} title="Rectangle" onClick={() => toggleDraw("rectangle")} variant="purple">
+                        <RectangleHorizontal size={15} />
+                    </SideBtn>
+                    <SideBtn active={drawingMode === "circle"} title="Circle" onClick={() => toggleDraw("circle")} variant="purple">
+                        <Circle size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    {/* Price Ruler for Limit Orders */}
+                    <SideBtn
+                        active={enablePriceRuler && orderType === "limit"}
+                        title="Set Limit Price (Click on chart)"
+                        onClick={() => {
+                            if (!enablePriceRuler) return;
+                            // Get current last price from data
+                            const data = dataRef.current;
+                            if (data.length > 0) {
+                                const lastCandle = data[data.length - 1];
+                                const lastPrice = lastCandle.close || lastCandle.value;
+                                if (lastPrice) {
+                                    setRulerPrice(lastPrice);
+                                }
+                            }
+                        }}
+                        variant="purple"
+                        disabled={!enablePriceRuler || orderType !== "limit"}
+                    >
+                        <Ruler size={15} />
+                    </SideBtn>
+
+                    <Sep />
+
+                    <SideBtn active={false} title="Clear drawings" onClick={clearDrawings} disabled={drawings.length === 0}>
+                        <Trash2 size={15} />
+                    </SideBtn>
+                </div>
+            )}
+
+            {/* ── Chart + canvas ── */}
+            <div
+                style={{
+                    position: "relative",
+                    flex: 1,
+                    height: chartH,
+                    borderRadius: isMulti ? 8 : "0 8px 8px 0",
+                    overflow: "hidden"
+                }}
             >
                 {/* No-data overlay */}
                 {!hasData && (
@@ -483,8 +562,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                             style={{
                                 color: "rgba(156,163,175,0.6)",
                                 fontSize: 13,
-                                fontWeight: 500,
-                                fontFamily: "ui-monospace,monospace"
+                                fontWeight: 500
                             }}
                         >
                             No chart data available
