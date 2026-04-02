@@ -19,11 +19,32 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<ReturnType<ReturnType<typeof createChart>["addSeries"]> | null>(null);
+    const scaleFactorRef = useRef<number>(1);
 
     // Determine if PnL is positive overall (for color theming)
     const isProfitable = useMemo(() => {
         if (data.length < 2) return true;
         return data[data.length - 1].value >= data[0].value;
+    }, [data]);
+
+    // Normalize data to fit within chart's allowed range
+    const normalizedData = useMemo(() => {
+        if (data.length === 0) return [];
+        
+        // Find max absolute value
+        const maxAbsValue = Math.max(...data.map(d => Math.abs(d.value)));
+        
+        // Chart max safe value is approximately 90071992547409.91
+        const CHART_MAX = 90071992547409.91;
+        
+        // Calculate scale factor with safety margin to avoid floating point precision issues
+        const scale = maxAbsValue > CHART_MAX ? (maxAbsValue / CHART_MAX) * 1.01 : 1;
+        scaleFactorRef.current = scale;
+        
+        return data.map(d => ({
+            ...d,
+            value: d.value / scale
+        }));
     }, [data]);
 
     useEffect(() => {
@@ -43,11 +64,13 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
                 priceFormat: {
                     type: "custom",
                     formatter: (price: number) => {
-                        const sign = price >= 0 ? "+" : "";
-                        if (Math.abs(price) >= 1000) {
-                            return `${sign}$${(price / 1000).toFixed(1)}K`;
+                        // Scale back the normalized value to original magnitude
+                        const originalPrice = price * scaleFactorRef.current;
+                        const sign = originalPrice >= 0 ? "+" : "";
+                        if (Math.abs(originalPrice) >= 1000) {
+                            return `${sign}$${(originalPrice / 1000).toFixed(1)}K`;
                         }
-                        return `${sign}$${price.toFixed(2)}`;
+                        return `${sign}$${originalPrice.toFixed(2)}`;
                     }
                 }
             });
@@ -55,7 +78,7 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
 
         // Update series data
         if (seriesRef.current) {
-            seriesRef.current.setData(data);
+            seriesRef.current.setData(normalizedData);
 
             // Update colors based on profitability
             seriesRef.current.applyOptions(getPnlSeriesOptions(isProfitable));
@@ -75,7 +98,7 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
 
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
-    }, [data, isProfitable, height]);
+    }, [data, normalizedData, isProfitable, height]);
 
     // Cleanup on unmount
     useEffect(() => {

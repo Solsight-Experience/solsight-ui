@@ -19,7 +19,7 @@ export const TimeFilters = memo<TimeFiltersProps>(function TimeFilters({ activeF
     const variantList = Object.keys(TimeFilterVariant).filter((key) => isNaN(Number(key))) as TimeFilterValue[];
 
     return (
-        <div className="flex gap-5 font-medium" role="tablist" aria-label="Time filters">
+        <div className="flex flex-wrap gap-1.5 font-medium sm:gap-2" role="tablist" aria-label="Time filters">
             {variantList.map((variant) => (
                 <TimeFilterItem key={variant} value={variant} isActive={variant === activeFilter} onClick={() => onFilterChange(variant)} />
             ))}
