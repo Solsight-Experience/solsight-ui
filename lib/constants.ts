@@ -131,8 +131,12 @@ export const CHART_INTERVALS = ["1s", "10s", "30s", "1m", "5m", "15m", "1h", "4h
 export type ChartInterval = (typeof CHART_INTERVALS)[number];
 
 // Trade tabs
-export const TRADE_TABS = ["trades", "top_traders", "holders"] as const;
-export type TradeTab = (typeof TRADE_TABS)[number];
+export const TRADE_TABS = {
+    TRADES: "trades",
+    TOP_TRADERS: "top_traders",
+    HOLDERS: "holders"
+} as const;
+export type TradeTab = (typeof TRADE_TABS)[keyof typeof TRADE_TABS];
 
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {

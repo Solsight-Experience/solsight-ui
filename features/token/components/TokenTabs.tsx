@@ -3,21 +3,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TradesTable } from "./TradesTable";
 import { TopTradersTable } from "./TopTraderTable";
 import { HoldersTable } from "./HoldersTable";
+import { TRADE_TABS, TradeTab } from "@/lib/constants";
 
 interface TokenTabsProps {
     tokenAddress: string;
     currentTradeTab: string;
-    onTabChange: (tab: string) => void;
+    onTabChange: (tab: TradeTab) => void;
 }
 
 export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress, currentTradeTab, onTabChange }) => {
     return (
         <div className="flex p-4 w-full col-span-3">
-            <Tabs value={currentTradeTab} onValueChange={onTabChange} className="w-full">
+            <Tabs value={currentTradeTab} onValueChange={(v) => onTabChange(v as TradeTab)} className="w-full">
                 <TabsList>
-                    <TabsTrigger value="trades">Trades</TabsTrigger>
-                    <TabsTrigger value="top_traders">Top Traders</TabsTrigger>
-                    <TabsTrigger value="holders">Holders</TabsTrigger>
+                    <TabsTrigger value={TRADE_TABS.TRADES}>Trades</TabsTrigger>
+                    <TabsTrigger value={TRADE_TABS.TOP_TRADERS}>Top Traders</TabsTrigger>
+                    <TabsTrigger value={TRADE_TABS.HOLDERS}>Holders</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="trades">
