@@ -449,23 +449,10 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
-        <div style={{ display: "flex", gap: 10, width: "100%" }}>
+        <div className="flex gap-2 w-full h-full">
             {/* ── Left sidebar ── */}
             {!isMulti && (
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "8px 6px",
-                        width: 44,
-                        flexShrink: 0,
-                        background: "rgba(255,255,255,0.02)",
-                        borderRight: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: "8px 0 0 8px"
-                    }}
-                >
+                <div className="flex flex-col items-center gap-1 p-2 bg-gray-900 border-r border-gray-700 rounded-l-lg w-fit overflow-auto scrollbar-thin">
                     {/* Chart type group */}
                     <SideBtn active={type === "candles"} title="Candles" onClick={() => setType("candles")} variant="purple">
                         <CandlestickChart size={15} />
@@ -536,42 +523,20 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
 
             {/* ── Chart + canvas ── */}
             <div
+                className="relative rounded-r-lg flex-1 overflow-hidden"
                 style={{
-                    position: "relative",
-                    flex: 1,
-                    height: chartH,
-                    borderRadius: isMulti ? 8 : "0 8px 8px 0",
-                    overflow: "hidden"
+                    minHeight: chartH
                 }}
             >
                 {/* No-data overlay */}
                 {!hasData && (
-                    <div
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            zIndex: 10,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,20,30,0.98))",
-                            borderRadius: "inherit"
-                        }}
-                    >
-                        <p
-                            style={{
-                                color: "rgba(156,163,175,0.6)",
-                                fontSize: 13,
-                                fontWeight: 500
-                            }}
-                        >
-                            No chart data available
-                        </p>
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-b from-gray-900/95 to-gray-900/98 rounded-r-lg">
+                        <p className="text-gray-400 text-sm font-medium">No chart data available</p>
                     </div>
                 )}
 
                 {/* Lightweight-charts mount point */}
-                <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+                <div ref={containerRef} className="w-full h-full" />
 
                 {/* Drawing canvas — sits on top, only captures events when a draw tool is active */}
                 {!isMulti && (
@@ -581,12 +546,8 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
+                        className="absolute inset-0 w-full h-full cursor-pointer"
                         style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            cursor: canvasCursor,
                             // Only intercept pointer events when a drawing tool is selected
                             pointerEvents: drawingMode && drawingMode !== "pointer" ? "all" : "none",
                             zIndex: 5
