@@ -1,5 +1,3 @@
-import { CandlestickData } from "lightweight-charts";
-
 // Token Detail Types
 export interface TokenDetail {
     address: string;
@@ -162,6 +160,30 @@ export interface HoldersResponse {
         top_10_holding_percent: number;
         top_20_holding_percent: number;
     };
+}
+
+export interface TokenPool {
+    pool_address: string;
+    dex: string;
+    pair_name: string;
+    quote_symbol: string;
+    liquidity_usd: number;
+    volume_24h_usd: number;
+    fee_percent: number;
+    reserve_base: number;
+    reserve_quote: number;
+}
+
+export interface TokenPoolsSummary {
+    total_liquidity_usd: number;
+    total_volume_24h_usd: number;
+    unique_dex_count: number;
+    unique_pool_count: number;
+}
+
+export interface TokenPoolsResponse {
+    pools: TokenPool[];
+    summary: TokenPoolsSummary;
 }
 
 // Swap Types

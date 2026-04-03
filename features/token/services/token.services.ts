@@ -1,14 +1,35 @@
 import { apiClient } from "@/lib/api-client";
 import { TOKEN_ENDPOINTS } from "@/lib/constants";
+import type { PoolOverview, PoolFilterResponse } from "@/types/filter";
 import type {
     TokenDetail,
     ChartData,
     TradesResponse,
     TopTradersResponse,
     HoldersResponse,
+    TokenPoolsResponse,
     SwapPreviewRequest,
     SwapPreviewResponse
 } from "../types/token.types";
+
+const mapPoolOverviewToTokenPool = (pool: PoolOverview): TokenPoolsResponse["pools"][number] => ({
+    pool_address: pool.address,
+    dex: pool.protocol,
+    pair_name: `${pool.base_token.symbol}/${pool.quote_token.symbol}`,
+    quote_symbol: pool.quote_token.symbol,
+    liquidity_usd: pool.liquidity,
+    volume_24h_usd: pool.volume_24h,
+    fee_percent: pool.fee_percent,
+    reserve_base: 0,
+    reserve_quote: 0
+});
+
+const summarizePools = (pools: TokenPoolsResponse["pools"]): TokenPoolsResponse["summary"] => ({
+    total_liquidity_usd: pools.reduce((sum, pool) => sum + pool.liquidity_usd, 0),
+    total_volume_24h_usd: pools.reduce((sum, pool) => sum + pool.volume_24h_usd, 0),
+    unique_dex_count: new Set(pools.map((pool) => pool.dex)).size,
+    unique_pool_count: pools.length
+});
 
 export const tokenApi = {
     // Get token details
@@ -73,6 +94,24 @@ export const tokenApi = {
             params
         });
         return response;
+    },
+
+    getTokenPools: async (address: string): Promise<TokenPoolsResponse> => {
+        try {
+            const response = await apiClient.get<TokenPoolsResponse>(TOKEN_ENDPOINTS.TOKEN_POOLS(address));
+            return response;
+        } catch {
+            const fallbackResponse = await apiClient.post<PoolFilterResponse>("/api/pools/filter?limit=200", {
+                tokens: [address]
+            });
+
+            const normalizedPools = fallbackResponse.pools.map(mapPoolOverviewToTokenPool);
+
+            return {
+                pools: normalizedPools,
+                summary: summarizePools(normalizedPools)
+            };
+        }
     },
 
     // Swap preview

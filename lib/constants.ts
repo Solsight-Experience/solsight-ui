@@ -116,6 +116,7 @@ export const TOKEN_ENDPOINTS = {
     TOKEN_TRADES: (address: string) => `/api/tokens/${address}/trades`,
     TOKEN_HOLDERS: (address: string) => `/api/tokens/${address}/holders`,
     TOKEN_TOP_TRADERS: (address: string) => `/api/tokens/${address}/top-traders`,
+    TOKEN_POOLS: (address: string) => `/api/tokens/${address}/pools`,
 
     // Token Actions
     SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
@@ -131,7 +132,7 @@ export const CHART_INTERVALS = ["1s", "10s", "30s", "1m", "5m", "15m", "1h", "4h
 export type ChartInterval = (typeof CHART_INTERVALS)[number];
 
 // Trade tabs
-export const TRADE_TABS = ["trades", "top_traders", "holders"] as const;
+export const TRADE_TABS = ["trades", "top_traders", "holders", "pools"] as const;
 export type TradeTab = (typeof TRADE_TABS)[number];
 
 // Chat API Endpoints

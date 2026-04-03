@@ -4,6 +4,7 @@ import { useTokenUIStore } from "../stores/token.stores";
 import { TradesTable } from "./TradesTable";
 import { TopTradersTable } from "./TopTraderTable";
 import { HoldersTable } from "./HoldersTable";
+import { PoolsTable } from "./PoolsTable";
 
 import { TradeTab } from "@/lib/constants";
 
@@ -22,6 +23,7 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
                         <TabsTrigger value="trades">Trades</TabsTrigger>
                         <TabsTrigger value="top_traders">Top Traders</TabsTrigger>
                         <TabsTrigger value="holders">Holders</TabsTrigger>
+                        <TabsTrigger value="pools">Pools</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -36,6 +38,10 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
 
                     <TabsContent value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <HoldersTable tokenAddress={tokenAddress} />
+                    </TabsContent>
+
+                    <TabsContent value="pools" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                        <PoolsTable tokenAddress={tokenAddress} />
                     </TabsContent>
                 </div>
             </Tabs>

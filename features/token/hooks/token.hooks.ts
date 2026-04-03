@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
-import type { ChartData, ChartCandlePointDto, Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
+import type { ChartCandlePointDto, Holder, SwapPreviewRequest, TokenDetail, TokenPoolsResponse, TopTrader, Trade } from "../types/token.types";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
 import { useEffect, useMemo, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
@@ -14,7 +14,8 @@ export const tokenKeys = {
     chart: (address: string, interval: string) => [...tokenKeys.all, "chart", address, interval] as const,
     trades: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "trades", address, params] as const,
     topTraders: (address: string, timeFrame: string) => [...tokenKeys.all, "top-traders", address, timeFrame] as const,
-    holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const
+    holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const,
+    pools: (address: string) => [...tokenKeys.all, "pools", address] as const
 };
 
 const normalizeCandlePoint = (point: ChartCandlePointDto): CandlestickData | null => {
@@ -75,7 +76,7 @@ export function useTokenDetail(address: string) {
         if (!newDetail) return;
         if (!initial.data) return;
         setData((prev) => ({ ...prev, ...newDetail }));
-    }, [newDetail]);
+    }, [newDetail, initial.data]);
 
     return { ...initial, data };
 }
@@ -216,6 +217,33 @@ export function useHolders(
             return { holders: sortedHolders };
         });
     }, [holderUpdate, params?.limit]);
+
+    return { ...initial, data };
+}
+
+export function useTokenPools(address: string) {
+    const initial = useQuery({
+        queryKey: tokenKeys.pools(address),
+        queryFn: () => tokenApi.getTokenPools(address),
+        enabled: !!address,
+        staleTime: 30000
+    });
+
+    const [data, setData] = useState<TokenPoolsResponse>({
+        pools: [],
+        summary: {
+            total_liquidity_usd: 0,
+            total_volume_24h_usd: 0,
+            unique_dex_count: 0,
+            unique_pool_count: 0
+        }
+    });
+
+    useEffect(() => {
+        if (initial.data) {
+            setData(initial.data);
+        }
+    }, [initial.data]);
 
     return { ...initial, data };
 }
