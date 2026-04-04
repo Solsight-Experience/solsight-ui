@@ -6,6 +6,7 @@ import { formatNumber, formatTimeAgo } from "../utils/token.utils";
 import type { Holder } from "../types/token.types";
 import { PnlMiniChart } from "./PnlMiniChart";
 import type { UTCTimestamp } from "lightweight-charts";
+import { numberFormatter } from "@/lib/formatters";
 
 interface WalletPnlPanelProps {
     holder: Holder;
@@ -191,21 +192,21 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
                         <div className="space-y-3">
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Total Value</p>
-                                <p className="text-2xl font-bold text-white">{formatNumber(holder.remaining_usd)}</p>
+                                <p className="text-2xl font-bold text-white">{numberFormatter.format(holder.remaining_usd)}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-xs text-gray-500">Unrealized PnL</p>
                                     <p className={`text-sm font-semibold ${(holder.unrealized_pnl || 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
                                         {(holder.unrealized_pnl || 0) >= 0 ? "+" : ""}
-                                        {formatNumber(holder.unrealized_pnl || 0)}
+                                        {numberFormatter.format(holder.unrealized_pnl || 0)}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500">Realized PnL</p>
                                     <p className={`text-sm font-semibold ${(holder.realized_pnl || 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
                                         {(holder.realized_pnl || 0) >= 0 ? "+" : ""}
-                                        {formatNumber(holder.realized_pnl || 0)}
+                                        {numberFormatter.format(holder.realized_pnl || 0)}
                                     </p>
                                 </div>
                             </div>
@@ -216,7 +217,7 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Holdings</p>
                                 <p className="text-lg font-semibold text-white">
-                                    {formatNumber(holder.balance)} <span className="text-gray-400 text-sm">{tokenSymbol}</span>
+                                    {numberFormatter.format(holder.balance)} <span className="text-gray-400 text-sm">{tokenSymbol}</span>
                                 </p>
                                 <p className="text-xs text-purple-400">{holder.balance_percent.toFixed(3)}% of supply</p>
                             </div>

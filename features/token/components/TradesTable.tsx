@@ -51,17 +51,17 @@ export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
     }
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full">
-                <thead className="text-base text-gray-500 border-b border-gray-600">
+        <div className="flex-1 overflow-auto w-full scrollbar-thin pb-4">
+            <table className="w-full whitespace-nowrap min-w-[800px]">
+                <thead className="sticky top-0 z-10 bg-[black]/90 backdrop-blur-md text-xs text-gray-500 border-b border-gray-700 shadow-sm after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gray-700">
                     <tr>
-                        <th className="pb-2 text-start px-4">Age</th>
-                        <th className="pb-2 text-start px-4">Type</th>
-                        <th className="pb-2 text-start px-4">Market Cap</th>
-                        <th className="pb-2 text-start px-4">Amount</th>
-                        <th className="pb-2 text-start px-4">USD</th>
-                        <th className="pb-2 text-start px-4">Trader</th>
-                        <th className="pb-2 text-start px-4">View</th>
+                        <th className="py-2 text-start px-4 font-medium">Age</th>
+                        <th className="py-2 text-start px-4 font-medium">Type</th>
+                        <th className="py-2 text-start px-4 font-medium">Market Cap</th>
+                        <th className="py-2 text-start px-4 font-medium">Amount</th>
+                        <th className="py-2 text-start px-4 font-medium">USD</th>
+                        <th className="py-2 text-start px-4 font-medium">Trader</th>
+                        <th className="py-2 text-start px-4 font-medium">View</th>
                     </tr>
                 </thead>
                 <tbody>

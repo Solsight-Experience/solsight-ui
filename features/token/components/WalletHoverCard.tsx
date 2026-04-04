@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { formatNumber } from "../utils/token.utils";
 import type { Holder } from "../types/token.types";
 import { WalletPnlPanel } from "./WalletPnlPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface WalletHoverCardProps {
     holder: Holder;
@@ -41,20 +42,30 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
     const holderDuration = formatHolderDuration(holder.first_tx_time);
 
     return (
-        <div className="relative inline-block" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-            <div
-                onClick={() => {
-                    setIsOpen(false);
-                    setIsPnlPanelOpen(true);
-                }}
-                className="cursor-pointer"
-            >
-                {children}
-            </div>
+        <div className="inline-block" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+                <PopoverTrigger asChild>
+                    <div
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setIsOpen(false);
+                            setIsPnlPanelOpen(true);
+                        }}
+                        className="cursor-pointer inline-block"
+                    >
+                        {children}
+                    </div>
+                </PopoverTrigger>
 
-            {isOpen && (
-                <div className="absolute left-0 top-full mt-1 z-50 animate-in fade-in-0 zoom-in-95 duration-100">
-                    <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-xl p-3 min-w-[280px]">
+                <PopoverContent
+                    side="bottom"
+                    align="start"
+                    sideOffset={4}
+                    className="w-auto p-0 border-none bg-transparent shadow-none"
+                    onMouseEnter={() => setIsOpen(true)}
+                    onMouseLeave={() => setIsOpen(false)}
+                >
+                    <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-xl p-3 min-w-[280px] animate-in fade-in-0 zoom-in-95 duration-100">
                         {/* Header with wallet address */}
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
                             <div className="flex items-center gap-2">
@@ -155,10 +166,11 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
                         {/* Action Icons */}
                         <div className="flex items-center justify-center gap-4 mt-3 pt-2 border-t border-gray-700">
                             <button
-                                className="text-gray-500 hover:text-white transition-colors"
+                                className="text-gray-500 hover:text-white transition-colors cursor-pointer"
                                 title="View on Explorer"
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    e.preventDefault();
                                     window.open(`https://solscan.io/account/${holder.address}`, "_blank");
                                 }}
                             >
@@ -171,7 +183,7 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
                                     />
                                 </svg>
                             </button>
-                            <button className="text-gray-500 hover:text-white transition-colors" title="Filter by wallet">
+                            <button className="text-gray-500 hover:text-white transition-colors cursor-pointer" title="Filter by wallet">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path
                                         strokeLinecap="round"
@@ -183,8 +195,8 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                </PopoverContent>
+            </Popover>
 
             {/* PnL Panel Dialog */}
             <WalletPnlPanel holder={holder} tokenSymbol={tokenSymbol} open={isPnlPanelOpen} onOpenChange={setIsPnlPanelOpen} />
