@@ -17,7 +17,7 @@ interface TokenTabsProps {
 
 export const TokenTabs = memo<TokenTabsProps>(function TokenTabs({ onTabClick, activeTab = "TRENDING" }) {
     return (
-        <div className="flex gap-5 p-4" role="tablist" aria-label="Token categories">
+        <div className="flex flex-wrap gap-2 p-2 sm:gap-3 sm:p-3" role="tablist" aria-label="Token categories">
             {TAB_OPTIONS.map((tab) => (
                 <TokenTab
                     key={tab.value}
@@ -34,13 +34,13 @@ export const TokenTabs = memo<TokenTabsProps>(function TokenTabs({ onTabClick, a
 type TokenTabProps = {
     title: string;
     isActive?: boolean;
-} & HTMLAttributes<HTMLHeadingElement>;
+} & HTMLAttributes<HTMLButtonElement>;
 
 const TokenTab = memo<TokenTabProps>(function TokenTab({ className, title, isActive = false, ...props }) {
     return (
-        <h5
+        <button
+            type="button"
             role="tab"
-            tabIndex={0}
             className={cn(
                 "cursor-pointer font-medium transition-all hover:text-brand-100",
                 isActive && "text-brand-75 drop-shadow-xs/25 drop-shadow-[0_7px_19px_rgba(151,32,139,0.6)]",
@@ -50,6 +50,6 @@ const TokenTab = memo<TokenTabProps>(function TokenTab({ className, title, isAct
             {...props}
         >
             {title}
-        </h5>
+        </button>
     );
 });

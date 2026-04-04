@@ -118,7 +118,7 @@ export default function TokenTable() {
     if (filters.activeTab === "CATEGORIES") {
         return (
             <>
-                <div className="flex justify-between items-center mb-3">
+                <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
                     {renderRightPanel()}
                 </div>
@@ -129,7 +129,7 @@ export default function TokenTable() {
 
     return (
         <>
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
                 {renderRightPanel()}
             </div>
