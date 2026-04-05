@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { currencyFormatter } from "@/lib/formatters";
 import { useTokenPools } from "../hooks/token.hooks";
@@ -108,7 +108,21 @@ const PoolRow: React.FC<{
 };
 
 export const PoolsTable: React.FC<PoolsTableProps> = ({ tokenAddress }) => {
-    const { data: poolsData, isLoading, isError } = useTokenPools(tokenAddress);
+    const itemsPerPage = 20;
+    const [currentPage, setCurrentPage] = useState(1);
+    const offset = (currentPage - 1) * itemsPerPage;
+    const {
+        data: poolsData,
+        isLoading,
+        isError
+    } = useTokenPools(tokenAddress, {
+        limit: itemsPerPage,
+        offset
+    });
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [tokenAddress]);
 
     if (isLoading) {
         return (
@@ -129,6 +143,10 @@ export const PoolsTable: React.FC<PoolsTableProps> = ({ tokenAddress }) => {
     }
 
     const totalLiquidity = poolsData.summary.total_liquidity_usd || poolsData.pools.reduce((sum, pool) => sum + pool.liquidity_usd, 0);
+    const totalItems = poolsData.summary.unique_pool_count || poolsData.pools.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    const startEntry = totalItems === 0 ? 0 : offset + 1;
+    const endEntry = Math.min(offset + poolsData.pools.length, totalItems);
 
     return (
         <div className="flex h-full flex-col overflow-hidden">
@@ -168,15 +186,37 @@ export const PoolsTable: React.FC<PoolsTableProps> = ({ tokenAddress }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {poolsData.pools
-                            .slice()
-                            .sort((a, b) => b.liquidity_usd - a.liquidity_usd)
-                            .map((pool, index) => (
-                                <PoolRow key={pool.pool_address} pool={pool} rank={index + 1} totalLiquidity={totalLiquidity} />
-                            ))}
+                        {poolsData.pools.map((pool, index) => (
+                            <PoolRow key={pool.pool_address} pool={pool} rank={offset + index + 1} totalLiquidity={totalLiquidity} />
+                        ))}
                     </tbody>
                 </table>
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-gray-800 bg-[black]/50 px-3 py-3">
+                    <div className="text-xs text-gray-400">
+                        Showing <span className="text-gray-200">{startEntry}</span> to <span className="text-gray-200">{endEntry}</span> of{" "}
+                        <span className="text-gray-200">{totalItems}</span> entries
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={currentPage === 1 || isLoading}
+                            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages || isLoading}
+                            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

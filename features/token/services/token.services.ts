@@ -96,12 +96,22 @@ export const tokenApi = {
         return response;
     },
 
-    getTokenPools: async (address: string): Promise<TokenPoolsResponse> => {
+    getTokenPools: async (
+        address: string,
+        params?: {
+            limit?: number;
+            offset?: number;
+        }
+    ): Promise<TokenPoolsResponse> => {
         try {
-            const response = await apiClient.get<TokenPoolsResponse>(TOKEN_ENDPOINTS.TOKEN_POOLS(address));
+            const response = await apiClient.get<TokenPoolsResponse>(TOKEN_ENDPOINTS.TOKEN_POOLS(address), {
+                params
+            });
             return response;
         } catch {
-            const fallbackResponse = await apiClient.post<PoolFilterResponse>("/api/pools/filter?limit=200", {
+            const fallbackLimit = params?.limit ?? 200;
+            const fallbackOffset = params?.offset ?? 0;
+            const fallbackResponse = await apiClient.post<PoolFilterResponse>(`/api/pools/filter?limit=${fallbackLimit}&offset=${fallbackOffset}`, {
                 tokens: [address]
             });
 

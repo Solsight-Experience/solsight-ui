@@ -15,7 +15,7 @@ export const tokenKeys = {
     trades: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "trades", address, params] as const,
     topTraders: (address: string, timeFrame: string) => [...tokenKeys.all, "top-traders", address, timeFrame] as const,
     holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const,
-    pools: (address: string) => [...tokenKeys.all, "pools", address] as const
+    pools: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "pools", address, params] as const
 };
 
 const normalizeCandlePoint = (point: ChartCandlePointDto): CandlestickData | null => {
@@ -221,10 +221,16 @@ export function useHolders(
     return { ...initial, data };
 }
 
-export function useTokenPools(address: string) {
+export function useTokenPools(
+    address: string,
+    params?: {
+        limit?: number;
+        offset?: number;
+    }
+) {
     const initial = useQuery({
-        queryKey: tokenKeys.pools(address),
-        queryFn: () => tokenApi.getTokenPools(address),
+        queryKey: tokenKeys.pools(address, params),
+        queryFn: () => tokenApi.getTokenPools(address, params),
         enabled: !!address,
         staleTime: 30000
     });
