@@ -18,6 +18,7 @@ export interface TokenTableFilters {
     activeTab: TokenTableTabOption;
     quickBuyAmount: string;
     categorySearch: string;
+    selectedCategorySlug: string | null;
     sortOption: SortOption;
     sortDirection: SortDirection;
     favouriteIds: Set<string>;
@@ -31,6 +32,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         activeTab: "TRENDING",
         quickBuyAmount: "0.1",
         categorySearch: "",
+        selectedCategorySlug: null,
         sortOption: "volumes",
         sortDirection: "none",
         favouriteIds: new Set(),
@@ -150,11 +152,17 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         isLoading,
         error
     } = useQuery({
-        queryKey: queryKeys.tokens.trending({
-            tab: filters.activeTab,
-            timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-            sortBy: mapSortOptionToSortBy(filters.sortOption)
-        }),
+        queryKey:
+            filters.activeTab === "CATEGORIES" && filters.selectedCategorySlug
+                ? queryKeys.tokens.categoryDetail(filters.selectedCategorySlug, {
+                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                      sortBy: mapSortOptionToSortBy(filters.sortOption)
+                  })
+                : queryKeys.tokens.trending({
+                      tab: filters.activeTab,
+                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                      sortBy: mapSortOptionToSortBy(filters.sortOption)
+                  }),
         queryFn: async () => {
             const timeFrame = mapTimeFilterToTimeFrame(filters.timeFilter);
 
@@ -174,9 +182,18 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                     });
 
                 case "CATEGORIES":
+                    if (filters.selectedCategorySlug) {
+                        const res = await TokenDiscoveryService.getCategoryDetail(filters.selectedCategorySlug, {
+                            limit: 20,
+                            sort_by: mapSortOptionToSortBy(filters.sortOption)
+                        });
+                        return { tokens: res.tokens, total: res.total, updated_at: res.category.updated_at };
+                    }
+                    return { tokens: [], total: 0, updated_at: "" };
+
                 case "FAVOURITES":
                 default:
-                    // For categories and favourites, still fetch trending data
+                    // For favourites, still fetch trending data
                     // and filter client-side
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
@@ -267,7 +284,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     }, []);
 
     const setActiveTab = useCallback((activeTab: TokenTableTabOption) => {
-        setFilters((prev) => ({ ...prev, activeTab }));
+        setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
+    }, []);
+
+    const setSelectedCategorySlug = useCallback((selectedCategorySlug: string | null) => {
+        setFilters((prev) => ({ ...prev, selectedCategorySlug }));
     }, []);
 
     const setQuickBuyAmount = useCallback((quickBuyAmount: string) => {
@@ -308,6 +329,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             activeTab: "TRENDING",
             quickBuyAmount: "0.1",
             categorySearch: "",
+            selectedCategorySlug: null,
             sortOption: "volumes",
             sortDirection: "none",
             favouriteIds: new Set(),
@@ -322,6 +344,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setSelectedCategorySlug,
         toggleSort,
         toggleFavourite,
         resetFilters,

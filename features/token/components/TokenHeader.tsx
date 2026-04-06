@@ -1,5 +1,6 @@
 import React from "react";
 import { Shield, Star, Copy, TrendingUp, TrendingDown } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTokenUIStore } from "../stores/token.stores";
 import { useToggleFavorite } from "../hooks/token.hooks";
 import { copyToClipboard, formatNumber } from "../utils/token.utils";
@@ -46,7 +47,10 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton
         <div className="border-b border-gray-800 bg-black px-4 py-2 flex-shrink-0 flex items-center justify-between">
             {/* Left Box: Identity */}
             <div className="flex items-center gap-3">
-                <img src={token.logo_uri} alt={token.symbol} className="w-8 h-8 rounded-full" />
+                <Avatar>
+                    <AvatarImage src={token.logo_uri} alt={token.symbol} />
+                    <AvatarFallback>{token.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
                 <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
                         <h1 className="text-sm font-bold text-gray-100">{token.symbol}</h1>
