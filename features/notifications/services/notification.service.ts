@@ -5,7 +5,9 @@ const ENDPOINTS = {
     notifications: "/api/notifications",
     unreadCount: "/api/notifications/unread-count",
     markAsRead: (id: string) => `/api/notifications/${id}/read`,
-    markAllAsRead: "/api/notifications/read-all"
+    markAllAsRead: "/api/notifications/read-all",
+    deleteNotification: (id: string) => `/api/notifications/${id}`,
+    deleteAllNotifications: "/api/notifications"
 } as const;
 
 export async function fetchNotifications(params?: {
@@ -27,4 +29,12 @@ export async function markAsRead(id: string): Promise<void> {
 
 export async function markAllAsRead(): Promise<void> {
     return apiClient.patch<void>(ENDPOINTS.markAllAsRead);
+}
+
+export async function deleteNotification(id: string): Promise<void> {
+    return apiClient.delete<void>(ENDPOINTS.deleteNotification(id));
+}
+
+export async function deleteAllNotifications(): Promise<void> {
+    return apiClient.delete<void>(ENDPOINTS.deleteAllNotifications);
 }
