@@ -181,7 +181,7 @@ export const useWalletAuth = () => {
             });
 
             // Result contains publicKey
-            const publicKey = result.publicKey;
+            const publicKey = (result as { publicKey: string }).publicKey;
             setWalletKey(publicKey);
             setConnected(true);
             return publicKey;
@@ -191,7 +191,7 @@ export const useWalletAuth = () => {
         }
     };
 
-    const handleWalletConnect = async (walletName: string, userId?: string) => {
+    const handleWalletConnect = async (walletName: string, userId?: string): Promise<boolean> => {
         if (walletName === "Phantom") {
             try {
                 const pubKey = await connectPhantom();
@@ -227,12 +227,13 @@ export const useWalletAuth = () => {
                             type: "active"
                         });
 
-                        alert(response.message);
+                        return true;
                     }
                 }
+                return false;
             } catch (error: unknown) {
                 console.error("Wallet connection/login error:", error);
-                alert("Operation failed: " + getErrorMessage(error));
+                throw new Error(getErrorMessage(error));
             }
         } else if (walletName === "MetaMask") {
             try {
@@ -248,7 +249,7 @@ export const useWalletAuth = () => {
                     const messageBytes = new TextEncoder().encode(nonce);
 
                     // Solflare Snap expects message as Uint8Array (serialized as array) or string.
-                    const { signature } = await provider.request({
+                    const snapResult = await provider.request({
                         method: "wallet_invokeSnap",
                         params: {
                             snapId: SOLANA_SNAP_ID,
@@ -261,6 +262,7 @@ export const useWalletAuth = () => {
                             }
                         }
                     });
+                    const { signature } = snapResult as { signature: string };
 
                     const signatureStr = signature;
 
@@ -282,15 +284,16 @@ export const useWalletAuth = () => {
                             type: "active"
                         });
 
-                        alert(response.message);
+                        return true;
                     }
                 }
+                return false;
             } catch (error: unknown) {
                 console.error("MetaMask connection/login error:", error);
-                alert("Operation failed: " + getErrorMessage(error));
+                throw new Error(getErrorMessage(error));
             }
         } else {
-            alert(`Connect ${walletName} coming soon!`);
+            throw new Error(`Connect ${walletName} coming soon!`);
         }
     };
 
