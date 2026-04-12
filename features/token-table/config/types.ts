@@ -38,14 +38,14 @@ export type TokenTableData = {
  * Represents aggregated data for a token category
  */
 export interface CategoryOverview {
+    id: string;
     name: string;
     slug: string;
-    description: string;
     market_cap: number;
-    change_1h: number;
-    change_24h: number;
-    change_7d: number;
-    volume: number;
-    num_tokens: number;
-    top_tokens: string[]; // token addresses
+    market_cap_change_24h: number;
+    content: string;
+    top_3_coins_id: string[];
+    top_3_coins: string[];
+    volume_24h: number;
+    updated_at: string;
 }

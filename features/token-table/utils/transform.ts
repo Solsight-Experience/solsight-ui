@@ -67,7 +67,7 @@ function calculateAuditScore(audit: TokenOverview["audit"]): string {
 /**
  * Calculate estimated fees (simplified)
  */
-function calculateFees(volume: number): string {
+function calculateFees(): string {
     // Assuming average 0.5-1% fees
     const feePercentage = 0.5 + Math.random() * 0.5;
     return `${feePercentage.toFixed(2)}%`;
@@ -84,7 +84,7 @@ export function transformTokenOverview(token: TokenOverview): TokenTableData {
             ticker: token.symbol,
             name: token.name,
             priceHistory: token.price_sparkline || [],
-            category: token.category as string, // Category mapping may need adjustment
+            category: token.category as unknown as import("../config/types").TokenCategory, // Category mapping may need adjustment
             age: formatAge(token.age_seconds)
         },
         marketCap: {
@@ -109,7 +109,7 @@ export function transformTokenOverview(token: TokenOverview): TokenTableData {
             },
             {
                 label: "Fees",
-                value: calculateFees(Number(token.volume_24h)),
+                value: calculateFees(),
                 trend: "up"
             },
             {
