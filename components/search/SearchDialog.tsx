@@ -2,9 +2,8 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
-import { Link, RotateCw, Router, Search } from "lucide-react";
+import { RotateCw, Search } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { SortButton } from "../sort/sort-button/SortButton";
 import { DialogClose } from "@radix-ui/react-dialog";
@@ -12,6 +11,7 @@ import { FilterButton, useSearchWithFilters, type FilterFormData, getFilterReque
 import type { TokenOverview, PoolOverview, SortBy, PoolSortBy, SortOrder, TokenFilterResponse, PoolFilterResponse } from "@/types/filter";
 import { formatCompact, formatCurrency, formatPercent } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type SearchDialogProps = {
     isOpen: boolean;
@@ -73,13 +73,6 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
             setSortBy(id);
             setSortOrder("desc");
         }
-    };
-
-    const handleTabChange = (tab: string) => {
-        setActiveTab(tab as TabType);
-        setResults({ tokens: [], pools: [], total: 0 });
-        setSortBy("");
-        setSortOrder("desc");
     };
 
     const performSearch = useCallback(async () => {
@@ -170,7 +163,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                 clearTimeout(debounceTimerRef.current);
             }
         };
-    }, [searchQuery, isOpen, performSearch]);
+    }, [searchQuery, filterFormData, isOpen, performSearch]);
 
     // Trigger search when sort changes (only if we have query or filters)
     useEffect(() => {
@@ -316,9 +309,12 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                 >
                     {/* Token Info - Left Side */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="size-10 rounded-full bg-slate-800 flex-shrink-0 overflow-hidden border border-slate-700">
-                            {t.logo_uri ? <img src={t.logo_uri} alt={t.symbol} className="size-10 object-cover" /> : <div className="size-10 bg-slate-700" />}
-                        </div>
+                        <Avatar className="size-10 rounded-full border border-slate-700 bg-slate-800 shrink-0">
+                            <AvatarImage src={t.logo_uri || ""} alt={t.symbol} className="object-cover" />
+                            <AvatarFallback delayMs={0} className="text-slate-400 font-medium text-sm">
+                                {t.symbol?.slice(0, 2).toUpperCase() || "?"}
+                            </AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0 flex-1">
                             <div className="font-semibold text-slate-200 truncate">{t.symbol}</div>
                             <div className="text-xs text-slate-400 truncate">{t.name}</div>
@@ -382,8 +378,8 @@ function PoolResults({
     pools: Array<{
         address: string;
         protocol: string;
-        base_token: { symbol: string };
-        quote_token: { symbol: string };
+        base_token: { symbol: string; logo_uri?: string };
+        quote_token: { symbol: string; logo_uri?: string };
         volume_24h?: number;
         fee_percent?: number;
     }>;
@@ -396,11 +392,27 @@ function PoolResults({
                     key={p.address}
                     className="flex items-center justify-between gap-3 p-3 border border-slate-700 rounded-lg hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 transition-all duration-200"
                 >
-                    <div className="min-w-0">
-                        <div className="font-medium text-slate-200 truncate">
-                            {p.base_token.symbol} / {p.quote_token.symbol}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex -space-x-3 isolate items-center shrink-0">
+                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-10 hover:z-20 transition-all">
+                                <AvatarImage src={p.base_token?.logo_uri || ""} alt={p.base_token?.symbol} className="object-cover" />
+                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                    {p.base_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
+                                </AvatarFallback>
+                            </Avatar>
+                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-0 hover:z-20 transition-all">
+                                <AvatarImage src={p.quote_token?.logo_uri || ""} alt={p.quote_token?.symbol} className="object-cover" />
+                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                    {p.quote_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
+                                </AvatarFallback>
+                            </Avatar>
                         </div>
-                        <div className="text-xs text-slate-400 truncate">{p.protocol}</div>
+                        <div className="min-w-0">
+                            <div className="font-medium text-slate-200 truncate">
+                                {p.base_token?.symbol} / {p.quote_token?.symbol}
+                            </div>
+                            <div className="text-xs text-slate-400 truncate">{p.protocol}</div>
+                        </div>
                     </div>
                     <div className="text-right text-sm text-slate-200 flex-shrink-0">
                         {typeof p.fee_percent === "number" ? <div className="text-xs text-slate-500">Fee {p.fee_percent}%</div> : null}

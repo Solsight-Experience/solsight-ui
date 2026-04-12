@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { SortPanel } from "./SortPanel";
 import { CategorySearch } from "./CategorySearch";
 import { EmptyState } from "./EmptyState";
 import { CategoryTable } from "./CategoryTable";
+import { CategoryDetailModal } from "./CategoryDetailModal";
 import { useTokenTable } from "../hooks/useTokenTable";
 import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
 import type { TokenTableData } from "../config/types";
@@ -38,6 +39,7 @@ export default function TokenTable() {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setSelectedCategorySlug,
         toggleSort,
         resetFilters,
         applyFilterResults,
@@ -122,7 +124,8 @@ export default function TokenTable() {
                     <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
                     {renderRightPanel()}
                 </div>
-                <CategoryTable searchQuery={filters.categorySearch} />
+                <CategoryTable searchQuery={filters.categorySearch} onCategorySelect={setSelectedCategorySlug} />
+                <CategoryDetailModal categorySlug={filters.selectedCategorySlug} onClose={() => setSelectedCategorySlug(null)} />
             </>
         );
     }
@@ -130,7 +133,9 @@ export default function TokenTable() {
     return (
         <>
             <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                <div className="flex items-center gap-3">
+                    <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                </div>
                 {renderRightPanel()}
             </div>
 

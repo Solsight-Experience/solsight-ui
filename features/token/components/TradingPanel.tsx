@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
@@ -705,7 +706,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = typeof publicKey === "string" ? publicKey : typeof publicKey?.toBase58 === "function" ? publicKey.toBase58() : "";
+            const walletAddress = typeof publicKey?.toBase58 === "function" ? publicKey.toBase58() : typeof publicKey === "string" ? publicKey : "";
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }
@@ -769,9 +770,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         if (priceUsd <= 0) return;
 
         // This logic assumes we are always pairing with SOL as the quote currency
-        const isPaySol = payMint === COMMON_TOKENS.SOL.mint;
-        const isReceiveSol = receiveMint === COMMON_TOKENS.SOL.mint;
-
         // Fallback simple relation if it's not a SOL pair (might not be accurate for Token-Token without USD value of pay token)
         const effectiveSolPrice = solPriceUsd || 1;
 
@@ -884,7 +882,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                             >
                                                 {selectedBuyPayToken ? (
                                                     <>
-                                                        <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
+                                                        <Avatar className="w-5 h-5">
+                                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                                            <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                        </Avatar>
                                                         <span className="leading-4">{payToken}</span>
                                                     </>
                                                 ) : (
@@ -900,7 +901,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     onSelect={() => setSelectedBuyPayMint(option.mint)}
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
-                                                    <img src={option.logoUri} className="w-5 h-5 rounded-full" alt={option.symbol} />
+                                                    <Avatar className="w-5 h-5">
+                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                    </Avatar>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
                                                         <div className="text-xs text-gray-400">
@@ -919,7 +923,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                     </DropdownMenu>
                                 ) : (
                                     <>
-                                        <img src={payTokenLogo} className="w-5 h-5 rounded-full" alt={payToken} />
+                                        <Avatar className="w-5 h-5">
+                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                            <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
                                         <span className="font-semibold text-gray-100 tracking-wide">{payToken}</span>
                                     </>
                                 )}
@@ -996,7 +1003,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                             >
                                                 {selectedSellReceiveToken ? (
                                                     <>
-                                                        <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
+                                                        <Avatar className="w-5 h-5">
+                                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                                            <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                        </Avatar>
                                                         <span className="leading-4">{receiveToken}</span>
                                                     </>
                                                 ) : (
@@ -1012,7 +1022,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     onSelect={() => setSelectedSellReceiveMint(option.mint)}
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
-                                                    <img src={option.logoUri} className="w-5 h-5 rounded-full" alt={option.symbol} />
+                                                    <Avatar className="w-5 h-5">
+                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                    </Avatar>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
                                                         <div className="text-xs text-gray-400">
@@ -1031,7 +1044,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                     </DropdownMenu>
                                 ) : (
                                     <>
-                                        <img src={receiveTokenLogo} className="w-5 h-5 rounded-full" alt={receiveToken} />
+                                        <Avatar className="w-5 h-5">
+                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                            <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
                                         <span className="font-semibold text-gray-100 tracking-wide">{receiveToken}</span>
                                     </>
                                 )}

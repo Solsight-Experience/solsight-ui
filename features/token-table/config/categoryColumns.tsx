@@ -1,114 +1,119 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ArrowUpDown } from "lucide-react";
 import { CategoryOverview } from "./types";
 import { cn } from "@/lib/utils";
-import { currencyFormatter, percentFormatter } from "@/lib/formatters";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { currencyFormatter } from "@/lib/formatters";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /**
  * Category Table Columns
- * Columns configuration for the Categories tab table
+ * Configuration for the Categories tab based on new Discovery API
  */
 export const categoryColumns: ColumnDef<CategoryOverview>[] = [
     {
         accessorKey: "name",
-        header: "Category",
+        header: ({ column }) => {
+            return (
+                <button
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="flex items-center gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                >
+                    Category
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                </button>
+            );
+        },
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
         size: 180
     },
     {
-        accessorKey: "top_tokens",
-        header: "Top Gainers",
+        accessorKey: "top_3_coins",
+        header: "Top Tokens",
         cell: ({ row }) => (
             <div className="flex -space-x-2">
-                {row.original.top_tokens.slice(0, 3).map((tokenAddress, idx) => (
+                {row.original.top_3_coins?.slice(0, 3).map((tokenUrl, idx) => (
                     <Avatar
                         key={idx}
-                        className="h-8 w-8 border-2 border-background cursor-pointer transition-transform hover:scale-110 hover:z-10"
-                        title={tokenAddress}
+                        className="h-8 w-8 border-2 border-white bg-white cursor-pointer transition-transform hover:scale-110 hover:z-10"
+                        title={row.original.top_3_coins_id?.[idx]}
                     >
-                        <AvatarFallback className="bg-gradient-to-br from-brand-200 to-brand-100 text-xs font-semibold text-white">
-                            {tokenAddress.slice(2, 4).toUpperCase()}
+                        <AvatarImage src={tokenUrl} />
+                        <AvatarFallback className="bg-gray-800 text-xs font-semibold text-white">
+                            {row.original.top_3_coins_id?.[idx]?.slice(0, 2).toUpperCase() || "T"}
                         </AvatarFallback>
                     </Avatar>
                 ))}
             </div>
         ),
-        size: 80
-    },
-    {
-        accessorKey: "change_1h",
-        header: () => <span className="block text-right">1h</span>,
-        cell: ({ row }) => {
-            const change = row.original.change_1h;
-            const isPositive = change > 0;
-            const isNegative = change < 0;
-            const ChangeIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : null;
-            const accentColor = isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground";
-
-            return (
-                <div className="flex items-center justify-end gap-1">
-                    {ChangeIcon ? <ChangeIcon className={cn("size-4", accentColor)} /> : null}
-                    <span className={cn("font-medium", accentColor)}>{percentFormatter.format(change)}</span>
-                </div>
-            );
-        },
-        size: 60
-    },
-    {
-        accessorKey: "change_24h",
-        header: () => <span className="block text-right">24h</span>,
-        cell: ({ row }) => {
-            const change = row.original.change_24h;
-            const isPositive = change > 0;
-            const isNegative = change < 0;
-            const ChangeIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : null;
-            const accentColor = isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground";
-
-            return (
-                <div className="flex items-center justify-end gap-1">
-                    {ChangeIcon ? <ChangeIcon className={cn("size-4", accentColor)} /> : null}
-                    <span className={cn("font-medium", accentColor)}>{percentFormatter.format(Number(change))}</span>
-                </div>
-            );
-        },
-        size: 80
-    },
-    {
-        accessorKey: "change_7d",
-        header: () => <span className="block text-right">7d</span>,
-        cell: ({ row }) => {
-            const change = row.original.change_7d;
-            const isPositive = change > 0;
-            const isNegative = change < 0;
-            const ChangeIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : null;
-            const accentColor = isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground";
-
-            return (
-                <div className="flex items-center justify-end gap-1">
-                    {ChangeIcon ? <ChangeIcon className={cn("size-4", accentColor)} /> : null}
-                    <span className={cn("font-medium", accentColor)}>{percentFormatter.format(Number(change))}</span>
-                </div>
-            );
-        },
-        size: 80
-    },
-    {
-        accessorKey: "market_cap",
-        header: () => <span className="block text-right">Market Cap</span>,
-        cell: ({ row }) => <span className="block text-right font-semibold">{currencyFormatter.formatCompact(row.original.market_cap)}</span>,
         size: 120
     },
     {
-        accessorKey: "volume",
-        header: () => <span className="block text-right">Volume</span>,
-        cell: ({ row }) => <span className="block text-right font-medium">{currencyFormatter.formatCompact(row.original.volume)}</span>,
-        size: 100
+        accessorKey: "volume_24h",
+        header: ({ column }) => {
+            return (
+                <button
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                >
+                    Volume (24h)
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                </button>
+            );
+        },
+        cell: ({ row }) => <span className="block text-right font-medium text-purple-400">{currencyFormatter.formatCompact(row.original.volume_24h)}</span>,
+        size: 120
     },
     {
-        accessorKey: "num_tokens",
-        header: () => <span className="block text-right">Nums of Coins</span>,
-        cell: ({ row }) => <span className="block text-right font-medium">{row.original.num_tokens}</span>,
-        size: 110
+        accessorKey: "market_cap",
+        header: ({ column }) => {
+            return (
+                <button
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                >
+                    Market Cap
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                </button>
+            );
+        },
+        cell: ({ row }) => <span className="block text-right font-semibold text-white">{currencyFormatter.formatCompact(row.original.market_cap)}</span>,
+        size: 120
+    },
+    {
+        accessorKey: "market_cap_change_24h",
+        header: ({ column }) => {
+            return (
+                <button
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                >
+                    Market Cap Change (24h)
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                </button>
+            );
+        },
+        cell: ({ row }) => {
+            const change = row.original.market_cap_change_24h;
+            // Guard for null/undefined
+            if (change === null || change === undefined) {
+                return <div className="text-right text-gray-500">-</div>;
+            }
+
+            const isPositive = change > 0;
+            const isNegative = change < 0;
+            const ChangeIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : null;
+            const accentColor = isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground";
+
+            return (
+                <div className="flex items-center justify-end gap-1">
+                    {ChangeIcon ? <ChangeIcon className={cn("size-4", accentColor)} /> : null}
+                    <span className={cn("font-medium", accentColor)}>
+                        {isNegative ? "-" : isPositive ? "+" : ""}
+                        {Math.abs(Number(change)).toFixed(3)}%
+                    </span>
+                </div>
+            );
+        },
+        size: 140
     }
 ];

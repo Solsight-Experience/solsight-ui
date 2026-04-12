@@ -8,19 +8,24 @@ import { useCategoryTable } from "../hooks/useCategoryTable";
 
 interface CategoryTableProps {
     searchQuery?: string;
+    onCategorySelect?: (slug: string) => void;
 }
 
 /**
  * CategoryTable Component
  * Displays category overview data for the Categories tab
  */
-export function CategoryTable({ searchQuery = "" }: CategoryTableProps) {
+export function CategoryTable({ searchQuery = "", onCategorySelect }: CategoryTableProps) {
     const router = useRouter();
     const { table, isLoading, error } = useCategoryTable({ searchQuery });
 
     const handleRowClick = (categorySlug: string) => {
-        // Navigate to category detail page - you can customize this route
-        router.push(`/category/${categorySlug}`);
+        if (onCategorySelect) {
+            onCategorySelect(categorySlug);
+        } else {
+            // Navigate to category detail page as fallback
+            router.push(`/category/${categorySlug}`);
+        }
     };
 
     const hasData = table.getRowModel().rows.length > 0;
@@ -32,7 +37,7 @@ export function CategoryTable({ searchQuery = "" }: CategoryTableProps) {
             ) : isLoading ? (
                 <EmptyState message="Loading categories..." emptyStateForLoading={true} />
             ) : hasData ? (
-                <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
+                <div className="w-full">
                     <Table className="px-4 table-fixed w-full">
                         <TableHeader className="bg-muted/20">
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -65,6 +70,25 @@ export function CategoryTable({ searchQuery = "" }: CategoryTableProps) {
                             ))}
                         </TableBody>
                     </Table>
+                    <div className="flex items-center justify-end space-x-2 py-4 px-4 bg-muted/10 border-t border-border">
+                        <div className="flex-1 text-sm text-muted-foreground mr-4">
+                            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                        </div>
+                        <button
+                            className="px-3 py-1 bg-muted/30 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-sm transition-colors"
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            Previous
+                        </button>
+                        <button
+                            className="px-3 py-1 bg-muted/30 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-sm transition-colors"
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <EmptyState message="No categories found" />
