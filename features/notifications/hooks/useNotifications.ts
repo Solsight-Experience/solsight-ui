@@ -58,9 +58,14 @@ export function useNotifications() {
         const socket = NotificationSocketManager.getInstance();
         socket.subscribe(userId);
         socket.onNotification(userId, (notification) => handleNewNotificationRef.current(notification));
+
+        // Re-subscribe after reconnect so client rejoins the user room
+        const handleReconnect = () => socket.subscribe(userId);
+        socket.getSocket().on('connect', handleReconnect);
         subscribedUserIdRef.current = userId;
 
         return () => {
+            socket.getSocket().off('connect', handleReconnect);
             socket.unsubscribe(userId);
             subscribedUserIdRef.current = null;
         };
@@ -76,6 +81,8 @@ export function useNotifications() {
         setPanelOpen: store.setPanelOpen,
         markAsRead: store.markAsRead,
         markAllAsRead: store.markAllAsRead,
+        deleteNotification: store.deleteNotification,
+        deleteAllNotifications: store.deleteAllNotifications,
         loadMore: store.loadMore
     };
 }
