@@ -4,7 +4,10 @@ import { useState, memo, useCallback } from "react";
 import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import { SearchIcon, ChevronDown, Bell, BarChart2, Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid } from "lucide-react";
+import {
+  SearchIcon, ChevronDown, Bell, BarChart2,
+  Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LogoutConfirmDialog from "../auth/LogoutConfirmDialog";
 import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDialog";
@@ -209,7 +212,8 @@ const HeaderIcon = memo(function HeaderIcon() {
 const NAV_ITEMS = [
     { href: "/", label: "Discover", icon: <TrendingUp size={12} /> },
     { href: "/portfolio", label: "Portfolio", icon: <BarChart2 size={12} /> },
-    { href: "/multi-chart", label: "Multi Viewer", icon: <LayoutGrid size={12} /> }
+    { href: "/multi-chart", label: "Multi Viewer", icon: <LayoutGrid size={12} /> },
+    { href: '/wallet-tracker', label: 'Wallet Tracker', icon: <Search size={12} /> },
 ] as const;
 
 const NavLinks = memo(function NavLinks() {

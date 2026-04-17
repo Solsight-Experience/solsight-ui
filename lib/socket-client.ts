@@ -47,6 +47,10 @@ export class SocketManager {
         this.socket.emit(event, data);
     }
 
+    getSocket(): Socket {
+        return this.socket;
+    }
+
     disconnect() {
         this.events.forEach((_, key) => this.offKey(key));
         this.socket.disconnect();

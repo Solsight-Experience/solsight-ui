@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fetchNotifications, fetchUnreadCount, markAsRead as apiMarkAsRead, markAllAsRead as apiMarkAllAsRead } from "../services/notification.service";
+import { fetchNotifications, fetchUnreadCount, markAsRead as apiMarkAsRead, markAllAsRead as apiMarkAllAsRead, deleteNotification as apiDeleteNotification, deleteAllNotifications as apiDeleteAllNotifications } from "../services/notification.service";
 import { Notification } from "../types/notification.types";
 
 const PAGE_LIMIT = 20;
@@ -17,6 +17,8 @@ interface NotificationState {
     addNotification: (notification: Notification) => void;
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
+    deleteNotification: (id: string) => void;
+    deleteAllNotifications: () => void;
     setPanelOpen: (open: boolean) => void;
     reset: () => void;
 }
@@ -35,14 +37,21 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
 
     fetchInitial: async () => {
         set({ isLoading: true });
-        const [notificationsRes, unreadRes] = await Promise.all([fetchNotifications({ limit: PAGE_LIMIT }), fetchUnreadCount()]);
-        set({
-            notifications: notificationsRes.notifications,
-            hasMore: notificationsRes.hasMore,
-            cursor: notificationsRes.notifications.at(-1)?.id ?? null,
-            unreadCount: unreadRes.count,
-            isLoading: false
-        });
+        try {
+            const [notificationsRes, unreadRes] = await Promise.all([
+                fetchNotifications({ limit: PAGE_LIMIT }),
+                fetchUnreadCount(),
+            ]);
+            set({
+                notifications: notificationsRes.notifications,
+                hasMore: notificationsRes.hasMore,
+                cursor: notificationsRes.notifications.at(-1)?.id ?? null,
+                unreadCount: unreadRes.count,
+                isLoading: false,
+            });
+        } catch {
+            set({ isLoading: false });
+        }
     },
 
     loadMore: async () => {
@@ -78,6 +87,26 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
             unreadCount: 0
         }));
         apiMarkAllAsRead();
+    },
+
+    deleteNotification: (id) => {
+        set((state) => {
+            let wasUnread = false;
+            const notifications = state.notifications.filter((n) => {
+                if (n.id === id) { wasUnread = !n.isRead; return false; }
+                return true;
+            });
+            return {
+                notifications,
+                unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount
+            };
+        });
+        apiDeleteNotification(id);
+    },
+
+    deleteAllNotifications: () => {
+        set({ notifications: [], unreadCount: 0, hasMore: false, cursor: null });
+        apiDeleteAllNotifications();
     },
 
     setPanelOpen: (open) => set({ isPanelOpen: open }),
