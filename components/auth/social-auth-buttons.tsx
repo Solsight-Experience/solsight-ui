@@ -36,8 +36,6 @@ export default function SocialAuthButtons() {
                 return;
             }
 
-            console.log("Google credential received:", response.credential);
-
             const token = response.credential;
             const data = await callOAuthLoginApi(token);
 

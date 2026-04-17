@@ -4,30 +4,19 @@ import { useState, memo, useCallback } from "react";
 import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import {
-  SearchIcon, ChevronDown, Bell, BarChart2,
-  Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search,
-} from "lucide-react";
+import { SearchIcon, ChevronDown, Bell, BarChart2, Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LogoutConfirmDialog from "../auth/LogoutConfirmDialog";
 import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
-
-const TICKERS = [
-    { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
-    { symbol: "JUP/SOL", price: "0.00562", change: 5.43 },
-    { symbol: "RAY/SOL", price: "0.0264", change: 8.92 },
-    { symbol: "PYTH/SOL", price: "0.00285", change: 1.73 },
-    { symbol: "WIF/SOL", price: "0.0119", change: -0.91 },
-    { symbol: "JTO/SOL", price: "0.0189", change: 2.67 },
-    { symbol: "ORCA/SOL", price: "0.0171", change: -1.2 }
-];
+import { useTickerData } from "@/features/token-table/hooks/useTickerData";
 
 export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
+    const tickerData = useTickerData();
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -62,11 +51,14 @@ export default function Header() {
 
                 <div className="flex-1 overflow-hidden">
                     <div className="flex w-max hover:[animation-play-state:paused]" style={{ animation: "ticker-scroll 30s linear infinite" }}>
-                        {[...TICKERS, ...TICKERS].map((t, i) => (
+                        {[...tickerData, ...tickerData].map((t, i) => (
                             <span key={i} className="inline-flex items-center gap-1.5 px-5 text-[10px] border-r border-white/5">
                                 <span className="text-white/40 tracking-wide">{t.symbol}</span>
-                                <span className="text-white/80 font-semibold">{t.price}</span>
-                                <span className={t.up ? "text-emerald-400" : "text-red-400"}>{t.change}</span>
+                                <span className="text-white/80 font-semibold">${t.price}</span>
+                                <span className={t.change >= 0 ? "text-emerald-400" : "text-red-400"}>
+                                    {t.change >= 0 ? "+" : ""}
+                                    {t.change.toFixed(2)}%
+                                </span>
                             </span>
                         ))}
                     </div>
@@ -213,7 +205,7 @@ const NAV_ITEMS = [
     { href: "/", label: "Discover", icon: <TrendingUp size={12} /> },
     { href: "/portfolio", label: "Portfolio", icon: <BarChart2 size={12} /> },
     { href: "/multi-chart", label: "Multi Viewer", icon: <LayoutGrid size={12} /> },
-    { href: '/wallet-tracker', label: 'Wallet Tracker', icon: <Search size={12} /> },
+    { href: "/wallet-tracker", label: "Wallet Tracker", icon: <Search size={12} /> }
 ] as const;
 
 const NavLinks = memo(function NavLinks() {
