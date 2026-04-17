@@ -1,52 +1,52 @@
 "use client";
 
-import { useState, memo, useCallback } from 'react';
-import Link from 'next/link';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { SearchDialog } from '@/components/search/SearchDialog';
+import { useState, memo, useCallback } from "react";
+import Link from "next/link";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { SearchDialog } from "@/components/search/SearchDialog";
 import {
   SearchIcon, ChevronDown, Bell, BarChart2,
   Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search,
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import LogoutConfirmDialog from '../auth/LogoutConfirmDialog';
-import DisconnectWalletsConfirmDialog from '../auth/DisconnectWalletsConfirmDialog';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { NotificationBadge, NotificationPanel } from '@/features/notifications/components';
-import { useNotifications } from '@/features/notifications/hooks/useNotifications';
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import LogoutConfirmDialog from "../auth/LogoutConfirmDialog";
+import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
+import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 
 const TICKERS = [
-  { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
-  { symbol: "JUP/SOL", price: "0.00562", change: 5.43 },
-  { symbol: "RAY/SOL", price: "0.0264", change: 8.92 },
-  { symbol: "PYTH/SOL", price: "0.00285", change: 1.73 },
-  { symbol: "WIF/SOL", price: "0.0119", change: -0.91 },
-  { symbol: "JTO/SOL", price: "0.0189", change: 2.67 },
-  { symbol: "ORCA/SOL", price: "0.0171", change: -1.20 }
+    { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
+    { symbol: "JUP/SOL", price: "0.00562", change: 5.43 },
+    { symbol: "RAY/SOL", price: "0.0264", change: 8.92 },
+    { symbol: "PYTH/SOL", price: "0.00285", change: 1.73 },
+    { symbol: "WIF/SOL", price: "0.0119", change: -0.91 },
+    { symbol: "JTO/SOL", price: "0.0189", change: 2.67 },
+    { symbol: "ORCA/SOL", price: "0.0171", change: -1.2 }
 ];
 
 export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
 
-  const [searchOpen,                 setSearchOpen]                 = useState(false);
-  const [avatarMenuOpen,             setAvatarMenuOpen]             = useState(false);
-  const [confirmLogoutOpen,          setConfirmLogoutOpen]          = useState(false);
-  const [confirmDisconnectWalletsOpen, setConfirmDisconnectWalletsOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+    const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+    const [confirmDisconnectWalletsOpen, setConfirmDisconnectWalletsOpen] = useState(false);
 
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
 
-  const handleDisConnectWallets = useCallback(() => {
-    setConfirmDisconnectWalletsOpen(true);
-  }, []);
+    const handleDisConnectWallets = useCallback(() => {
+        setConfirmDisconnectWalletsOpen(true);
+    }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    setAvatarMenuOpen(false);
-    setConfirmLogoutOpen(false);
-    setConfirmDisconnectWalletsOpen(false);
-  };
+    const handleLogout = async () => {
+        await logout();
+        setAvatarMenuOpen(false);
+        setConfirmLogoutOpen(false);
+        setConfirmDisconnectWalletsOpen(false);
+    };
 
     return (
         <header className="">
@@ -176,20 +176,20 @@ export default function Header() {
             {/* Ticker keyframe — one tiny <style> tag just for the @keyframes rule */}
             <style>{`@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
 
-      <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
-      <DisconnectWalletsConfirmDialog
-        isOpen={confirmDisconnectWalletsOpen}
-        onClose={() => setConfirmDisconnectWalletsOpen(false)}
-        onSuccess={() => handleLogout()}
-      />
-      <LogoutConfirmDialog
-        isOpen={confirmLogoutOpen}
-        onClose={() => setConfirmLogoutOpen(false)}
-        onLogout={handleLogout}
-        onDisconnectWallets={() => setConfirmDisconnectWalletsOpen(true)}
-      />
-    </header>
-  );
+            <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+            <DisconnectWalletsConfirmDialog
+                isOpen={confirmDisconnectWalletsOpen}
+                onClose={() => setConfirmDisconnectWalletsOpen(false)}
+                onSuccess={() => handleLogout()}
+            />
+            <LogoutConfirmDialog
+                isOpen={confirmLogoutOpen}
+                onClose={() => setConfirmLogoutOpen(false)}
+                onLogout={handleLogout}
+                onDisconnectWallets={() => setConfirmDisconnectWalletsOpen(true)}
+            />
+        </header>
+    );
 }
 
 const HeaderIcon = memo(function HeaderIcon() {
