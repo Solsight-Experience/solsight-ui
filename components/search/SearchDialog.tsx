@@ -176,30 +176,30 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent showCloseButton={false} className="min-w-250 bg-slate-950 border border-slate-700">
+            <DialogContent showCloseButton={false} className="min-w-250 bg-white border border-gray-200 shadow-xl">
                 <DialogTitle className="sr-only">Search Dialog</DialogTitle>
                 <DialogDescription className="sr-only">Search dialog: find token and pool.</DialogDescription>
                 <div className="flex gap-2">
-                    <InputGroup>
+                    <InputGroup className="border-gray-200 bg-gray-50 [--ring:theme(colors.gray.300)]">
                         <InputGroupInput
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search token symbol, address, or pool..."
-                            className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
+                            className="text-gray-900 placeholder:text-gray-400"
                             autoFocus
                         />
                         <InputGroupAddon align={"inline-end"}>
-                            <Search className="text-slate-500" />
+                            <Search className="text-gray-400" />
                         </InputGroupAddon>
                     </InputGroup>
                     <DialogClose asChild>
-                        <Button variant={"outline"} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600">
+                        <Button variant={"outline"} className="border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300">
                             Cancel
                         </Button>
                     </DialogClose>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] items-center gap-2">
-                    <div className="text-xs text-slate-500 font-medium">Sort by:</div>
+                    <div className="text-xs text-gray-500 font-medium">Sort by:</div>
                     <div className="flex items-center justify-end">
                         <div className="px-0 py-2 flex gap-2 justify-end">
                             {currentSorts.map((item) => (
@@ -218,7 +218,6 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                             onApply={handleFilterApply}
                             onReset={() => {
                                 setFilterFormData(null);
-                                // Re-run search with query only (without filters)
                                 if (searchQuery.trim().length >= 2) {
                                     performSearch();
                                 } else {
@@ -230,9 +229,9 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                 </div>
 
                 {/* Results Area */}
-                <div className="mt-4 min-h-56 max-h-96 overflow-auto rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                <div className="mt-4 min-h-56 max-h-96 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
                     {isLoading && (
-                        <div className="flex items-center justify-center gap-3 text-slate-400 py-8">
+                        <div className="flex items-center justify-center gap-3 text-gray-400 py-8">
                             <RotateCw className="animate-spin w-5 h-5" />
                             <span className="font-medium text-sm">Searching…</span>
                         </div>
@@ -241,9 +240,9 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                     {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
                         <div className="flex items-center justify-center py-8 text-center">
                             <div>
-                                <Search className="w-8 h-8 text-slate-600 mx-auto mb-3 opacity-60" />
-                                <p className="text-slate-300 text-sm font-medium">Start searching</p>
-                                <p className="text-slate-500 text-xs mt-2">Type at least 2 characters to find tokens</p>
+                                <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                                <p className="text-gray-700 text-sm font-medium">Start searching</p>
+                                <p className="text-gray-400 text-xs mt-2">Type at least 2 characters to find tokens</p>
                             </div>
                         </div>
                     )}
@@ -251,8 +250,8 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
                     {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
                         <div className="flex items-center justify-center py-8 text-center">
                             <div>
-                                <p className="text-slate-300 text-sm font-medium">No results</p>
-                                <p className="text-slate-500 text-xs mt-2">Try different keywords</p>
+                                <p className="text-gray-700 text-sm font-medium">No results</p>
+                                <p className="text-gray-400 text-xs mt-2">Try different keywords</p>
                             </div>
                         </div>
                     )}
@@ -271,7 +270,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
 function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (open: boolean) => void }) {
     const router = useRouter();
-    if (!tokens?.length) return <div className="text-slate-400 text-sm">No tokens found</div>;
+    if (!tokens?.length) return <div className="text-gray-400 text-sm">No tokens found</div>;
 
     const formatAge = (seconds: number) => {
         const days = Math.floor(seconds / 86400);
@@ -304,21 +303,21 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
             {tokens.map((t) => (
                 <div
                     key={t.address}
-                    className="flex items-center gap-4 p-3 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 cursor-pointer transition-all duration-200"
+                    className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 cursor-pointer transition-all duration-200"
                     onClick={() => handleTokenClick(t.address)}
                 >
                     {/* Token Info - Left Side */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar className="size-10 rounded-full border border-slate-700 bg-slate-800 shrink-0">
+                        <Avatar className="size-10 rounded-full border border-gray-200 bg-gray-100 shrink-0">
                             <AvatarImage src={t.logo_uri || ""} alt={t.symbol} className="object-cover" />
-                            <AvatarFallback delayMs={0} className="text-slate-400 font-medium text-sm">
+                            <AvatarFallback delayMs={0} className="text-gray-500 font-medium text-sm">
                                 {t.symbol?.slice(0, 2).toUpperCase() || "?"}
                             </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-slate-200 truncate">{t.symbol}</div>
-                            <div className="text-xs text-slate-400 truncate">{t.name}</div>
-                            <div className="text-xs text-slate-500 font-mono">{formatAddress(t.address)}</div>
+                            <div className="font-semibold text-gray-900 truncate">{t.symbol}</div>
+                            <div className="text-xs text-gray-500 truncate">{t.name}</div>
+                            <div className="text-xs text-gray-400 font-mono">{formatAddress(t.address)}</div>
                         </div>
                     </div>
 
@@ -326,40 +325,40 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                     <div className="flex gap-8 flex-shrink-0">
                         {/* Market Cap */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">MCAP</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.market_cap))}</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">MCAP</div>
+                            <div className="text-sm font-medium text-gray-800">{formatCurrency(Number(t.market_cap))}</div>
                         </div>
 
                         {/* Transactions */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">TXN 24h</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.txns_24h.total))}</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">TXN 24h</div>
+                            <div className="text-sm font-medium text-gray-800">{formatCompact(Number(t.txns_24h.total))}</div>
                         </div>
 
                         {/* Holders */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Holders</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.holders.count))}</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">Holders</div>
+                            <div className="text-sm font-medium text-gray-800">{formatCompact(Number(t.holders.count))}</div>
                         </div>
 
                         {/* Volume */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Volume</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.volume_24h))}</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">Volume</div>
+                            <div className="text-sm font-medium text-gray-800">{formatCurrency(Number(t.volume_24h))}</div>
                         </div>
 
                         {/* Age */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Age</div>
-                            <div className="text-sm font-medium text-slate-200">{formatAge(Number(t.age_seconds))}</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">Age</div>
+                            <div className="text-sm font-medium text-gray-800">{formatAge(Number(t.age_seconds))}</div>
                         </div>
 
                         {/* Price Change */}
                         <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Price</div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide">Price</div>
                             <div className="text-sm font-medium">
-                                <span className="text-slate-200">{formatPrice(Number(t.price))}</span>
-                                <span className="mx-1 text-slate-500">/</span>
+                                <span className="text-gray-800">{formatPrice(Number(t.price))}</span>
+                                <span className="mx-1 text-gray-400">/</span>
                                 <span className={`${Number(t.price_change_24h) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                                     {formatPercent(Number(t.price_change_24h))}
                                 </span>
@@ -384,38 +383,38 @@ function PoolResults({
         fee_percent?: number;
     }>;
 }) {
-    if (!pools?.length) return <div className="text-slate-400 text-sm">No pools found</div>;
+    if (!pools?.length) return <div className="text-gray-400 text-sm">No pools found</div>;
     return (
         <div className="space-y-2">
             {pools.map((p) => (
                 <div
                     key={p.address}
-                    className="flex items-center justify-between gap-3 p-3 border border-slate-700 rounded-lg hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 transition-all duration-200"
+                    className="flex items-center justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200"
                 >
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex -space-x-3 isolate items-center shrink-0">
-                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-10 hover:z-20 transition-all">
+                            <Avatar className="size-8 rounded-full border-2 border-white bg-gray-100 z-10 hover:z-20 transition-all">
                                 <AvatarImage src={p.base_token?.logo_uri || ""} alt={p.base_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                <AvatarFallback delayMs={0} className="text-gray-500 font-bold text-[10px]">
                                     {p.base_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
                                 </AvatarFallback>
                             </Avatar>
-                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-0 hover:z-20 transition-all">
+                            <Avatar className="size-8 rounded-full border-2 border-white bg-gray-100 z-0 hover:z-20 transition-all">
                                 <AvatarImage src={p.quote_token?.logo_uri || ""} alt={p.quote_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                <AvatarFallback delayMs={0} className="text-gray-500 font-bold text-[10px]">
                                     {p.quote_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
                                 </AvatarFallback>
                             </Avatar>
                         </div>
                         <div className="min-w-0">
-                            <div className="font-medium text-slate-200 truncate">
+                            <div className="font-medium text-gray-900 truncate">
                                 {p.base_token?.symbol} / {p.quote_token?.symbol}
                             </div>
-                            <div className="text-xs text-slate-400 truncate">{p.protocol}</div>
+                            <div className="text-xs text-gray-500 truncate">{p.protocol}</div>
                         </div>
                     </div>
-                    <div className="text-right text-sm text-slate-200 flex-shrink-0">
-                        {typeof p.fee_percent === "number" ? <div className="text-xs text-slate-500">Fee {p.fee_percent}%</div> : null}
+                    <div className="text-right text-sm text-gray-800 flex-shrink-0">
+                        {typeof p.fee_percent === "number" ? <div className="text-xs text-gray-400">Fee {p.fee_percent}%</div> : null}
                         {typeof p.volume_24h === "number" ? <div className="font-medium">Vol ${p.volume_24h.toLocaleString()}</div> : null}
                     </div>
                 </div>

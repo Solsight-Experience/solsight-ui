@@ -5,9 +5,9 @@ import { PortfolioFilters } from "./Portfoliofilters";
 
 export const PortfolioSidebar: React.FC = () => {
     return (
-        <div className="border-r-2 sticky top-0 left-0 border-gray-700 flex flex-col gap-4 p-4 pb-32 overflow-y-auto max-h-screen">
-            {/* <QuickLinks /> */}
+        <div className="sticky top-[32px] flex flex-col gap-5 px-5 pb-32 overflow-y-auto max-h-[calc(100vh-82px)]">
             <WalletList />
+            <div className="h-px bg-[var(--border-faint)]" />
             <PortfolioFilters />
         </div>
     );

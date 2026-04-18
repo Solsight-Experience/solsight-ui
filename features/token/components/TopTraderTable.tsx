@@ -20,12 +20,12 @@ const PriceChangeIndicator: React.FC<{ value: number; showIcon?: boolean }> = ({
 };
 
 const TopTraderRow: React.FC<TopTrader & { rank: number }> = ({ rank, address, name, total_pnl, roi_percent, win_rate, trades_count }) => (
-    <tr className="border-b border-gray-700 hover:bg-gray-800/50">
-        <td className="py-3 px-4 text-sm font-semibold text-gray-400">#{rank}</td>
+    <tr className="border-b border-[var(--border-faint)] hover:bg-[var(--surface-btn)]">
+        <td className="py-3 px-4 text-sm font-semibold text-[var(--text-muted)]">#{rank}</td>
         <td className="py-3 px-4">
             <div className="flex flex-col gap-1">
-                {name && <span className="text-sm font-semibold">{name}</span>}
-                <code className="text-xs text-gray-400">{address}</code>
+                {name && <span className="text-sm font-semibold text-[var(--text-primary)]">{name}</span>}
+                <code className="text-xs text-[var(--text-muted)]">{address}</code>
             </div>
         </td>
         <td className="py-3 px-4">
@@ -37,8 +37,8 @@ const TopTraderRow: React.FC<TopTrader & { rank: number }> = ({ rank, address, n
         <td className="py-3 px-4">
             <PriceChangeIndicator value={roi_percent} showIcon={false} />
         </td>
-        <td className="py-3 px-4 text-sm">{win_rate.toFixed(1)}%</td>
-        <td className="py-3 px-4 text-sm text-gray-400">{trades_count}</td>
+        <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{win_rate.toFixed(1)}%</td>
+        <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{trades_count}</td>
     </tr>
 );
 
@@ -49,20 +49,20 @@ export const TopTradersTable: React.FC<TopTradersTableProps> = ({ tokenAddress }
         return (
             <div className="animate-pulse">
                 {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-16 bg-gray-800 rounded mb-2"></div>
+                    <div key={i} className="h-16 bg-[var(--surface-btn)] rounded mb-2"></div>
                 ))}
             </div>
         );
     }
 
     if (!tradersData?.traders || tradersData.traders.length === 0) {
-        return <div className="text-center py-8 text-gray-400">No trader data available</div>;
+        return <div className="text-center py-8 text-[var(--text-muted)]">No trader data available</div>;
     }
 
     return (
         <div className="flex-1 overflow-auto w-full scrollbar-thin pb-4">
             <table className="w-full whitespace-nowrap min-w-[700px]">
-                <thead className="sticky top-0 z-10 bg-[black]/90 backdrop-blur-md text-xs text-gray-500 border-b border-gray-700 shadow-sm after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gray-700">
+                <thead className="sticky top-0 z-10 bg-[var(--surface-card)] backdrop-blur-md text-xs text-[var(--text-muted)] border-b border-[var(--border-subtle)] shadow-sm">
                     <tr>
                         <th className="py-2 text-start px-4 font-medium">Rank</th>
                         <th className="py-2 text-start px-4 font-medium">Trader</th>

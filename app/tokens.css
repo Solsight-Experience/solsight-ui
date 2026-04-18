@@ -1,0 +1,124 @@
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SolSight Design Tokens
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * This is the SINGLE SOURCE OF TRUTH for all theme colors.
+ *
+ * Structure:
+ *   1. Primitive palette  — raw color values, never used in components directly
+ *   2. Light mode tokens  — semantic tokens applied when theme = "light"  (:root)
+ *   3. Dark mode tokens   — semantic tokens applied when theme = "dark"   (.dark)
+ *
+ * To customize the theme:
+ *   • Change a brand color  → edit the primitive, it propagates everywhere
+ *   • Change a surface/text → edit the semantic token in the light or dark block
+ *   • Add a new theme       → duplicate the .dark block with a new class name,
+ *                             set defaultTheme in app/layout.tsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ── 1. Primitive palette ────────────────────────────────────────────────── */
+:root {
+  /* Brand / violet — dark-mode palette (light on dark) */
+  --prim-brand-50:  #f8eeff;
+  --prim-brand-75:  #e1b8fd;
+  --prim-brand-100: #d59afd;
+  --prim-brand-200: #c36ffc;   /* primary accent dark mode */
+  --prim-brand-300: #b751fb;
+  --prim-brand-400: #8039b0;
+
+  /* Brand / violet — light-mode palette (dark on light) */
+  --prim-brand-light-accent:  #7c3aed;   /* violet-600: primary text accent */
+  --prim-brand-light-strong:  #6d28d9;   /* violet-700: headings, badges     */
+  --prim-brand-light-bg:      rgba(109,40,217,0.10); /* tinted bg           */
+  --prim-brand-light-border:  rgba(109,40,217,0.35); /* borders             */
+  --prim-brand-500: #703199;
+
+  /* Grays (light → dark) */
+  --prim-gray-50:  #fbfbfb;
+  --prim-gray-100: #f9f9f9;
+  --prim-gray-200: #d6d6d6;
+  --prim-gray-300: #a1a1a1;
+  --prim-gray-400: #808080;
+  --prim-gray-500: #4b4b4b;
+  --prim-gray-700: #292929;
+  --prim-gray-800: #1f1f1f;
+  --prim-gray-900: #0e0e0e;
+
+  /* Semantic status */
+  --prim-error-normal: #c13a32;
+  --prim-error-dark:   #912c26;
+}
+
+/* ── 2. Light mode semantic tokens ──────────────────────────────────────── */
+:root {
+  /* ·· Surfaces ·· */
+  --surface-page:    #f8f9fc;               /* main page / body background    */
+  --surface-card:    #ffffff;               /* cards, popovers, modals         */
+  --surface-panel:   #f0f3f8;               /* sidebars, secondary panels      */
+  --surface-overlay: #ffffff;               /* dropdowns, context menus        */
+  --surface-glass:   rgba(255,255,255,0.80);/* backdrop-blur translucent areas */
+
+  /* ·· Interactive elements ·· */
+  --surface-btn:        rgba(0,0,0,0.04);   /* default button / input bg       */
+  --surface-btn-hover:  rgba(0,0,0,0.07);   /* hover state                     */
+  --surface-btn-active: rgba(0,0,0,0.10);   /* pressed / active state          */
+
+  /* ·· Borders ·· */
+  --border-faint:   rgba(0,0,0,0.05);       /* hairlines, dividers             */
+  --border-subtle:  rgba(0,0,0,0.08);       /* default card / panel border     */
+  --border-default: rgba(0,0,0,0.13);       /* form inputs, buttons            */
+  --border-strong:  rgba(0,0,0,0.22);       /* emphasized / focused border     */
+
+  /* ·· Text ·· */
+  --text-primary:   #111827;                /* headings, body copy             */
+  --text-secondary: rgba(17,24,39,0.75);    /* secondary labels                */
+  --text-muted:     rgba(17,24,39,0.45);    /* captions, placeholders          */
+  --text-disabled:  rgba(17,24,39,0.25);    /* disabled state                  */
+
+  /* ·· Ticker strip ·· */
+  --ticker-bg:     rgba(248,249,252,0.85);
+  --ticker-border: rgba(0,0,0,0.06);
+
+  /* ·· Shadows ·· */
+  --shadow-dropdown: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.07);
+  --shadow-card:     0 2px 8px  rgba(0,0,0,0.08);
+  --shadow-popover:  0 4px 16px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+/* ── 3. Dark mode semantic tokens ───────────────────────────────────────── */
+.dark {
+  /* ·· Surfaces ·· */
+  --surface-page:    #05050a;
+  --surface-card:    #0d1117;
+  --surface-panel:   #090910;
+  --surface-overlay: #0c1018;
+  --surface-glass:   rgba(9,9,16,0.80);
+
+  /* ·· Interactive elements ·· */
+  --surface-btn:        rgba(255,255,255,0.04);
+  --surface-btn-hover:  rgba(255,255,255,0.08);
+  --surface-btn-active: rgba(255,255,255,0.13);
+
+  /* ·· Borders ·· */
+  --border-faint:   rgba(255,255,255,0.04);
+  --border-subtle:  rgba(255,255,255,0.07);
+  --border-default: rgba(255,255,255,0.10);
+  --border-strong:  rgba(255,255,255,0.22);
+
+  /* ·· Text ·· */
+  --text-primary:   #fbfbfb;
+  --text-secondary: rgba(251,251,251,0.75);
+  --text-muted:     rgba(251,251,251,0.45);
+  --text-disabled:  rgba(251,251,251,0.25);
+
+  /* ·· Ticker strip ·· */
+  --ticker-bg:     rgba(0,0,0,0.30);
+  --ticker-border: rgba(255,255,255,0.04);
+
+  /* ·· Shadows ·· */
+  --shadow-dropdown: 0 16px 40px rgba(0,0,0,0.60), 0 0 0 1px rgba(139,92,246,0.08);
+  --shadow-card:     0 2px 8px  rgba(0,0,0,0.40);
+  --shadow-popover:  0 8px 24px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06);
+}
