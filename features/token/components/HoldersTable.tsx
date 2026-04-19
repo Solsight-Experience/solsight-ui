@@ -4,7 +4,10 @@ import { formatTimeAgo } from "../utils/token.utils";
 import { currencyFormatter, compactFormatter } from "@/lib/formatters";
 import type { Holder } from "../types/token.types";
 import { WalletHoverCard } from "./WalletHoverCard";
-import { Filter, ExternalLink, Wallet } from "lucide-react";
+import { useTokenUIStore } from "../stores/token.stores";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, ExternalLink, Wallet, Settings2 } from "lucide-react";
 
 // Funding source icons - using colored circles to match Axiom style
 const FundingIcon: React.FC<{ label: string }> = ({ label }) => {
@@ -81,7 +84,48 @@ const formatHeldTime = (firstTxTimestamp: number): string => {
     return `${minutes}m`;
 };
 
-const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }> = ({ holder, rank, tokenSymbol }) => {
+const HoldersTableSettings = () => {
+    const { holdersTableColumns, toggleHoldersTableColumn } = useTokenUIStore();
+
+    const columns = [
+        { id: "balance", label: "Bal/Last Active" },
+        { id: "bought", label: "Bought/Avg MC" },
+        { id: "sold", label: "Sold/Avg MC" },
+        { id: "unrealized", label: "Unrealized" },
+        { id: "remaining", label: "Remaining" },
+        { id: "funding", label: "Funding/TF Amount" },
+        { id: "held", label: "Holding Duration" }
+    ];
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <div className="cursor-pointer text-gray-500 hover:text-gray-200 transition-colors p-[1px]">
+                    <Settings2 className="w-3.5 h-3.5" />
+                </div>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[200px] p-2 bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-lg">
+                <div className="flex items-center px-1 pb-2 mb-1 border-b border-gray-800">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Table Settings</span>
+                </div>
+                <div className="space-y-0.5">
+                    {columns.map(col => (
+                        <label key={col.id} className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-gray-800/60 rounded cursor-pointer group transition-colors">
+                            <Checkbox 
+                                checked={holdersTableColumns[col.id]} 
+                                onCheckedChange={() => toggleHoldersTableColumn(col.id)} 
+                                className="border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 rounded"
+                            />
+                            <span className="text-xs text-gray-400 group-hover:text-gray-200 transition-colors flex-1">{col.label}</span>
+                        </label>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
+const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string; columns: Record<string, boolean> }> = ({ holder, rank, tokenSymbol, columns }) => {
     const {
         address,
         name,
@@ -139,6 +183,7 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
             </td>
 
             {/* SOL Balance + Last Active */}
+            {columns.balance && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <div className="flex items-center gap-1.5">
                     <span className="text-gray-400">≡</span>
@@ -148,8 +193,10 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
                     </span>
                 </div>
             </td>
+            )}
 
             {/* Bought (Avg Buy) */}
+            {columns.bought && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <div className="flex flex-col">
                     <div className="flex items-center gap-1">
@@ -161,8 +208,10 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
                     </span>
                 </div>
             </td>
+            )}
 
             {/* Sold (Avg Sell) */}
+            {columns.sold && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <div className="flex flex-col">
                     {total_sold > 0 ? (
@@ -180,16 +229,20 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
                     )}
                 </div>
             </td>
+            )}
 
             {/* Unrealized PnL */}
+            {columns.unrealized && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <span className={`font-medium ${unrealized_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
                     {unrealized_pnl >= 0 ? "+" : ""}
                     {currencyFormatter.format(unrealized_pnl)}
                 </span>
             </td>
+            )}
 
             {/* Remaining */}
+            {columns.remaining && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <div className="flex items-center gap-2">
                     <span className="text-gray-200">{currencyFormatter.format(remaining_usd)}</span>
@@ -200,8 +253,10 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
                     </div>
                 </div>
             </td>
+            )}
 
             {/* Funding */}
+            {columns.funding && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 {funding_label ? (
                     <div className="flex flex-col">
@@ -212,13 +267,16 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string }
                     <span className="text-gray-600">—</span>
                 )}
             </td>
+            )}
 
             {/* Held Time */}
+            {columns.held && (
             <td className="py-2.5 px-2 whitespace-nowrap">
                 <span className={`font-medium ${first_tx_time > Date.now() - 3600000 ? "text-green-400" : "text-gray-300"}`}>
                     {formatHeldTime(first_tx_time)}
                 </span>
             </td>
+            )}
         </tr>
     );
 };
@@ -230,6 +288,8 @@ interface HoldersTableProps {
 
 export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenSymbol }) => {
     const { data: holdersData, isLoading } = useHolders(tokenAddress, { limit: 100 });
+    const { holdersTableColumns } = useTokenUIStore();
+    const [currentPage, setCurrentPage] = useState(1);
 
     if (isLoading) {
         return (
@@ -245,28 +305,73 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenS
         return <div className="text-center py-8 text-gray-400">No holder data available</div>;
     }
 
+    const itemsPerPage = 20;
+    const totalPages = Math.ceil(holdersData.holders.length / itemsPerPage);
+    const paginatedHolders = holdersData.holders.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full">
-                <thead className="text-xs text-gray-500 border-b border-gray-700">
-                    <tr>
-                        <th className="py-2 text-start px-2 font-medium">#</th>
-                        <th className="py-2 text-start px-2 font-medium">Wallet</th>
-                        <th className="py-2 text-start px-2 font-medium">SOL Balance (Last Active)</th>
-                        <th className="py-2 text-start px-2 font-medium">Bought (Avg Buy)</th>
-                        <th className="py-2 text-start px-2 font-medium">Sold (Avg Sell)</th>
-                        <th className="py-2 text-start px-2 font-medium">U. PnL ↑↓</th>
-                        <th className="py-2 text-start px-2 font-medium">Remaining</th>
-                        <th className="py-2 text-start px-2 font-medium">Funding</th>
-                        <th className="py-2 text-start px-2 font-medium">Held</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {holdersData.holders.map((holder, index) => (
-                        <HolderRow key={holder.address} holder={holder} rank={index + 1} tokenSymbol={tokenSymbol} />
-                    ))}
-                </tbody>
-            </table>
+        <div className="flex flex-col w-full h-full overflow-hidden">
+            <div className="flex-1 overflow-auto w-full relative group scrollbar-thin pb-4">
+                <table className="w-full whitespace-nowrap min-w-[1000px]">
+                    <thead className="sticky top-0 z-20 bg-[black]/90 backdrop-blur-md text-xs text-gray-500 border-b border-gray-700 shadow-sm after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gray-700">
+                        <tr>
+                            <th className="py-2 text-start px-2 font-medium">#</th>
+                            <th className="py-2 text-start px-2 font-medium">
+                                <div className="flex items-center gap-1.5">
+                                    <HoldersTableSettings />
+                                    Wallet
+                                </div>
+                            </th>
+                            {holdersTableColumns.balance && <th className="py-2 text-start px-2 font-medium">SOL Balance (Last Active)</th>}
+                            {holdersTableColumns.bought && <th className="py-2 text-start px-2 font-medium">Bought (Avg Buy)</th>}
+                            {holdersTableColumns.sold && <th className="py-2 text-start px-2 font-medium">Sold (Avg Sell)</th>}
+                            {holdersTableColumns.unrealized && <th className="py-2 text-start px-2 font-medium">U. PnL ↑↓</th>}
+                            {holdersTableColumns.remaining && <th className="py-2 text-start px-2 font-medium">Remaining</th>}
+                            {holdersTableColumns.funding && <th className="py-2 text-start px-2 font-medium">Funding</th>}
+                            {holdersTableColumns.held && <th className="py-2 text-start px-2 font-medium">Held</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedHolders.map((holder, index) => (
+                            <HolderRow 
+                                key={holder.address} 
+                                holder={holder} 
+                                rank={(currentPage - 1) * itemsPerPage + index + 1} 
+                                tokenSymbol={tokenSymbol} 
+                                columns={holdersTableColumns} 
+                            />
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-3 py-3 border-t border-gray-800 bg-[black]/50">
+                    <div className="text-xs text-gray-400">
+                        Showing <span className="text-gray-200">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-gray-200">{Math.min(currentPage * itemsPerPage, holdersData.holders.length)}</span> of <span className="text-gray-200">{holdersData.holders.length}</span> entries
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 text-xs rounded-md bg-gray-800 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600"
+                        >
+                            Previous
+                        </button>
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 text-xs rounded-md bg-gray-800 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

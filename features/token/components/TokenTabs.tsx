@@ -5,6 +5,8 @@ import { TradesTable } from "./TradesTable";
 import { TopTradersTable } from "./TopTraderTable";
 import { HoldersTable } from "./HoldersTable";
 
+import { TradeTab } from "@/lib/constants";
+
 interface TokenTabsProps {
     tokenAddress: string;
 }
@@ -13,25 +15,29 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
     const { currentTradeTab, setCurrentTradeTab } = useTokenUIStore();
 
     return (
-        <div className="flex p-4 w-full col-span-3">
-            <Tabs value={currentTradeTab} onValueChange={(v: string) => setCurrentTradeTab(v)} className="w-full">
-                <TabsList>
-                    <TabsTrigger value="trades">Trades</TabsTrigger>
-                    <TabsTrigger value="top_traders">Top Traders</TabsTrigger>
-                    <TabsTrigger value="holders">Holders</TabsTrigger>
-                </TabsList>
+        <div className="flex flex-col w-full h-full">
+            <Tabs value={currentTradeTab} onValueChange={(v: string) => setCurrentTradeTab(v as TradeTab)} className="flex flex-col w-full h-full">
+                <div className="shrink-0 p-4 pb-0 z-20">
+                    <TabsList>
+                        <TabsTrigger value="trades">Trades</TabsTrigger>
+                        <TabsTrigger value="top_traders">Top Traders</TabsTrigger>
+                        <TabsTrigger value="holders">Holders</TabsTrigger>
+                    </TabsList>
+                </div>
 
-                <TabsContent value="trades">
-                    <TradesTable tokenAddress={tokenAddress} />
-                </TabsContent>
+                <div className="flex-1 overflow-hidden p-0 flex flex-col">
+                    <TabsContent value="trades" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                        <TradesTable tokenAddress={tokenAddress} />
+                    </TabsContent>
 
-                <TabsContent value="top_traders" className="m-0">
-                    <TopTradersTable tokenAddress={tokenAddress} />
-                </TabsContent>
+                    <TabsContent value="top_traders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                        <TopTradersTable tokenAddress={tokenAddress} />
+                    </TabsContent>
 
-                <TabsContent value="holders" className="m-0">
-                    <HoldersTable tokenAddress={tokenAddress} />
-                </TabsContent>
+                    <TabsContent value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                        <HoldersTable tokenAddress={tokenAddress} />
+                    </TabsContent>
+                </div>
             </Tabs>
         </div>
     );

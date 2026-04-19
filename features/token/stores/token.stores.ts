@@ -38,6 +38,10 @@ interface TokenUIState {
     favoriteTokens: Set<string>;
     toggleFavorite: (address: string) => void;
     isFavorite: (address: string) => boolean;
+
+    // Holders Table Columns
+    holdersTableColumns: Record<string, boolean>;
+    toggleHoldersTableColumn: (columnId: string) => void;
 }
 
 export const useTokenUIStore = create<TokenUIState>()(
@@ -94,13 +98,32 @@ export const useTokenUIStore = create<TokenUIState>()(
                     }
                     return { favoriteTokens: newFavorites };
                 }),
-            isFavorite: (address) => get().favoriteTokens.has(address)
+            isFavorite: (address) => get().favoriteTokens.has(address),
+
+            // Holders Table Columns
+            holdersTableColumns: {
+                balance: true,
+                bought: true,
+                sold: true,
+                unrealized: true,
+                remaining: true,
+                funding: false,
+                held: false
+            },
+            toggleHoldersTableColumn: (columnId) =>
+                set((state) => ({
+                    holdersTableColumns: {
+                        ...state.holdersTableColumns,
+                        [columnId]: !state.holdersTableColumns[columnId]
+                    }
+                }))
         }),
         {
             name: "token-ui-state",
             partialize: (state) => ({
                 chartInterval: state.chartInterval,
-                favoriteTokens: Array.from(state.favoriteTokens) // Convert Set to Array for storage
+                favoriteTokens: Array.from(state.favoriteTokens), // Convert Set to Array for storage
+                holdersTableColumns: state.holdersTableColumns
             }),
             // Custom storage to handle Set conversion
             storage: {
@@ -111,7 +134,16 @@ export const useTokenUIStore = create<TokenUIState>()(
                     return {
                         state: {
                             ...stored.state,
-                            favoriteTokens: new Set(stored.state.favoriteTokens || [])
+                            favoriteTokens: new Set(stored.state.favoriteTokens || []),
+                            holdersTableColumns: stored.state.holdersTableColumns || {
+                                balance: true,
+                                bought: true,
+                                sold: true,
+                                unrealized: true,
+                                remaining: true,
+                                funding: false,
+                                held: false
+                            }
                         }
                     };
                 },

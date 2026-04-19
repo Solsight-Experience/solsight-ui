@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatNumber } from "../utils/token.utils";
+import { currencyFormatter } from "@/lib/formatters";
 import type { TokenDetail } from "../types/token.types";
 
 interface TokenStatsProps {
@@ -86,7 +87,7 @@ export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
     const stats = [
         {
             label: "Price",
-            value: `$${Number(token.price).toFixed(4)}`,
+            value: currencyFormatter.format(token.price),
             change: token.price_change?.["24h"]
         },
         {

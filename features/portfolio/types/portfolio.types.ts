@@ -119,6 +119,7 @@ export interface AppInfo {
 export interface TokenAmount {
     address: string;
     symbol: string;
+    logo_uri?: string;
     amount: number;
     value_usd: number;
 }
