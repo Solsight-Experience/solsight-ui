@@ -152,7 +152,7 @@ const TEAM = [
         glow: "rgba(124,58,237,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Next.js", "Rust", "Solana"]
+        tags: ["Next.js", "Rust", "Nest.js"]
     },
     {
         student_id: "2",
@@ -164,7 +164,7 @@ const TEAM = [
         glow: "rgba(59,130,246,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Anchor", "Solidity", "Web3.js"]
+        tags: ["Rust", "Solana", "Anchor"]
     },
     {
         student_id: "3",
@@ -176,7 +176,7 @@ const TEAM = [
         glow: "rgba(236,72,153,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Python", "PyTorch", "Kafka"]
+        tags: ["Figma", "UI/UX Analysis", "Next.js"]
     },
     {
         student_id: "4",
@@ -188,7 +188,7 @@ const TEAM = [
         glow: "rgba(16,185,129,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Rust", "Axum", "Kubernetes"]
+        tags: ["Rust", "Axum", "Nest.js"]
     },
     {
         student_id: "5",
@@ -200,7 +200,7 @@ const TEAM = [
         glow: "rgba(245,158,11,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Figma", "React", "Tailwind"]
+        tags: ["Rust", "Axum", "Nest.js"]
     },
     {
         student_id: "6",
@@ -212,7 +212,7 @@ const TEAM = [
         glow: "rgba(239,68,68,0.35)",
         github: "#",
         linkedin: "#",
-        tags: ["Security", "Rust", "Playwright"]
+        tags: ["Rust", "Axum", "Nest.js"]
     }
 ];
 
