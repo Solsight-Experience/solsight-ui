@@ -26,19 +26,23 @@ export class ChatSocketManager extends SocketManager {
     }
 
     onResponse(sessionId: string, handler: (data: ChatResponseDto) => void): void {
-        this.on(CHAT_SOCKET_EVENTS.RESPONSE, handler, `response:${sessionId}`);
+        this.on(CHAT_SOCKET_EVENTS.RESPONSE, handler as EventHandler, `response:${sessionId}`);
     }
 
     onStream(sessionId: string, handler: (chunk: ChatStreamChunk) => void): void {
-        this.on(CHAT_SOCKET_EVENTS.STREAM, handler, `stream:${sessionId}`);
+        this.on(CHAT_SOCKET_EVENTS.STREAM, handler as EventHandler, `stream:${sessionId}`);
     }
 
     onComplete(sessionId: string, handler: () => void): void {
-        this.on(CHAT_SOCKET_EVENTS.COMPLETE, handler, `complete:${sessionId}`);
+        this.on(CHAT_SOCKET_EVENTS.COMPLETE, handler as EventHandler, `complete:${sessionId}`);
     }
 
     onError(sessionId: string, handler: (err: { code: string; message: string }) => void): void {
-        this.on(CHAT_SOCKET_EVENTS.ERROR, handler, `error:${sessionId}`);
+        this.on(CHAT_SOCKET_EVENTS.ERROR, handler as EventHandler, `error:${sessionId}`);
+    }
+
+    onToolProgress(sessionId: string, handler: (payload: { sessionId: string; label: string }) => void): void {
+        this.on(CHAT_SOCKET_EVENTS.TOOL_PROGRESS, handler as EventHandler, `toolProgress:${sessionId}`);
     }
 
     offSession(sessionId: string): void {
@@ -46,5 +50,6 @@ export class ChatSocketManager extends SocketManager {
         this.offKey(`stream:${sessionId}`);
         this.offKey(`complete:${sessionId}`);
         this.offKey(`error:${sessionId}`);
+        this.offKey(`toolProgress:${sessionId}`);
     }
 }
