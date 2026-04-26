@@ -164,6 +164,13 @@ export interface HoldersResponse {
     };
 }
 
+// Holder Update Payload (streamed from socket)
+export interface HolderUpdatePayload {
+    token: string;
+    changed: Holder[];
+    removed: string[];
+}
+
 // Swap Types
 export interface SwapPreviewRequest {
     amount_in: number;

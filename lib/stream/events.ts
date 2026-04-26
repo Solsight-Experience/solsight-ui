@@ -1,5 +1,4 @@
-import type { TokenDetail, TradeStreamResponse, TopTrader } from "@/features/token/types/token.types";
-import type { HolderUpdatePayload } from "@/features/token/hooks/token.socket.hooks";
+import type { TokenDetail, TradeStreamResponse, TopTrader, HolderUpdatePayload } from "@/features/token/types/token.types";
 import type { Notification } from "@/features/notifications/types/notification.types";
 
 // Per-entry params types (one per registry key)

@@ -1,23 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { phantomWallet } from "@/lib/wallet";
-import { ChatSocketManager } from "../services/chat.socket.service";
-import { ChatMessageDto, ChatResponseDto } from "@/types/dto";
+import { useChatStream } from "./useChatStream";
+import type { ChatMessageDto, ChatResponseDto } from "@/types/dto";
 
 export function useChat() {
     const [messages, setMessages] = useState<ChatMessageDto[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const sessionIdRef = useRef<string>(crypto.randomUUID());
-    const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
 
-    useEffect(() => {
-        const sessionId = sessionIdRef.current;
-
-        socketManager.onResponse(sessionId, (response: ChatResponseDto) => {
+    const { send } = useChatStream({
+        sessionId: sessionIdRef.current,
+        onResponse: (response: ChatResponseDto) => {
             setMessages((prev) => [
                 ...prev,
                 {
@@ -28,34 +26,21 @@ export function useChat() {
                     timestamp: Date.now()
                 }
             ]);
-        });
-
-        socketManager.onComplete(sessionId, () => {
+        },
+        onComplete: () => {
             setIsLoading(false);
-        });
-
-        socketManager.onError(sessionId, (err) => {
+        },
+        onError: (err) => {
             setError(err.message);
             setIsLoading(false);
-        });
-
-        return () => {
-            socketManager.offSession(sessionId);
-        };
-    }, [socketManager]);
+        }
+    });
 
     const sendMessage = (text: string) => {
-        setMessages((prev) => [
-            ...prev,
-            {
-                role: "user",
-                content: text,
-                timestamp: Date.now()
-            }
-        ]);
+        setMessages((prev) => [...prev, { role: "user", content: text, timestamp: Date.now() }]);
         setIsLoading(true);
         setError(null);
-        socketManager.sendMessage({
+        send({
             message: text,
             sessionId: sessionIdRef.current,
             userId: user?.id,

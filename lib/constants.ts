@@ -136,38 +136,29 @@ export type TradeTab = (typeof TRADE_TABS)[number];
 
 // Wallet Alert API Endpoints
 export const WALLET_ALERT_ENDPOINTS = {
-  LIST:   (address: string)              => `/api/watchlist/${address}/alerts`,
-  CREATE: (address: string)              => `/api/watchlist/${address}/alerts`,
-  UPDATE: (address: string, id: string)  => `/api/watchlist/${address}/alerts/${id}`,
-  DELETE: (address: string, id: string)  => `/api/watchlist/${address}/alerts/${id}`,
+    LIST: (address: string) => `/api/watchlist/${address}/alerts`,
+    CREATE: (address: string) => `/api/watchlist/${address}/alerts`,
+    UPDATE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`,
+    DELETE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`
 } as const;
 
 // Watchlist API Endpoints
 export const WATCHLIST_ENDPOINTS = {
-  LIST: '/api/watchlist',
-  ADD: '/api/watchlist',
-  UPDATE: (address: string) => `/api/watchlist/${address}`,
-  REMOVE: (address: string) => `/api/watchlist/${address}`,
+    LIST: "/api/watchlist",
+    ADD: "/api/watchlist",
+    UPDATE: (address: string) => `/api/watchlist/${address}`,
+    REMOVE: (address: string) => `/api/watchlist/${address}`
 } as const;
 
 // Portfolio Watch (arbitrary wallet) API Endpoints
 export const PORTFOLIO_WATCH_ENDPOINTS = {
-  OVERVIEW: '/api/portfolio/watch/overview',
-  POSITIONS: '/api/portfolio/watch/positions',
-  ACTIVITIES: '/api/portfolio/watch/activities',
-  PNL_CHART: '/api/portfolio/watch/pnl-chart',
+    OVERVIEW: "/api/portfolio/watch/overview",
+    POSITIONS: "/api/portfolio/watch/positions",
+    ACTIVITIES: "/api/portfolio/watch/activities",
+    PNL_CHART: "/api/portfolio/watch/pnl-chart"
 } as const;
 
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
     MESSAGE: "/api/chat/message"
-} as const;
-
-// Chat Socket Events
-export const CHAT_SOCKET_EVENTS = {
-    SEND: "chat:message",
-    RESPONSE: "chat:response",
-    STREAM: "chat:stream",
-    COMPLETE: "chat:complete",
-    ERROR: "chat:error"
 } as const;

@@ -1,31 +1,17 @@
-import { TokenSocketManager } from "../services/token.socket.services";
-import { useEffect, useState } from "react";
-import type { Trade, TradeStreamResponse, TopTrader, Holder, ChartDataPoint, TokenDetail } from "../types/token.types";
-import type { ChartInterval } from "@/lib/constants";
-import { CandlestickData, UTCTimestamp } from "lightweight-charts";
-import { useTokenUIStore } from "../stores/token.stores";
+"use client";
 
-const socket = TokenSocketManager.getInstance();
+import { useStream } from "@/hooks/useStream";
+import type { TokenDetail, TradeStreamResponse, TopTrader, HolderUpdatePayload } from "../types/token.types";
+import type { ChartInterval } from "@/lib/constants";
+import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
 
 export function useTokenDetailStream(address: string) {
-    const [detail, setDetail] = useState<TokenDetail>();
-    useEffect(() => {
-        const dto = {
-            domain: "stats",
-            resource: address,
-            interval: "5s"
-        };
-
-        socket.onDomainEvent(dto, (data: TokenDetail) => {
-            console.log("data", data);
-            setDetail(data);
-        });
-
-        return () => {
-            socket.unsubscribe(dto);
-        };
-    }, [address]);
-    return detail;
+    const { data } = useStream("TOKEN_STATS", {
+        domain: "stats",
+        resource: address,
+        interval: "5s"
+    });
+    return data;
 }
 
 export function useTradeStream(
@@ -34,99 +20,49 @@ export function useTradeStream(
         type?: "all" | "buy" | "sell";
     }
 ) {
-    const [trades, setTrades] = useState<Trade[]>();
-    useEffect(() => {
-        const dto = {
-            domain: "trades",
-            resource: address,
-            interval: "5s"
-        };
-
-        socket.onDomainEvent(dto, (data: TradeStreamResponse) => {
-            setTrades(data.trades);
-        });
-
-        return () => {
-            socket.unsubscribe(dto);
-        };
-    }, [address]);
-
-    return trades;
+    const { data } = useStream("TOKEN_TRADES", {
+        domain: "trades",
+        resource: address,
+        interval: "5s"
+    });
+    return data?.trades;
 }
 
 export function useTopTradersStream(address: string, timeFrame: "24h" | "7d" | "30d" | "all" = "24h") {
-    const [topTraders, setTopTraders] = useState<TopTrader>();
-    useEffect(() => {
-        const dto = {
-            domain: "top_traders",
-            resource: address,
-            interval: "5s"
-        };
-
-        socket.onDomainEvent(dto, (data: { data: TopTrader }) => {
-            setTopTraders(data.data);
-        });
-
-        return () => {
-            socket.unsubscribe(dto);
-        };
-    }, [address]);
-    return topTraders;
-}
-
-export interface HolderUpdatePayload {
-    token: string;
-    changed: Holder[];
-    removed: string[];
+    const { data } = useStream("TOKEN_TOP_TRADERS", {
+        domain: "top_traders",
+        resource: address,
+        interval: "5s"
+    });
+    return data?.data;
 }
 
 export function useHoldersStream(address: string) {
-    const [holderUpdate, setHolderUpdate] = useState<HolderUpdatePayload>();
-    useEffect(() => {
-        const dto = {
-            domain: "holders",
-            resource: address,
-            interval: "5s"
-        };
-
-        socket.onDomainEvent(dto, (data: HolderUpdatePayload) => {
-            // Backend sends: { token, changed: Holder[], removed: string[] }
-            if (data?.changed || data?.removed) {
-                setHolderUpdate(data);
-            }
-        });
-
-        return () => {
-            socket.unsubscribe(dto);
-        };
-    }, [address]);
-    return holderUpdate;
+    const { data } = useStream("TOKEN_HOLDERS", {
+        domain: "holders",
+        resource: address,
+        interval: "5s"
+    });
+    return data?.changed || data?.removed ? data : undefined;
 }
 
+// BUG FIX (Architect A4, Critic C5):
+// OLD: Read chartInterval from store inside this hook, but useEffect deps had [address, interval] parameter.
+//      This caused mismatch: subscription used store, resubscription triggered by parameter.
+// NEW: Use the `interval` parameter as the single source of truth.
+//      Caller (useChartData) already reads store at component level and passes it.
 export function useChartDataStream(address: string, interval: ChartInterval) {
-    const [chart, setChart] = useState<CandlestickData>();
-    const { chartInterval, orderType, limitPrice } = useTokenUIStore();
-    useEffect(() => {
-        const priceDto = {
-            domain: "priceOHLC",
-            resource: address,
-            interval: chartInterval
-        };
-
-        socket.onDomainEvent(priceDto, ({ priceOHLC, time }) => {
-            setChart((prev) => ({
-                open: priceOHLC.open,
-                high: priceOHLC.high,
-                low: priceOHLC.low,
-                close: priceOHLC.close,
-                time: time as UTCTimestamp
-            }));
-        });
-
-        return () => {
-            socket.unsubscribe(priceDto);
-        };
-    }, [address, interval]);
-
-    return chart;
+    const { data } = useStream("TOKEN_CHART", {
+        domain: "priceOHLC",
+        resource: address,
+        interval: interval
+    });
+    if (!data) return undefined;
+    return {
+        open: data.priceOHLC.open,
+        high: data.priceOHLC.high,
+        low: data.priceOHLC.low,
+        close: data.priceOHLC.close,
+        time: data.time as UTCTimestamp
+    } as CandlestickData;
 }

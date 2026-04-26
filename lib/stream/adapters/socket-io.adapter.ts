@@ -78,13 +78,13 @@ export class SocketIoAdapter implements StreamAdapter {
     }
 
     subscribe(channel: string, payload: Record<string, string>, roomKey?: string): void {
-        const id = this.subscriptionId(channel, payload);
+        const id = this.subscriptionId(payload);
         this.activeSubscriptions.set(id, { channel, payload, roomKey });
         this.socket.emit(channel, payload);
     }
 
     unsubscribe(channel: string, payload: Record<string, string>): void {
-        const id = this.subscriptionId(channel, payload);
+        const id = this.subscriptionId(payload);
         this.activeSubscriptions.delete(id);
         this.socket.emit(channel, payload);
     }
@@ -143,8 +143,8 @@ export class SocketIoAdapter implements StreamAdapter {
         };
     }
 
-    private subscriptionId(channel: string, payload: Record<string, string>): string {
-        return `${channel}:${JSON.stringify(payload)}`;
+    private subscriptionId(payload: Record<string, string>): string {
+        return `subscription:${JSON.stringify(payload)}`;
     }
 
     private notifyStatusCallbacks(status: ConnectionStatus): void {
