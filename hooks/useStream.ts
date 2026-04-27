@@ -29,19 +29,15 @@ export function useStream<K extends StreamKey>(
 
     const enabled = options?.enabled ?? true;
     const stoppedRef = useRef(false);
+    const cleanupRef = useRef<(() => void) | null>(null);
     const onEventRef = useRef(options?.onEvent);
     onEventRef.current = options?.onEvent;
 
-    // Params stability (C7): stringify params to detect actual changes vs new object references
     const paramsKey = useMemo(() => JSON.stringify(params), [params]);
-    const prevParamsKeyRef = useRef<string | undefined>(undefined);
 
-    // Main subscription effect
     useEffect(() => {
         if (!enabled || stoppedRef.current) return;
 
-        // Cast through unknown to avoid TypeScript union parameter mismatch;
-        // the generic constraint K ensures params is the correct type at the call site.
         const entry = STREAMS[key] as unknown as {
             subscribe: string;
             unsubscribe: string;
@@ -52,24 +48,12 @@ export function useStream<K extends StreamKey>(
         const payload = entry.buildSubscribePayload(params);
         const roomKey = entry.buildRoomKey?.(params);
 
-        // Check if params actually changed (not just a new object reference with same values)
-        const paramsChanged = prevParamsKeyRef.current !== paramsKey;
-        prevParamsKeyRef.current = paramsKey;
-
-        if (!paramsChanged && data !== undefined) {
-            // Params are the same as before and we already have data — skip re-subscription
-            return;
-        }
-
-        // Subscribe to the server-side room/channel
         adapter.subscribe(entry.subscribe, payload, roomKey);
 
-        // Listen for events; adapter handles room filtering internally
         const unsubscribeListener = adapter.on(
             entry.event,
             (rawData) => {
                 const typed = rawData as StreamEventMap[K];
-                // Fire onEvent synchronously BEFORE setData so notification events are never lost
                 onEventRef.current?.(typed);
                 if (!stoppedRef.current) {
                     setData(typed);
@@ -78,9 +62,14 @@ export function useStream<K extends StreamKey>(
             roomKey
         );
 
-        return () => {
+        cleanupRef.current = () => {
             unsubscribeListener();
             adapter.unsubscribe(entry.unsubscribe, payload);
+        };
+
+        return () => {
+            cleanupRef.current?.();
+            cleanupRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key, paramsKey, enabled, adapter]);
@@ -113,6 +102,8 @@ export function useStream<K extends StreamKey>(
 
     const stop = useCallback(() => {
         stoppedRef.current = true;
+        cleanupRef.current?.();
+        cleanupRef.current = null;
     }, []);
 
     return { data, status, error, stop };

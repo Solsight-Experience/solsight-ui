@@ -4,6 +4,7 @@ import type { ConnectionStatus } from "../types";
 
 interface SubscriptionRecord {
     channel: string;
+    unsubscribeChannel: string;
     payload: Record<string, string>;
     roomKey?: string;
 }
@@ -57,6 +58,12 @@ export class SocketIoAdapter implements StreamAdapter {
             this.currentStatus = "reconnecting";
             this.notifyStatusCallbacks("reconnecting");
         });
+
+        // reconnect_attempt is a manager event in socket.io v4, not on socket
+        this.socket.io.on("reconnect_attempt", () => {
+            this.currentStatus = "reconnecting";
+            this.notifyStatusCallbacks("reconnecting");
+        });
     }
 
     connect(): void {
@@ -68,8 +75,7 @@ export class SocketIoAdapter implements StreamAdapter {
     disconnect(): void {
         // Emit unsubscribe for all active subscriptions before closing
         for (const sub of this.activeSubscriptions.values()) {
-            const unsubChannel = sub.channel.replace(":subscribe", ":unsubscribe");
-            this.socket.emit(unsubChannel, sub.payload);
+            this.socket.emit(sub.unsubscribeChannel, sub.payload);
         }
         this.activeSubscriptions.clear();
         this.socket.disconnect();
@@ -77,9 +83,14 @@ export class SocketIoAdapter implements StreamAdapter {
         this.notifyStatusCallbacks("disconnected");
     }
 
-    subscribe(channel: string, payload: Record<string, string>, roomKey?: string): void {
+    subscribe(channel: string, payload: Record<string, string>, roomKey?: string, unsubscribeChannel?: string): void {
         const id = this.subscriptionId(payload);
-        this.activeSubscriptions.set(id, { channel, payload, roomKey });
+        this.activeSubscriptions.set(id, {
+            channel,
+            unsubscribeChannel: unsubscribeChannel || channel.replace(":subscribe", ":unsubscribe"),
+            payload,
+            roomKey
+        });
         this.socket.emit(channel, payload);
     }
 

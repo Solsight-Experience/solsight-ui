@@ -39,7 +39,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    return <SocketContext.Provider value={{ adapter: adapterRef.current!, status }}>{children}</SocketContext.Provider>;
+    if (!adapterRef.current) {
+        return <>{children}</>;
+    }
+
+    return <SocketContext.Provider value={{ adapter: adapterRef.current, status }}>{children}</SocketContext.Provider>;
 }
 
 export function useSocketContext(): SocketContextValue {

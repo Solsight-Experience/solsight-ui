@@ -3,7 +3,7 @@ import type { ConnectionStatus } from "../types";
 export interface StreamAdapter {
     connect(): void;
     disconnect(): void;
-    subscribe(channel: string, payload: Record<string, string>, roomKey?: string): void;
+    subscribe(channel: string, payload: Record<string, string>, roomKey?: string, unsubscribeChannel?: string): void;
     unsubscribe(channel: string, payload: Record<string, string>): void;
     on(event: string, handler: (...args: unknown[]) => void, roomKey?: string): () => void;
     off(event: string, handler: (...args: unknown[]) => void): void;
