@@ -1,81 +1,104 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 
-// API client configuration for NestJS backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+export interface RequestConfig {
+    params?: Record<string, unknown>;
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+}
+
 class ApiClient {
-    public client: AxiosInstance;
+    private baseURL: string;
 
-    constructor() {
-        this.client = axios.create({
-            baseURL: API_BASE_URL,
-            timeout: 0,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            withCredentials: true // Enable sending cookies
-        });
-
-        this.setupInterceptors();
+    constructor(baseURL: string) {
+        this.baseURL = baseURL;
     }
 
-    private setupInterceptors() {
-        // Request interceptor - add auth token if available
-        this.client.interceptors.request.use(
-            (config) => {
-                const token = Cookies.get("auth_token");
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
+    private buildURL(path: string, params?: Record<string, unknown>): string {
+        const url = new URL(path, this.baseURL);
+        if (params) {
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== undefined && value !== null) {
+                    if (Array.isArray(value)) {
+                        for (const item of value) {
+                            url.searchParams.append(key, String(item));
+                        }
+                    } else {
+                        url.searchParams.set(key, String(value));
+                    }
                 }
-                return config;
-            },
-            (error) => Promise.reject(error)
-        );
-
-        // Response interceptor - handle common errors
-        this.client.interceptors.response.use(
-            (response) => response,
-            (error) => {
-                // if (error.response?.status === 401) {
-                //   // Handle unauthorized - redirect to login
-                //   localStorage.removeItem('authToken');
-                //   window.location.href = '/auth/login';
-                // }
-                return Promise.reject(error);
             }
-        );
+        }
+        return url.toString();
     }
 
-    // Generic HTTP methods
-    async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.get(url, config);
-        return response.data;
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json"
+        };
+        const token = Cookies.get("auth_token");
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+        return headers;
     }
 
-    async post<T>(url: string, data?: object, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.post(url, data, config);
-        return response.data;
+    private async request<T>(method: string, path: string, data?: object, config?: RequestConfig): Promise<T> {
+        const url = this.buildURL(path, config?.params);
+        const headers = { ...this.getAuthHeaders(), ...config?.headers };
+
+        const init: RequestInit = {
+            method,
+            headers,
+            credentials: "include",
+            signal: config?.signal
+        };
+
+        if (data !== undefined) {
+            init.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, init);
+
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            const error = new Error(body.message || `Request failed with status ${response.status}`);
+            (error as unknown as Record<string, unknown>).response = {
+                status: response.status,
+                data: body
+            };
+            throw error;
+        }
+
+        if (response.status === 204) {
+            return undefined as T;
+        }
+
+        return response.json();
     }
 
-    async put<T>(url: string, data?: object, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.put(url, data, config);
-        return response.data;
+    async get<T>(url: string, config?: RequestConfig): Promise<T> {
+        return this.request<T>("GET", url, undefined, config);
     }
 
-    async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.delete(url, config);
-        return response.data;
+    async post<T>(url: string, data?: object, config?: RequestConfig): Promise<T> {
+        return this.request<T>("POST", url, data, config);
     }
 
-    async patch<T>(url: string, data?: object, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.patch(url, data, config);
-        return response.data;
+    async put<T>(url: string, data?: object, config?: RequestConfig): Promise<T> {
+        return this.request<T>("PUT", url, data, config);
+    }
+
+    async delete<T>(url: string, config?: RequestConfig): Promise<T> {
+        return this.request<T>("DELETE", url, undefined, config);
+    }
+
+    async patch<T>(url: string, data?: object, config?: RequestConfig): Promise<T> {
+        return this.request<T>("PATCH", url, data, config);
     }
 }
 
-// Export singleton instance
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient(API_BASE_URL);
 
-// Convenience export for direct use
 export default apiClient;

@@ -1,8 +1,8 @@
-import type MockAdapter from "axios-mock-adapter";
+import type { FetchMockAdapter } from "../index";
 import { PORTFOLIO_ENDPOINTS } from "@/lib/constants";
 import { mockWallets, mockActivities, mockPnlChartData, mockPhantomWallet } from "../data/portfolioData";
 
-export function setupPortfolioMocks(mock: MockAdapter) {
+export function setupPortfolioMocks(mock: FetchMockAdapter) {
     let wallets = [...mockWallets]; // Use mutable copy for testing
 
     const getTotalBalances = () => ({
@@ -87,7 +87,7 @@ export function setupPortfolioMocks(mock: MockAdapter) {
 
     // GET: Positions
     mock.onGet(PORTFOLIO_ENDPOINTS.POSITIONS).reply((config) => {
-        const walletAddress = config.params?.wallet_address;
+        const walletAddress = config.params?.get("wallet_address");
         if (!walletAddress) return [400, { error: "wallet_address is required" }];
 
         const wallet = mockWallets.find((w) => w.address === walletAddress);
@@ -161,7 +161,7 @@ export function setupPortfolioMocks(mock: MockAdapter) {
 
     // POST: Add Wallet (Connect Phantom)
     mock.onPost(PORTFOLIO_ENDPOINTS.WALLETS).reply((config) => {
-        const data = JSON.parse(config.data || "{}");
+        const data = (config.data || {}) as Record<string, unknown>;
 
         // For mock, we'll just add the Phantom wallet
         if (wallets.find((w) => w.address === mockPhantomWallet.address)) {

@@ -1,62 +1,154 @@
-import MockAdapter from "axios-mock-adapter";
-import apiClient from "../api-client";
+type ReplyFn = (config: { url: string; data?: unknown; params?: URLSearchParams }) => [number, unknown] | Promise<[number, unknown]>;
+type Reply = [number, unknown] | ReplyFn;
 
-// Import mock handlers
-import { setupPortfolioMocks } from "./handlers/portfolioHandlers";
-import { setupTokenMockApi } from "./handlers/tokenHandlers";
+interface MockRoute {
+    method: string;
+    url: string | RegExp;
+    reply: Reply;
+}
 
-let mockAdapter: MockAdapter | null = null;
+export class FetchMockAdapter {
+    private routes: MockRoute[] = [];
+    private originalFetch: typeof fetch | null = null;
+    private delayMs: number;
+    private passthrough: boolean;
 
-export function setupMockAdapter() {
-    // Only setup in browser (client-side)
-    if (typeof window === "undefined") {
-        return;
+    constructor(options?: { delayResponse?: number; onNoMatch?: "passthrough" | "error" }) {
+        this.delayMs = options?.delayResponse ?? 0;
+        this.passthrough = options?.onNoMatch === "passthrough";
     }
 
-    // Check if mock is enabled
+    activate(): void {
+        if (this.originalFetch) return;
+        this.originalFetch = globalThis.fetch;
+        globalThis.fetch = this.interceptedFetch.bind(this) as typeof fetch;
+    }
+
+    private matchRoute(method: string, url: string): MockRoute | undefined {
+        return this.routes.find((route) => {
+            if (route.method !== method.toUpperCase()) return false;
+            if (route.url instanceof RegExp) return route.url.test(url);
+            return url.includes(route.url);
+        });
+    }
+
+    private async interceptedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const method = (init?.method || "GET").toUpperCase();
+
+        const route = this.matchRoute(method, url);
+
+        if (!route) {
+            if (this.passthrough && this.originalFetch) {
+                return this.originalFetch(input, init);
+            }
+            return new Response(JSON.stringify({ message: "No mock handler for request" }), { status: 404 });
+        }
+
+        if (this.delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+        }
+
+        let status: number;
+        let body: unknown;
+
+        if (typeof route.reply === "function") {
+            const parsedUrl = new URL(url, "http://localhost");
+            const data = init?.body ? JSON.parse(init.body as string) : undefined;
+            const result = await route.reply({ url, data, params: parsedUrl.searchParams });
+            [status, body] = result;
+        } else {
+            [status, body] = route.reply;
+        }
+
+        return new Response(JSON.stringify(body), {
+            status,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
+
+    onGet(url: string | RegExp) {
+        return this.on("GET", url);
+    }
+
+    onPost(url: string | RegExp) {
+        return this.on("POST", url);
+    }
+
+    onPut(url: string | RegExp) {
+        return this.on("PUT", url);
+    }
+
+    onDelete(url: string | RegExp) {
+        return this.on("DELETE", url);
+    }
+
+    onPatch(url: string | RegExp) {
+        return this.on("PATCH", url);
+    }
+
+    private on(method: string, url: string | RegExp) {
+        return {
+            reply: (statusOrFn: number | ReplyFn, data?: unknown) => {
+                if (typeof statusOrFn === "function") {
+                    this.routes.push({ method, url, reply: statusOrFn });
+                } else {
+                    this.routes.push({ method, url, reply: [statusOrFn, data] });
+                }
+            }
+        };
+    }
+
+    reset(): void {
+        this.routes = [];
+    }
+
+    restore(): void {
+        if (this.originalFetch) {
+            globalThis.fetch = this.originalFetch;
+            this.originalFetch = null;
+        }
+        this.routes = [];
+    }
+}
+
+let mockAdapter: FetchMockAdapter | null = null;
+
+export function setupMockAdapter() {
+    if (typeof window === "undefined") return;
+
     const isMockEnabled = process.env.NEXT_PUBLIC_ENABLE_MOCK === "true";
 
     if (!isMockEnabled) {
-        console.log("🔴 Mock adapter is disabled");
         return;
-    } else {
-        console.log("Mock adapter is enabled");
     }
 
-    // Create mock adapter with delay to simulate network latency
-    mockAdapter = new MockAdapter(apiClient.client, {
-        delayResponse: 50, // 50ms delay
-        onNoMatch: "passthrough" // Pass through unmatched requests
+    mockAdapter = new FetchMockAdapter({
+        delayResponse: 50,
+        onNoMatch: "passthrough"
     });
 
-    console.log("🟢 Mock adapter enabled with 50ms delay");
+    mockAdapter.activate();
 
     // Setup all mock handlers
-    setupPortfolioMocks(mockAdapter);
-
-    setupTokenMockApi(mockAdapter);
-
-    // Add more mock handlers here as needed
-    // setupTokenMocks(mockAdapter);
-    // setupUserMocks(mockAdapter);
-
-    console.log("✅ All mock handlers registered");
+    import("./handlers/portfolioHandlers").then(({ setupPortfolioMocks }) => {
+        setupPortfolioMocks(mockAdapter!);
+    });
+    import("./handlers/tokenHandlers").then(({ setupTokenMockApi }) => {
+        setupTokenMockApi(mockAdapter!);
+    });
 
     return mockAdapter;
 }
 
 export function resetMockAdapter() {
-    if (mockAdapter) {
-        mockAdapter.reset();
-        console.log("🔄 Mock adapter reset");
-    }
+    mockAdapter?.reset();
 }
 
 export function disableMockAdapter() {
     if (mockAdapter) {
         mockAdapter.restore();
         mockAdapter = null;
-        console.log("🔴 Mock adapter disabled");
     }
 }
 
@@ -64,7 +156,6 @@ export function getMockAdapter() {
     return mockAdapter;
 }
 
-// Auto setup when module is imported (only in browser)
 if (typeof window !== "undefined") {
     setupMockAdapter();
 }

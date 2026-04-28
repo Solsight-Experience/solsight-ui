@@ -1,4 +1,4 @@
-import MockAdapter from "axios-mock-adapter";
+import type { FetchMockAdapter } from "../index";
 
 // Mock Token Data
 const mockTokenData = {
@@ -190,7 +190,7 @@ const mockHolders = [
     }
 ];
 
-export function setupTokenMockApi(mock: MockAdapter) {
+export function setupTokenMockApi(mock: FetchMockAdapter) {
     // Get chart data
     // NOTE: Disabled to fetch real data from API
     // mock.onGet(/\/api\/tokens\/.*\/chart/).reply((config) => {
