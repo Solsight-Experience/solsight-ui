@@ -150,7 +150,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const {
         data: apiData,
         isLoading,
-        error
+        error,
+        dataUpdatedAt
     } = useQuery({
         queryKey:
             filters.activeTab === "CATEGORIES" && filters.selectedCategorySlug
@@ -350,6 +351,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         resetFilters,
         applyFilterResults,
         isLoading,
-        error
+        error,
+        dataUpdatedAt
     };
 }

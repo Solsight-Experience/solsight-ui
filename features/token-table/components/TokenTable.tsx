@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
+import { Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
@@ -44,7 +45,8 @@ export default function TokenTable() {
         resetFilters,
         applyFilterResults,
         isLoading,
-        error
+        error,
+        dataUpdatedAt
     } = useTokenTable(handleQuickBuy);
 
     // Debug log for favorites
@@ -180,21 +182,30 @@ export default function TokenTable() {
 
     return (
         <>
-            <div
-                className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
-                            shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]"
-            >
-                {/* ── Toolbar ── */}
-                <div
-                    className="flex flex-col gap-3 px-4 py-3 border-b border-white/[0.05] bg-white/[0.015]
-                                sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
-                    {renderRightPanel()}
-                </div>
+            <div className="relative">
+                {/* ── Cache freshness note ── */}
+                {!isCategories && dataUpdatedAt > 0 && !isLoading && (
+                    <div className="absolute -top-6 right-0">
+                        <CacheNote timestamp={dataUpdatedAt} />
+                    </div>
+                )}
 
-                {/* ── Content ── */}
-                {renderContent()}
+                <div
+                    className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
+                                shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]"
+                >
+                    {/* ── Toolbar ── */}
+                    <div
+                        className="flex flex-col gap-3 px-4 py-3 border-b border-white/[0.05] bg-white/[0.015]
+                                    sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                        {renderRightPanel()}
+                    </div>
+
+                    {/* ── Content ── */}
+                    {renderContent()}
+                </div>
             </div>
 
             {isCategories && <CategoryDetailModal categorySlug={filters.selectedCategorySlug} onClose={() => setSelectedCategorySlug(null)} />}
@@ -202,6 +213,35 @@ export default function TokenTable() {
                 <QuickBuyReviewModal open={quickBuyModalOpen} onOpenChange={setQuickBuyModalOpen} token={quickBuyToken} amountSol={filters.quickBuyAmount} />
             )}
         </>
+    );
+}
+
+/* ── Cache Note ──────────────────────────────────────────────────────────── */
+function formatDataAge(timestamp: number): string {
+    const ageMs = Date.now() - timestamp;
+    const ageSec = Math.floor(ageMs / 1000);
+    if (ageSec < 10) return "just now";
+    if (ageSec < 60) return `${ageSec}s ago`;
+    const ageMin = Math.floor(ageSec / 60);
+    if (ageMin < 60) return `${ageMin} min${ageMin > 1 ? "s" : ""} ago`;
+    const ageHour = Math.floor(ageMin / 60);
+    return `${ageHour}h ago`;
+}
+
+function CacheNote({ timestamp }: { timestamp: number }) {
+    const [age, setAge] = useState(() => formatDataAge(timestamp));
+
+    useEffect(() => {
+        setAge(formatDataAge(timestamp));
+        const id = setInterval(() => setAge(formatDataAge(timestamp)), 10_000);
+        return () => clearInterval(id);
+    }, [timestamp]);
+
+    return (
+        <span className="flex items-center gap-1 text-[10px] text-white/30 select-none">
+            <Clock className="w-2.5 h-2.5 shrink-0" />
+            Updated {age}
+        </span>
     );
 }
 
