@@ -149,9 +149,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     // Fetch tokens based on active tab
     const {
         data: apiData,
-        isLoading,
+        isPending,
+        isFetching,
         error,
-        dataUpdatedAt
+        dataUpdatedAt,
+        refetch
     } = useQuery({
         queryKey:
             filters.activeTab === "CATEGORIES" && filters.selectedCategorySlug
@@ -350,8 +352,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         toggleFavourite,
         resetFilters,
         applyFilterResults,
-        isLoading,
+        isLoading: isPending,
+        isFetching,
         error,
-        dataUpdatedAt
+        dataUpdatedAt,
+        refetch
     };
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
-import { Clock } from "lucide-react";
+import { Clock, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
@@ -45,9 +45,13 @@ export default function TokenTable() {
         resetFilters,
         applyFilterResults,
         isLoading,
+        isFetching,
         error,
-        dataUpdatedAt
+        dataUpdatedAt,
+        refetch
     } = useTokenTable(handleQuickBuy);
+
+    const isRefetching = isFetching && !isLoading;
 
     // Debug log for favorites
     const handleRowClick = (tokenAddress: string) => {
@@ -184,9 +188,9 @@ export default function TokenTable() {
         <>
             <div className="relative">
                 {/* ── Cache freshness note ── */}
-                {!isCategories && dataUpdatedAt > 0 && !isLoading && (
-                    <div className="absolute -top-6 right-0">
-                        <CacheNote timestamp={dataUpdatedAt} />
+                {!isCategories && dataUpdatedAt > 0 && (
+                    <div className="absolute -top-9 right-0">
+                        <CacheNote timestamp={dataUpdatedAt} isRefetching={isRefetching} onRefresh={() => refetch()} />
                     </div>
                 )}
 
@@ -228,7 +232,7 @@ function formatDataAge(timestamp: number): string {
     return `${ageHour}h ago`;
 }
 
-function CacheNote({ timestamp }: { timestamp: number }) {
+function CacheNote({ timestamp, isRefetching, onRefresh }: { timestamp: number; isRefetching: boolean; onRefresh: () => void }) {
     const [age, setAge] = useState(() => formatDataAge(timestamp));
 
     useEffect(() => {
@@ -238,9 +242,23 @@ function CacheNote({ timestamp }: { timestamp: number }) {
     }, [timestamp]);
 
     return (
-        <span className="flex items-center gap-1 text-[10px] text-white/30 select-none">
-            <Clock className="w-2.5 h-2.5 shrink-0" />
-            Updated {age}
+        <span className="flex items-center gap-3 select-none">
+            <span className="flex items-center gap-1.5 text-[11px] text-white/30">
+                <Clock className="w-3 h-3 shrink-0" />
+                Updated {age}
+            </span>
+            <button
+                onClick={onRefresh}
+                disabled={isRefetching}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-white/10
+                           text-[11px] font-medium text-white/50
+                           hover:border-violet-500/40 hover:text-violet-400 hover:bg-violet-500/5
+                           disabled:opacity-40 disabled:cursor-not-allowed
+                           transition-all duration-150"
+            >
+                <RotateCw className={`w-3 h-3 ${isRefetching ? "animate-spin" : ""}`} />
+                Refresh
+            </button>
         </span>
     );
 }
