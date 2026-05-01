@@ -244,7 +244,7 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string; 
                                 </span>
                             </>
                         ) : (
-                            <span className="text-[var(--text-disabled)]">$0</span>
+                            <span className="text-[var(--text-muted)]">$0</span>
                         )}
                     </div>
                 </td>
@@ -283,7 +283,7 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string; 
                             <span className="text-[var(--text-muted)] text-[10px]">{formatHeldTime(first_tx_time)} • ≡ 0.01 • 1</span>
                         </div>
                     ) : (
-                        <span className="text-[var(--text-disabled)]">—</span>
+                        <span className="text-[var(--text-muted)]">—</span>
                     )}
                 </td>
             )}

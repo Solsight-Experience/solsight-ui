@@ -70,7 +70,7 @@ const WalletItem: React.FC<{ wallet: WatchedWallet; isSelected: boolean; onSelec
                     <>
                         <span className="text-xs font-medium text-[var(--text-primary)] truncate">{wallet.label || shortenAddress(wallet.walletAddress)}</span>
                         {wallet.label && (
-                            <span className="text-[10px] text-[var(--text-disabled)] font-mono truncate">{shortenAddress(wallet.walletAddress)}</span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">{shortenAddress(wallet.walletAddress)}</span>
                         )}
                     </>
                 )}

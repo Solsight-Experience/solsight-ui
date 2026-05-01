@@ -167,7 +167,7 @@ export const AddTokenChartModal: React.FC<AddTokenChartModalProps> = ({ isOpen, 
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-semibold text-[var(--text-primary)] text-sm">{token.symbol}</div>
                                                         <div className="text-xs text-[var(--text-muted)] truncate">{token.name}</div>
-                                                        <div className="text-xs text-[var(--text-disabled)] font-mono">
+                                                        <div className="text-xs text-[var(--text-muted)] font-mono">
                                                             {token.address.slice(0, 6)}...
                                                             {token.address.slice(-4)}
                                                         </div>

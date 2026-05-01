@@ -97,7 +97,7 @@ const ActivityRow: React.FC<ActivityRowProps> = ({ timestamp, tx_hash, token_in,
             <td className="py-4 px-3">
                 <div className="flex flex-col">
                     <span className="text-sm text-[var(--text-secondary)]">{fee_sol.toFixed(6)} SOL</span>
-                    <span className="text-xs text-[var(--text-disabled)]">${fee_usd.toFixed(4)}</span>
+                    <span className="text-xs text-[var(--text-muted)]">${fee_usd.toFixed(4)}</span>
                 </div>
             </td>
             <td className="py-4 px-3">

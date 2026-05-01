@@ -45,7 +45,7 @@ export default function Authentication() {
 
     return (
         <div
-            className="min-h-screen flex flex-col overflow-hidden"
+            className="dark min-h-screen flex flex-col overflow-hidden"
             style={{ background: "linear-gradient(135deg, #070412 0%, #0d0920 40%, #060814 70%, #0a0612 100%)" }}
         >
             {/* Animated canvas background */}

@@ -74,7 +74,7 @@
   /* ·· Text ·· */
   --text-primary:   #111827;                /* headings, body copy             */
   --text-secondary: rgba(17,24,39,0.75);    /* secondary labels                */
-  --text-muted:     rgba(17,24,39,0.45);    /* captions, placeholders          */
+  --text-muted:     rgba(17,24,39,0.60);    /* captions, placeholders          */
   --text-disabled:  rgba(17,24,39,0.25);    /* disabled state                  */
 
   /* ·· Ticker strip ·· */

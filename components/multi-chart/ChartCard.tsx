@@ -65,7 +65,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, 
                     className="flex flex-col min-w-0 text-left hover:text-violet-600 dark:hover:text-violet-400 transition-colors cursor-pointer"
                 >
                     <div className="font-semibold text-[var(--text-primary)] hover:text-violet-600 dark:hover:text-violet-400 truncate">{displaySymbol}</div>
-                    <div className="text-xs text-[var(--text-disabled)] font-mono">{shortAddress}</div>
+                    <div className="text-xs text-[var(--text-muted)] font-mono">{shortAddress}</div>
                 </button>
 
                 <div className="flex items-center gap-2 flex-shrink-0">

@@ -104,7 +104,7 @@ export const WalletList: React.FC = () => {
                                             ${wallet.balance_usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] text-[var(--text-disabled)] font-mono mt-0.5">
+                                    <span className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
                                         {wallet.address.slice(0, 4)}…{wallet.address.slice(-4)}
                                     </span>
                                 </div>
