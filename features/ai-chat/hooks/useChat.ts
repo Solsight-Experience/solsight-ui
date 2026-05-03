@@ -10,6 +10,7 @@ export function useChat() {
     const [messages, setMessages] = useState<ChatMessageDto[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [toolProgressLabel, setToolProgressLabel] = useState<string | null>(null);
     const sessionIdRef = useRef<string>(crypto.randomUUID());
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
@@ -18,6 +19,7 @@ export function useChat() {
         const sessionId = sessionIdRef.current;
 
         socketManager.onResponse(sessionId, (response: ChatResponseDto) => {
+            setToolProgressLabel(null);
             setMessages((prev) => [
                 ...prev,
                 {
@@ -32,11 +34,19 @@ export function useChat() {
 
         socketManager.onComplete(sessionId, () => {
             setIsLoading(false);
+            setToolProgressLabel(null);
         });
 
         socketManager.onError(sessionId, (err) => {
             setError(err.message);
             setIsLoading(false);
+            setToolProgressLabel(null);
+        });
+
+        socketManager.onToolProgress(sessionId, (payload) => {
+            if (payload.sessionId === sessionId) {
+                setToolProgressLabel(payload.label);
+            }
         });
 
         return () => {
@@ -55,6 +65,7 @@ export function useChat() {
         ]);
         setIsLoading(true);
         setError(null);
+        setToolProgressLabel(null);
         socketManager.sendMessage({
             message: text,
             sessionId: sessionIdRef.current,
@@ -63,5 +74,5 @@ export function useChat() {
         });
     };
 
-    return { messages, isLoading, error, sendMessage };
+    return { messages, isLoading, toolProgressLabel, error, sendMessage };
 }
