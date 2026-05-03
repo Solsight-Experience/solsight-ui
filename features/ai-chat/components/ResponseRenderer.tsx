@@ -1,28 +1,57 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ChatResponseDto } from "@/types/dto";
 import { TokenBriefCard } from "./cards/TokenBriefCard";
 import { PortfolioSummaryCard } from "./cards/PortfolioSummaryCard";
 import { NavigationCard } from "./cards/NavigationCard";
-import { TradeConfirmDialog } from "./cards/TradeConfirmDialog";
+import { useTokenUIStore } from "@/features/token/stores/token.stores";
 
 export type ResponseRenderable = Pick<ChatResponseDto, "type" | "content" | "data">;
 
 type TokenBriefData = Parameters<typeof TokenBriefCard>[0]["data"];
 type PortfolioSummaryData = Parameters<typeof PortfolioSummaryCard>[0]["data"];
 type NavigationData = Parameters<typeof NavigationCard>[0]["data"];
-type TradeConfirmData = Parameters<typeof TradeConfirmDialog>[0]["data"];
 
-export const ResponseRenderer: React.FC<{ response: ResponseRenderable }> = ({ response }) => {
-    const [dialogOpen, setDialogOpen] = useState(false);
+type TradeIntentData = {
+    inputMint: string;
+    outputMint: string;
+    amount: string;
+    mode?: "buy" | "sell";
+    targetMint?: string;
+    timestamp?: number;
+};
+
+const IS_RECENT_THRESHOLD = 3000;
+const TradeAutoAction: React.FC<{ data: TradeIntentData }> = ({ data }) => {
+    const router = useRouter();
 
     useEffect(() => {
-        if (response.type === "trade_intent") {
-            setDialogOpen(true);
-        }
-    }, [response.type]);
+        const targetMint = data.targetMint || data.outputMint;
+        if (!targetMint) return;
 
+        const isRecent = data.timestamp && Date.now() - data.timestamp < IS_RECENT_THRESHOLD;
+        if (!isRecent) return;
+
+        useTokenUIStore.getState().setPendingTradeAction({
+            mint: targetMint,
+            amount: String(data.amount ?? ""),
+            mode: data.mode || "buy"
+        });
+
+        router.push(`/token/${targetMint}`);
+    }, [data.outputMint, data.targetMint, data.amount, data.mode, data.timestamp, router]);
+
+    return (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-violet-500/25 bg-violet-500/5 text-sm text-violet-300 animate-pulse">
+            <span className="text-base">⚡</span>
+            <span>Taking you to the swap page…</span>
+        </div>
+    );
+};
+
+export const ResponseRenderer: React.FC<{ response: ResponseRenderable; timestamp?: number }> = ({ response, timestamp }) => {
     switch (response.type) {
         case "text":
             return <p>{response.content}</p>;
@@ -33,14 +62,7 @@ export const ResponseRenderer: React.FC<{ response: ResponseRenderable }> = ({ r
         case "navigation":
             return <NavigationCard data={response.data as NavigationData} />;
         case "trade_intent":
-            return (
-                <TradeConfirmDialog
-                    data={response.data as TradeConfirmData}
-                    open={dialogOpen}
-                    onConfirm={() => setDialogOpen(false)}
-                    onCancel={() => setDialogOpen(false)}
-                />
-            );
+            return <TradeAutoAction data={{ ...(response.data as TradeIntentData), timestamp }} />;
         default:
             return <p>Unknown response type</p>;
     }

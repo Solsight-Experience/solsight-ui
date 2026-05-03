@@ -58,7 +58,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSlippageBps,
         limitPrice,
         setLimitPrice,
-        resetTradingPanel
+        resetTradingPanel,
+        pendingTradeAction,
+        setPendingTradeAction
     } = useTokenUIStore();
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
@@ -125,6 +127,18 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }, [token.address, resetTradingPanel, isViewingSolToken]);
 
     const resolvedTokenDecimals = token.decimals ?? 9;
+    useEffect(() => {
+        if (!pendingTradeAction) return;
+
+        if (pendingTradeAction.mint === token.address) {
+            setTradeMode(pendingTradeAction.mode);
+            setPayAmount(pendingTradeAction.amount);
+            setLastEdited("pay");
+            setPendingTradeAction(null);
+        }
+    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+
+    const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
     const selectedWalletAddress = useMemo(() => {
         const wallets = walletsData?.wallets ?? [];

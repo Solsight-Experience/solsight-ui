@@ -28,28 +28,28 @@ export interface CreateWalletDto {
 }
 
 export interface WalletResponseDto {
-  id?: string;
-  publicKey?: string;
-  walletType?: string;
-  balance?: number;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  address: string;
-  name: string;
-  icon: string;
-  is_default: boolean;
-  is_connected: boolean;
-  added_at: string;
-  balance_sol: number;
-  balance_usd: number;
+    id?: string;
+    publicKey?: string;
+    walletType?: string;
+    balance?: number;
+    userId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    address: string;
+    name: string;
+    icon: string;
+    is_default: boolean;
+    is_connected: boolean;
+    added_at: string;
+    balance_sol: number;
+    balance_usd: number;
 }
 
 export interface GetWalletsResponseDto {
-  wallets: WalletResponseDto[];
-  total_wallets: number;
-  total_balance_sol: number;
-  total_balance_usd: number;
+    wallets: WalletResponseDto[];
+    total_wallets: number;
+    total_balance_sol: number;
+    total_balance_usd: number;
 }
 
 // Transaction DTOs
@@ -104,11 +104,19 @@ export interface ChatMessageDto {
     timestamp: number;
 }
 
+export interface ChatPageContext {
+    pathname: string;
+    tokenAddress?: string;
+    tokenSymbol?: string;
+    tokenName?: string;
+}
+
 export interface SendChatMessageDto {
     message: string;
     sessionId: string;
     userId?: string;
     walletAddress?: string;
+    pageContext?: ChatPageContext;
 }
 
 export interface ChatResponseDto {
