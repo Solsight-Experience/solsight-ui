@@ -1,16 +1,77 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ArrowDown, Send } from "lucide-react";
+import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useChat } from "../hooks/useChat";
 import { ChatBubble } from "./ChatBubble";
 
+const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelect }) => (
+    <div className="flex flex-col items-center justify-center text-center space-y-5 py-10 px-6">
+        <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 opacity-20 blur-xl animate-pulse" />
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <Bot className="w-9 h-9 text-white" />
+            </div>
+        </div>
+
+        <div className="space-y-2">
+            <h3 className="font-semibold text-base text-foreground">Solsight AI Assistant</h3>
+            <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+                Your intelligent DeFi co-pilot on Solana. Ask me anything about tokens, portfolios, or trades.
+            </p>
+        </div>
+
+        <div className="flex flex-col gap-2 w-full max-w-[280px]">
+            {[
+                { icon: <CircleDollarSign className="w-4 h-4 text-emerald-400" />, text: "Current price of Solana (SOL)?" },
+                { icon: <LineChart className="w-4 h-4 text-violet-400" />, text: "Summarize my portfolio data" },
+                { icon: <ArrowLeftRight className="w-4 h-4 text-blue-400" />, text: "Swap 1 SOL to USDC" }
+            ].map(({ icon, text }) => (
+                <Button
+                    key={text}
+                    variant="ghost"
+                    onClick={() => onSelect(text)}
+                    className="flex items-center justify-start gap-2.5 px-3.5 py-6 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 hover:border-violet-500/30 active:scale-[0.98] transition-all cursor-pointer group text-left w-full"
+                >
+                    <div className="shrink-0">{icon}</div>
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors whitespace-normal leading-tight">{text}</span>
+                </Button>
+            ))}
+        </div>
+    </div>
+);
+
+const TypingIndicator: React.FC<{ label?: string }> = ({ label }) => (
+    <div className="flex items-start gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+            <Bot className="w-3.5 h-3.5 text-white" />
+        </div>
+        <div className="bg-card border border-border/60 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+            {label ? (
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                </div>
+            ) : (
+                <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 export const ChatWindow: React.FC = () => {
-    const { messages, isLoading, error, sendMessage } = useChat();
+    const { messages, isLoading, toolProgressLabel, error, sendMessage } = useChat();
     const [inputValue, setInputValue] = useState("");
     const [showScrollButton, setShowScrollButton] = useState(false);
 
@@ -66,49 +127,32 @@ export const ChatWindow: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-background relative">
-            <ScrollArea className="flex-1 px-4 overflow-auto" onScrollCapture={handleScroll}>
-                <div className="flex flex-col gap-5 py-6" role="log" aria-live="polite">
-                    {messages.length === 0 && (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 my-12 text-muted-foreground">
-                            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-2xl">👋</span>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="font-medium text-foreground">Welcome to Solsight</p>
-                                <p className="text-sm max-w-[250px]">Ask me about token analytics, your portfolio, or how to execute trades.</p>
-                            </div>
-                        </div>
-                    )}
+        <div className="flex flex-col h-full relative">
+            <ScrollArea className="flex-1 overflow-auto" onScrollCapture={handleScroll}>
+                <div className="flex flex-col gap-4 px-4 py-4" role="log" aria-live="polite">
+                    {messages.length === 0 && <WelcomeScreen onSelect={sendMessage} />}
 
                     {messages.map((msg, idx) => (
                         <ChatBubble key={msg.timestamp ?? idx} message={msg} />
                     ))}
 
-                    {isLoading && (
-                        <div className="flex justify-start mb-2 animate-in fade-in zoom-in duration-300">
-                            <div className="bg-card text-card-foreground border border-border px-4 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
-                            </div>
+                    {isLoading && <TypingIndicator label={toolProgressLabel ?? undefined} />}
+
+                    {error && (
+                        <div className="bg-destructive/8 border border-destructive/20 text-destructive text-xs px-4 py-3 rounded-xl text-center mx-2 animate-in fade-in">
+                            ⚠ {error}
                         </div>
                     )}
 
-                    {error && (
-                        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg mx-auto my-2 text-center max-w-[80%]">
-                            {error}
-                        </div>
-                    )}
                     <div ref={messagesEndRef} className="h-1" />
                 </div>
             </ScrollArea>
 
             {showScrollButton && (
                 <Button
-                    variant="secondary"
+                    variant="outline"
                     size="icon"
-                    className="absolute bottom-20 right-1/2 translate-x-1/2 rounded-full shadow-md z-10 w-8 h-8 opacity-90 hover:opacity-100 transition-all animate-in fade-in slide-in-from-bottom-2"
+                    className="absolute bottom-20 right-1/2 translate-x-1/2 rounded-full shadow-lg bg-background border border-border w-8 h-8 flex items-center justify-center hover:bg-muted transition-all animate-in fade-in slide-in-from-bottom-2 z-10 text-muted-foreground hover:text-foreground"
                     onClick={() => scrollToBottom("smooth")}
                     aria-label="Scroll to bottom"
                 >
@@ -116,36 +160,44 @@ export const ChatWindow: React.FC = () => {
                 </Button>
             )}
 
-            <div className="p-3 bg-background border-t">
-                <div className="relative flex items-end gap-2 bg-muted/40 border rounded-2xl px-3 py-2 focus-within:ring-1 focus-within:ring-primary focus-within:bg-background transition-colors">
-                    <Textarea
+            <div className="shrink-0 px-3 pb-3 pt-3 border-t border-border/60 bg-background/80 backdrop-blur-sm">
+                <div
+                    className={cn(
+                        "relative flex items-end gap-2 rounded-2xl px-3 py-2 transition-all duration-200",
+                        "bg-muted/40 border border-border/60",
+                        "focus-within:bg-background focus-within:border-violet-500/40 focus-within:shadow-[0_0_0_3px_hsl(var(--violet-500)/0.08)]",
+                        inputValue.trim() && "border-violet-500/30"
+                    )}
+                >
+                    <textarea
                         ref={textareaRef}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask anything..."
-                        className="min-h-[24px] max-h-[120px] w-full resize-none border-0 bg-transparent p-0 py-1.5 shadow-none focus-visible:ring-0 text-sm custom-scrollbar"
+                        placeholder="Ask Solsight AI anything..."
+                        className="min-h-[24px] max-h-[120px] w-full resize-none border-0 bg-transparent p-0 py-1.5 shadow-none outline-none text-sm placeholder:text-muted-foreground/60"
                         disabled={isLoading}
                         rows={1}
                         aria-label="Chat input"
                     />
 
                     <Button
+                        size="icon"
                         onClick={handleSend}
                         disabled={isLoading || !inputValue.trim()}
-                        size="icon"
                         className={cn(
-                            "h-8 w-8 shrink-0 rounded-full transition-all",
-                            inputValue.trim()
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30"
+                            "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 border-0",
+                            inputValue.trim() && !isLoading
+                                ? "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
+                                : "bg-muted-foreground/15 text-muted-foreground cursor-not-allowed"
                         )}
                         aria-label="Send message"
                     >
-                        <Send className="h-4 w-4 ml-0.5" />
+                        <Send className="h-3.5 w-3.5" />
                     </Button>
                 </div>
-                <div className="text-[10px] text-center text-muted-foreground mt-2">AI can make mistakes. Verify important trades.</div>
+
+                <p className="text-[10px] text-center text-muted-foreground/50 mt-3 px-2">AI responses may not be accurate. Verify before trading.</p>
             </div>
         </div>
     );
