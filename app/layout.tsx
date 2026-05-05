@@ -9,6 +9,7 @@ import ChatWidget from "@/features/ai-chat/components/ChatWidget";
 import { usePathname } from "next/navigation";
 import MockProvider from "@/providers/mock-provider";
 import { Toaster } from "sonner";
+import { useTheme } from "next-themes";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
@@ -16,6 +17,24 @@ function ChatGate() {
     const { isAuthenticated } = useAuth();
     if (!isAuthenticated) return null;
     return <ChatWidget />;
+}
+
+function ThemedToaster() {
+    const { resolvedTheme } = useTheme();
+    return (
+        <Toaster
+            position="top-center"
+            theme={resolvedTheme as "light" | "dark"}
+            toastOptions={{
+                classNames: {
+                    toast: "!bg-[var(--surface-card)] !text-[var(--text-primary)] !border-[var(--border-subtle)] !rounded-lg",
+                    title: "!text-[var(--text-primary)] !font-semibold",
+                    description: "!text-[var(--text-muted)]",
+                    actionButton: "!bg-primary !text-primary-foreground !font-medium hover:!opacity-90"
+                }
+            }}
+        />
+    );
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,18 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                 {showHeader && <Header />}
                                 <main>{children}</main>
                                 <ChatGate />
-                                <Toaster
-                                    position="top-center"
-                                    theme="dark"
-                                    toastOptions={{
-                                        classNames: {
-                                            toast: "!bg-card !text-card-foreground !border-border !rounded-lg",
-                                            title: "!text-card-foreground !font-semibold",
-                                            description: "!text-muted-foreground",
-                                            actionButton: "!bg-primary !text-primary-foreground !font-medium hover:!opacity-90"
-                                        }
-                                    }}
-                                />
+                                <ThemedToaster />
                             </AuthProvider>
                         </MockProvider>
                     </QueryProvider>

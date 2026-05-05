@@ -9,14 +9,16 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default: "bg-brand-200 text-black-dark shadow-xs hover:bg-brand-200/60",
+                default:
+                    "bg-violet-500/12 border border-violet-500/30 text-violet-700 hover:bg-violet-500/20 hover:border-violet-500/45 dark:bg-violet-500 dark:border-transparent dark:text-white dark:hover:bg-violet-600",
                 destructive:
                     "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
                 outline:
-                    "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-                secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-                ghost: "hover:bg-default-dark/20",
-                link: "text-primary underline-offset-4 hover:underline"
+                    "border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] shadow-xs hover:bg-[var(--surface-btn)] hover:border-[var(--border-strong)]",
+                secondary:
+                    "bg-[var(--surface-btn)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-xs hover:bg-[var(--surface-btn-hover)]",
+                ghost: "text-[var(--text-primary)] hover:bg-[var(--surface-btn)]",
+                link: "text-violet-600 dark:text-violet-400 underline-offset-4 hover:underline"
             },
             size: {
                 default: "h-9 px-4 py-2 has-[>svg]:px-3",

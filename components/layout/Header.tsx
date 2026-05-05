@@ -2,12 +2,10 @@
 
 import { useState, memo, useCallback } from "react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import {
-  SearchIcon, ChevronDown, Bell, BarChart2,
-  Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search,
-} from "lucide-react";
+import { SearchIcon, ChevronDown, Bell, BarChart2, Wallet, Settings, LogOut, User, TrendingUp, Zap, LayoutGrid, Search, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LogoutConfirmDialog from "../auth/LogoutConfirmDialog";
 import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDialog";
@@ -28,6 +26,7 @@ const TICKERS = [
 export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
+    const { theme, setTheme } = useTheme();
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -49,7 +48,7 @@ export default function Header() {
     };
 
     return (
-        <header className="">
+        <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-[#05050a]/80 border-b border-black/[0.06] dark:border-white/[0.04]">
             <div className="flex items-center h-[26px] border-b border-white/[0.04] overflow-hidden bg-black/30">
                 <div
                     className="flex items-center gap-1 px-3 h-full shrink-0
@@ -87,6 +86,18 @@ export default function Header() {
                         <SignInButton />
                     ) : (
                         <div className="flex items-center gap-2">
+                            {/* Theme Toggle */}
+                            <button
+                                aria-label="Toggle theme"
+                                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                                className="relative flex items-center justify-center w-[34px] h-[34px]
+                               bg-white/[0.04] border border-white/[0.09] rounded-lg
+                               text-white/45 cursor-pointer transition-all duration-150
+                               hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15"
+                            >
+                                {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+                            </button>
+
                             {/* Notification Bell */}
                             <Popover open={isPanelOpen} onOpenChange={setPanelOpen}>
                                 <PopoverTrigger asChild>
@@ -101,7 +112,7 @@ export default function Header() {
                                         <NotificationBadge count={unreadCount} />
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent align="end" sideOffset={8} className="p-0 border-white/10">
+                                <PopoverContent align="end" sideOffset={8} className="p-0 border-0 shadow-none bg-transparent">
                                     <NotificationPanel />
                                 </PopoverContent>
                             </Popover>
@@ -138,8 +149,8 @@ export default function Header() {
                                         <div className="fixed inset-0 z-40" onClick={() => setAvatarMenuOpen(false)} />
                                         <div
                                             className="absolute right-0 top-[calc(100%+8px)] w-[220px] z-50
-                                    bg-[#0d1117] border border-white/10 rounded-xl overflow-hidden
-                                    shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(139,92,246,0.08)]"
+                                    bg-[var(--surface-overlay)] border border-white/10 rounded-xl overflow-hidden
+                                    shadow-[var(--shadow-dropdown)]"
                                         >
                                             {/* Dropdown header */}
                                             <div className="px-3.5 py-3 bg-purple-500/[0.06]">
@@ -213,7 +224,7 @@ const NAV_ITEMS = [
     { href: "/", label: "Discover", icon: <TrendingUp size={12} /> },
     { href: "/portfolio", label: "Portfolio", icon: <BarChart2 size={12} /> },
     { href: "/multi-chart", label: "Multi Viewer", icon: <LayoutGrid size={12} /> },
-    { href: '/wallet-tracker', label: 'Wallet Tracker', icon: <Search size={12} /> },
+    { href: "/wallet-tracker", label: "Wallet Tracker", icon: <Search size={12} /> }
 ] as const;
 
 const NavLinks = memo(function NavLinks() {
