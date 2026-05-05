@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
+import { Clock, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
@@ -44,8 +45,13 @@ export default function TokenTable() {
         resetFilters,
         applyFilterResults,
         isLoading,
-        error
+        isFetching,
+        error,
+        dataUpdatedAt,
+        refetch
     } = useTokenTable(handleQuickBuy);
+
+    const isRefetching = isFetching && !isLoading;
 
     // Debug log for favorites
     const handleRowClick = (tokenAddress: string) => {
@@ -115,124 +121,197 @@ export default function TokenTable() {
     };
 
     const hasData = table.getRowModel().rows.length > 0;
+    const isCategories = filters.activeTab === "CATEGORIES";
 
-    // Render CategoryTable for Categories tab
-    if (filters.activeTab === "CATEGORIES") {
-        return (
-            <>
-                <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
-                    {renderRightPanel()}
+    const renderContent = () => {
+        if (isCategories) {
+            return <CategoryTable searchQuery={filters.categorySearch} onCategorySelect={setSelectedCategorySlug} />;
+        }
+        if (error) {
+            return <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />;
+        }
+        if (isLoading) return <LoadingSkeleton />;
+        if (!hasData && filters.activeTab === "FAVOURITES") {
+            return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
+        }
+        if (hasData) {
+            return (
+                <div
+                    className="overflow-y-auto max-h-[calc(100vh-260px)]
+                                [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.25)_transparent]"
+                >
+                    <Table>
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id} className="border-b border-white/[0.05] hover:bg-transparent">
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead
+                                            key={header.id}
+                                            className="h-8 px-4 bg-white/[0.015]
+                                                       text-[10px] font-bold uppercase tracking-[0.08em] text-white/35"
+                                        >
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows.map((row, idx) => (
+                                <TableRow
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && "selected"}
+                                    onClick={() => handleRowClick(row.original.id)}
+                                    className={[
+                                        "cursor-pointer border-b border-white/[0.04]",
+                                        "transition-colors duration-100",
+                                        "hover:bg-violet-500/[0.05] hover:border-violet-500/[0.12]",
+                                        idx % 2 !== 0 ? "bg-white/[0.012]" : "bg-transparent"
+                                    ].join(" ")}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id} className="px-4 py-2.5 text-[13px] font-medium text-white/80">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
-                <CategoryTable searchQuery={filters.categorySearch} onCategorySelect={setSelectedCategorySlug} />
-                <CategoryDetailModal categorySlug={filters.selectedCategorySlug} onClose={() => setSelectedCategorySlug(null)} />
-            </>
-        );
-    }
+            );
+        }
+        return <EmptyState message="Oops, it's empty!" />;
+    };
 
     return (
         <>
-            <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center gap-3">
-                    <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+            <div className="relative">
+                {/* ── Cache freshness note ── */}
+                {!isCategories && dataUpdatedAt > 0 && (
+                    <div className="absolute -top-9 right-0">
+                        <CacheNote timestamp={dataUpdatedAt} isRefetching={isRefetching} onRefresh={() => refetch()} />
+                    </div>
+                )}
+
+                <div
+                    className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
+                                shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]"
+                >
+                    {/* ── Toolbar ── */}
+                    <div
+                        className="flex flex-col gap-3 px-4 py-3 border-b border-white/[0.05] bg-white/[0.015]
+                                    sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                        {renderRightPanel()}
+                    </div>
+
+                    {/* ── Content ── */}
+                    {renderContent()}
                 </div>
-                {renderRightPanel()}
             </div>
 
-            <div
-                className="overflow-hidden rounded-2xl border border-purple-500/15 bg-[#0d1117]
-                            shadow-[0_0_0_1px_rgba(139,92,246,0.06),0_8px_32px_rgba(0,0,0,0.4)]"
-            >
-                {error ? (
-                    <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />
-                ) : isLoading ? (
-                    <LoadingSkeleton />
-                ) : !hasData && filters.activeTab === "FAVOURITES" ? (
-                    <EmptyState message="No favorite tokens yet. Click the star icon on any token to add it to your favorites!" />
-                ) : hasData ? (
-                    <div
-                        className="overflow-y-auto max-h-[calc(100vh-250px)]
-                                    [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.25)_transparent]"
-                    >
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id} className="border-b border-white/[0.06] hover:bg-transparent">
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead
-                                                key={header.id}
-                                                className="h-9 px-4 bg-white/[0.02]
-                                                           text-xs font-semibold uppercase tracking-wider text-white/50"
-                                            >
-                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {table.getRowModel().rows.map((row, idx) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
-                                        onClick={() => handleRowClick(row.original.id)}
-                                        className={[
-                                            "cursor-pointer border-b border-white/[0.04]",
-                                            "transition-all duration-150",
-                                            "hover:bg-purple-500/[0.06] hover:border-purple-500/20",
-                                            idx % 2 !== 0 ? "bg-white/[0.01]" : "bg-transparent"
-                                        ].join(" ")}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className="px-4 py-3 text-sm font-medium text-white/80">
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <EmptyState message="Oops, it's empty!" />
-                )}
-            </div>
-            <QuickBuyReviewModal open={quickBuyModalOpen} onOpenChange={setQuickBuyModalOpen} token={quickBuyToken} amountSol={filters.quickBuyAmount} />
+            {isCategories && <CategoryDetailModal categorySlug={filters.selectedCategorySlug} onClose={() => setSelectedCategorySlug(null)} />}
+            {!isCategories && (
+                <QuickBuyReviewModal open={quickBuyModalOpen} onOpenChange={setQuickBuyModalOpen} token={quickBuyToken} amountSol={filters.quickBuyAmount} />
+            )}
         </>
     );
 }
 
+/* ── Cache Note ──────────────────────────────────────────────────────────── */
+function formatDataAge(timestamp: number): string {
+    const ageMs = Date.now() - timestamp;
+    const ageSec = Math.floor(ageMs / 1000);
+    if (ageSec < 10) return "just now";
+    if (ageSec < 60) return `${ageSec}s ago`;
+    const ageMin = Math.floor(ageSec / 60);
+    if (ageMin < 60) return `${ageMin} min${ageMin > 1 ? "s" : ""} ago`;
+    const ageHour = Math.floor(ageMin / 60);
+    return `${ageHour}h ago`;
+}
+
+function CacheNote({ timestamp, isRefetching, onRefresh }: { timestamp: number; isRefetching: boolean; onRefresh: () => void }) {
+    const [age, setAge] = useState(() => formatDataAge(timestamp));
+
+    useEffect(() => {
+        setAge(formatDataAge(timestamp));
+        const id = setInterval(() => setAge(formatDataAge(timestamp)), 10_000);
+        return () => clearInterval(id);
+    }, [timestamp]);
+
+    return (
+        <span className="flex items-center gap-3 select-none">
+            <span className="flex items-center gap-1.5 text-[11px] text-white/30">
+                <Clock className="w-3 h-3 shrink-0" />
+                Updated {age}
+            </span>
+            <button
+                onClick={onRefresh}
+                disabled={isRefetching}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-white/10
+                           text-[11px] font-medium text-white/50
+                           hover:border-violet-500/40 hover:text-violet-400 hover:bg-violet-500/5
+                           disabled:opacity-40 disabled:cursor-not-allowed
+                           transition-all duration-150"
+            >
+                <RotateCw className={`w-3 h-3 ${isRefetching ? "animate-spin" : ""}`} />
+                Refresh
+            </button>
+        </span>
+    );
+}
+
 /* ── Loading Skeleton ────────────────────────────────────────────────────── */
+function SkBar({ className, style }: { className?: string; style?: React.CSSProperties }) {
+    return <div className={`rounded-full animate-pulse bg-black/[0.07] dark:bg-white/[0.07] ${className ?? ""}`} style={style} />;
+}
+
 function LoadingSkeleton() {
     return (
-        <div className="divide-y divide-white/[0.04]">
-            {/* Fake header */}
-            <div className="flex items-center gap-6 px-4 h-9 bg-white/[0.02]">
-                {[80, 120, 60, 90, 70, 80, 60].map((w, i) => (
-                    <div key={i} className="h-2 rounded-full bg-white/10 animate-pulse" style={{ width: w }} />
+        <div className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+            {/* Header row */}
+            <div className="flex items-center gap-4 px-4 h-8 bg-black/[0.02] dark:bg-white/[0.015]">
+                <SkBar className="w-4 h-1.5 shrink-0" />
+                <SkBar className="flex-[2] h-1.5" />
+                {[1, 1, 1, 1, 1, 1, 1].map((_, i) => (
+                    <SkBar key={i} className="flex-[1] h-1.5" />
                 ))}
+                <SkBar className="w-16 h-1.5 shrink-0" />
             </div>
-            {/* Fake rows */}
-            {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-6 px-4 py-3">
-                    <div className="flex items-center gap-2.5 shrink-0" style={{ width: 160 }}>
-                        <div className="w-7 h-7 rounded-full bg-purple-500/10 animate-pulse" />
-                        <div className="space-y-1.5">
-                            <div className="h-2.5 w-16 rounded-full bg-white/10 animate-pulse" />
-                            <div className="h-2 w-10 rounded-full bg-white/[0.06] animate-pulse" />
+
+            {/* Data rows */}
+            {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+                    {/* Star */}
+                    <SkBar className="w-4 h-4 shrink-0" style={{ animationDelay: `${i * 35}ms` }} />
+
+                    {/* Token cell */}
+                    <div className="flex items-center gap-2.5 flex-[2] min-w-0">
+                        <div
+                            className="w-7 h-7 rounded-full animate-pulse shrink-0 bg-violet-500/[0.12] dark:bg-violet-500/[0.10]"
+                            style={{ animationDelay: `${i * 35}ms` }}
+                        />
+                        <div className="space-y-1.5 min-w-0">
+                            <SkBar className="h-2 w-20" style={{ animationDelay: `${i * 35}ms` }} />
+                            <SkBar className="h-1.5 w-12 opacity-60" style={{ animationDelay: `${i * 35 + 80}ms` }} />
                         </div>
                     </div>
-                    {[70, 80, 65, 75, 60, 55].map((w, j) => (
-                        <div
-                            key={j}
-                            className="h-2.5 rounded-full animate-pulse"
-                            style={{
-                                width: w,
-                                backgroundColor: `rgba(255,255,255,${0.04 + (j % 2) * 0.02})`,
-                                animationDelay: `${i * 50 + j * 25}ms`
-                            }}
-                        />
+
+                    {/* Data columns */}
+                    {[1, 1, 1, 1, 1, 1, 1].map((_, j) => (
+                        <div key={j} className="flex-[1] flex flex-col items-end gap-1.5">
+                            <SkBar className="h-2 w-full max-w-[64px]" style={{ animationDelay: `${i * 35 + j * 20}ms` }} />
+                            <SkBar className="h-1.5 w-3/5 max-w-[40px] opacity-60" style={{ animationDelay: `${i * 35 + j * 20 + 60}ms` }} />
+                        </div>
                     ))}
+
+                    {/* Action button placeholder */}
+                    <div
+                        className="w-20 h-6 rounded-lg animate-pulse shrink-0 bg-violet-500/[0.08] dark:bg-violet-500/[0.07]"
+                        style={{ animationDelay: `${i * 35 + 140}ms` }}
+                    />
                 </div>
             ))}
         </div>
