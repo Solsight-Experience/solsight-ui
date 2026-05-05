@@ -16,12 +16,10 @@ export default function TokenDetailPage() {
     const { data: token, isLoading, error } = useTokenDetail(tokenAddress);
     const { setLimitPrice, orderType } = useTokenUIStore();
 
-    // Enable price ruler when limit order is selected
     useEffect(() => {
         setEnablePriceRuler(orderType === "limit");
     }, [orderType]);
 
-    // Handle ruler price change from chart
     const handleRulerPriceChange = useCallback(
         (price: number) => {
             setLimitPrice(price.toString());
@@ -31,18 +29,18 @@ export default function TokenDetailPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen text-white">
-                <div className="border-b border-gray-700 p-4 animate-pulse">
+            <div className="min-h-screen text-[var(--text-primary)]">
+                <div className="border-b border-[var(--border-subtle)] p-4 animate-pulse">
                     <div className="max-w-7xl mx-auto flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gray-700"></div>
+                        <div className="w-12 h-12 rounded-full bg-[var(--surface-btn)]"></div>
                         <div className="flex flex-col gap-2">
-                            <div className="h-6 w-32 bg-gray-700 rounded"></div>
-                            <div className="h-4 w-48 bg-gray-700 rounded"></div>
+                            <div className="h-6 w-32 bg-[var(--surface-btn)] rounded"></div>
+                            <div className="h-4 w-48 bg-[var(--surface-btn)] rounded"></div>
                         </div>
                     </div>
                 </div>
                 <div className="max-w-7xl mx-auto p-4">
-                    <div className="h-96 bg-gray-800 rounded-lg"></div>
+                    <div className="h-96 bg-[var(--surface-btn)] rounded-lg"></div>
                 </div>
             </div>
         );
@@ -50,10 +48,10 @@ export default function TokenDetailPage() {
 
     if (error || !token) {
         return (
-            <div className="min-h-screen text-white flex items-center justify-center">
+            <div className="min-h-screen text-[var(--text-primary)] flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-2">Token Not Found</h1>
-                    <p className="text-gray-400">The token you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.</p>
+                    <p className="text-[var(--text-muted)]">The token you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.</p>
                 </div>
             </div>
         );
@@ -61,7 +59,6 @@ export default function TokenDetailPage() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-65px)] overflow-hidden">
-            {/* Header (Now includes stats) */}
             <TokenHeader token={token} aiSummaryButton={<AISummaryButton onClick={() => setIsAISummaryOpen(true)} />} />
             {isAISummaryOpen && token && (
                 <AISummaryPanel
@@ -73,13 +70,11 @@ export default function TokenDetailPage() {
                 />
             )}
 
-            {/* Main Content - Two Column Full Height Layout */}
-            <div className="flex flex-row flex-1 overflow-hidden bg-black">
-                {/* Left Column - Chart & Tabs */}
-                <div className="flex-1 overflow-hidden border-r border-gray-800">
+            <div className="flex flex-row flex-1 overflow-hidden bg-[var(--surface-page)] gap-2 p-2">
+                {/* Left Column */}
+                <div className="flex-1 overflow-hidden rounded-lg border border-[var(--border-faint)]">
                     <ResizablePanelGroup orientation="vertical" className="flex-col">
-                        {/* Chart */}
-                        <ResizablePanel defaultSize={60} minSize={20} className="flex flex-col bg-black scrollbar-thin">
+                        <ResizablePanel defaultSize={60} minSize={20} className="flex flex-col bg-[var(--surface-page)]">
                             <div className="flex-1 min-h-0">
                                 <TokenChart
                                     tokenAddress={tokenAddress}
@@ -90,10 +85,9 @@ export default function TokenDetailPage() {
                             </div>
                         </ResizablePanel>
 
-                        <ResizableHandle withHandle className="bg-gray-800 hover:bg-purple-500 transition-colors" />
+                        <ResizableHandle withHandle className="bg-[var(--surface-btn)] hover:bg-violet-500 transition-colors" />
 
-                        {/* Tabs */}
-                        <ResizablePanel defaultSize={40} minSize={20} className="flex flex-col bg-black min-h-0">
+                        <ResizablePanel defaultSize={40} minSize={20} className="flex flex-col bg-[var(--surface-page)] min-h-0">
                             <div className="flex-1 flex flex-col overflow-hidden">
                                 <TokenTabs tokenAddress={tokenAddress} />
                             </div>
@@ -101,8 +95,8 @@ export default function TokenDetailPage() {
                     </ResizablePanelGroup>
                 </div>
 
-                {/* Right Column - Trading Panel (Fixed Width) */}
-                <div className="w-[340px] flex-shrink-0 bg-black overflow-y-auto scrollbar-thin">
+                {/* Right Column */}
+                <div className="w-[340px] flex-shrink-0 overflow-y-auto scrollbar-thin rounded-lg">
                     <TradingPanel token={token} />
                 </div>
             </div>

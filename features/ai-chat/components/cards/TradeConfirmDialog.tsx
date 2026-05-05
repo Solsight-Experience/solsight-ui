@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { Zap, ArrowRight, X } from "lucide-react";
 import { useTokenUIStore } from "@/features/token/stores/token.stores";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { addressFormatter } from "@/lib/formatters";
 
 interface TradeConfirmDialogProps {
     data: {
@@ -28,31 +29,51 @@ export const TradeConfirmDialog: React.FC<TradeConfirmDialogProps> = ({ data, op
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-            <DialogContent data-testid="trade-confirm-dialog">
+            <DialogContent data-testid="trade-confirm-dialog" className="max-w-sm border-border/60 backdrop-blur-xl">
                 <DialogHeader>
-                    <DialogTitle>Confirm Trade</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+                            <Zap className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        Confirm Trade
+                    </DialogTitle>
                 </DialogHeader>
 
-                <div className="grid gap-2">
-                    <div className="text-sm text-muted-foreground">You are about to trade:</div>
-                    <div className="flex items-center justify-between">
-                        <div className="font-medium">Amount</div>
-                        <div className="font-mono">{data.amount}</div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <div className="font-medium">To</div>
-                        <div className="truncate text-right">{data.outputMint}</div>
+                <div className="space-y-3 py-1">
+                    <p className="text-sm text-muted-foreground">Review your trade details before proceeding to the swap interface.</p>
+
+                    <div className="rounded-xl border border-border/60 bg-muted/20 divide-y divide-border/40 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3">
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Amount</span>
+                            <span className="text-sm font-mono font-semibold">{data.amount}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-3">
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">From</span>
+                            <span className="text-xs font-mono text-muted-foreground">{addressFormatter.format(data.inputMint)}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-3">
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">To</span>
+                            <span className="text-xs font-mono text-violet-400">{addressFormatter.format(data.outputMint)}</span>
+                        </div>
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={onCancel} type="button">
+                <div className="flex gap-2 pt-1">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-border/60 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                    >
+                        <X className="w-3.5 h-3.5" />
                         Cancel
-                    </Button>
-                    <Button onClick={handleConfirm} type="button">
-                        Confirm
-                    </Button>
-                </DialogFooter>
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-sm font-medium shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                        Go to Swap
+                        <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                </div>
             </DialogContent>
         </Dialog>
     );

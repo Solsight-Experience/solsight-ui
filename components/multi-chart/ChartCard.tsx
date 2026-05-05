@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Maximize2, Minimize2 } from "lucide-react";
 import { TokenChart } from "@/features/token/components";
-import { Button } from "@/components/ui/button";
 
 interface ChartCardProps {
     id: string;
@@ -29,11 +28,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, 
 
     if (isFullscreen) {
         return (
-            <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
+            <div className="fixed inset-0 bg-[var(--surface-page)] z-50 flex flex-col">
                 {/* Fullscreen header */}
-                <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-3 flex items-center justify-between">
-                    <div className="font-semibold text-slate-100 text-lg">{displaySymbol}</div>
-                    <button onClick={() => setIsFullscreen(false)} className="text-slate-400 hover:text-slate-200 transition-colors">
+                <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 flex items-center justify-between">
+                    <div className="font-semibold text-[var(--text-primary)] text-lg">{displaySymbol}</div>
+                    <button onClick={() => setIsFullscreen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                         <Minimize2 className="w-5 h-5" />
                     </button>
                 </div>
@@ -54,21 +53,24 @@ export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, 
             onDragStart={onDragStart}
             onDragOver={onDragOver}
             onDrop={onDrop}
-            className={` border-purple-900 border-1 rounded-lg hover:border-purple-600 transition-all duration-200 hover:shadow-lg hover:shadow-slate-500/10 overflow-hidden flex flex-col h-[280px] cursor-grab active:cursor-grabbing ${
+            className={`border border-violet-500/20 rounded-lg hover:border-violet-500/40 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 overflow-hidden flex flex-col h-[280px] cursor-grab active:cursor-grabbing bg-[var(--surface-card)] ${
                 isDragging ? "opacity-50" : ""
             }`}
         >
             {/* Header */}
-            <div className="border-b  px-4 py-3 flex items-center justify-between bg-slate-800/50">
-                <button onClick={handleTokenClick} className="flex flex-col min-w-0 text-left hover:text-purple-400 transition-colors cursor-pointer">
-                    <div className="font-semibold text-slate-100 hover:text-purple-400 truncate">{displaySymbol}</div>
-                    <div className="text-xs text-slate-500 font-mono">{shortAddress}</div>
+            <div className="border-b border-[var(--border-subtle)] px-4 py-3 flex items-center justify-between bg-[var(--surface-panel)]">
+                <button
+                    onClick={handleTokenClick}
+                    className="flex flex-col min-w-0 text-left hover:text-violet-600 dark:hover:text-violet-400 transition-colors cursor-pointer"
+                >
+                    <div className="font-semibold text-[var(--text-primary)] hover:text-violet-600 dark:hover:text-violet-400 truncate">{displaySymbol}</div>
+                    <div className="text-xs text-[var(--text-muted)] font-mono">{shortAddress}</div>
                 </button>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                         onClick={() => setIsFullscreen(true)}
-                        className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-200"
+                        className="p-1.5 hover:bg-[var(--surface-btn-hover)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                         title="Fullscreen"
                     >
                         <Maximize2 className="w-4 h-4" />
@@ -76,7 +78,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, 
 
                     <button
                         onClick={onRemove}
-                        className="p-1.5 hover:bg-red-500/20 rounded transition-colors text-slate-400 hover:text-red-400"
+                        className="p-1.5 hover:bg-red-500/10 rounded transition-colors text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-400"
                         title="Remove chart"
                     >
                         <X className="w-4 h-4" />

@@ -8,7 +8,6 @@ import Link from "next/link";
 import {
     Shield,
     Zap,
-    TrendingUp,
     Activity,
     Users,
     DollarSign,
@@ -21,7 +20,6 @@ import {
     Check,
     ChevronRight,
     X,
-    Menu,
     Star,
     Layers,
     RefreshCw,
@@ -372,7 +370,7 @@ function TestimonialCard({ t, idx }: { t: (typeof TESTIMONIALS)[0]; idx: number 
                     <Star key={i} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                 ))}
             </div>
-            <p className="text-white/65 text-sm leading-relaxed mb-5">"{t.text}"</p>
+            <p className="text-white/65 text-sm leading-relaxed mb-5">&quot;{t.text}&quot;</p>
             <div className="flex items-center gap-3">
                 <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
@@ -491,8 +489,11 @@ export default function Authentication() {
     const heroRef = useRef<HTMLDivElement>(null);
 
     return (
-        <div className="relative min-h-screen" style={{ background: "linear-gradient(135deg, #0a0010 0%, #0d0920 40%, #06040e 70%, #0a0612 100%)" }}>
-            {/* ── canvas particle background ── */}
+        <div
+            className="dark min-h-screen flex flex-col overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #070412 0%, #0d0920 40%, #060814 70%, #0a0612 100%)" }}
+        >
+            {/* Animated canvas background */}
             <AuthBackground />
 
             {/* ── ambient orbs ── */}
@@ -545,10 +546,10 @@ export default function Authentication() {
                                     style={
                                         active
                                             ? {
-                                                background: "linear-gradient(135deg, rgba(124,58,237,0.45) 0%, rgba(168,85,247,0.3) 100%)",
-                                                boxShadow: "0 0 20px rgba(124,58,237,0.2)",
-                                                border: "1px solid rgba(139,92,246,0.3)"
-                                            }
+                                                  background: "linear-gradient(135deg, rgba(124,58,237,0.45) 0%, rgba(168,85,247,0.3) 100%)",
+                                                  boxShadow: "0 0 20px rgba(124,58,237,0.2)",
+                                                  border: "1px solid rgba(139,92,246,0.3)"
+                                              }
                                             : {}
                                     }
                                 >
@@ -635,9 +636,9 @@ export default function Authentication() {
                                         style={
                                             active
                                                 ? {
-                                                    background: "linear-gradient(135deg, rgba(124,58,237,0.45),rgba(168,85,247,0.3))",
-                                                    border: "1px solid rgba(139,92,246,0.3)"
-                                                }
+                                                      background: "linear-gradient(135deg, rgba(124,58,237,0.45),rgba(168,85,247,0.3))",
+                                                      border: "1px solid rgba(139,92,246,0.3)"
+                                                  }
                                                 : {}
                                         }
                                     >

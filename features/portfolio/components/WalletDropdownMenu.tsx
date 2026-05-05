@@ -43,26 +43,29 @@ export default function WalletDropdownMenu({ walletAddress, isDefault }: WalletD
         <>
             <DropdownMenu open={open} onOpenChange={setOpen}>
                 <DropdownMenuTrigger asChild>
-                    <Button variant={"link"}>
-                        <EllipsisVertical className="size-6 text-purple-500" />
+                    <Button variant="ghost" size="icon" className="size-8 shrink-0">
+                        <EllipsisVertical className="size-4 text-[var(--text-muted)]" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-fit bg-darkblack-normal border-gray-600" align="start">
+                <DropdownMenuContent
+                    className="w-44 bg-[var(--surface-overlay)] border border-[var(--border-subtle)] shadow-[var(--shadow-dropdown)]"
+                    align="end"
+                >
                     <DropdownMenuGroup>
                         <DropdownMenuItem
-                            className="text-base focus:bg-gray-700 text-yellow-400 flex items-center gap-2"
+                            className="text-[13px] text-amber-600 dark:text-amber-400 focus:bg-[var(--surface-btn)] focus:text-amber-600 dark:focus:text-amber-400 flex items-center gap-2 cursor-pointer"
                             onClick={handleSetDefault}
                             disabled={isDefault || setDefaultMutation.isPending}
                         >
-                            <Star className="size-4 text-yellow-400" />
+                            <Star className="size-3.5 text-amber-500" />
                             {setDefaultMutation.isPending ? "Setting..." : "Set as Default"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            className="text-base focus:bg-gray-700 text-red-300 focus:text-red-100 flex items-center gap-2"
+                            className="text-[13px] text-red-600 dark:text-red-400 focus:bg-red-500/[0.08] focus:text-red-600 dark:focus:text-red-400 flex items-center gap-2 cursor-pointer"
                             onClick={handleDeleteClick}
                             disabled={deleteMutation.isPending}
                         >
-                            <Trash2 className="size-4 text-red-300" />
+                            <Trash2 className="size-3.5 text-red-500 dark:text-red-400" />
                             Delete wallet
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
@@ -70,21 +73,27 @@ export default function WalletDropdownMenu({ walletAddress, isDefault }: WalletD
             </DropdownMenu>
 
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent className="border-gray-600">
+                <DialogContent className="border-[var(--border-subtle)] bg-[var(--surface-card)]">
                     <DialogHeader>
-                        <DialogTitle className="text-xl">Delete Wallet</DialogTitle>
-                        <DialogDescription className="text-base text-gray-400">
+                        <DialogTitle className="text-[var(--text-primary)] text-lg">Delete Wallet</DialogTitle>
+                        <DialogDescription className="text-[var(--text-muted)] text-sm">
                             Are you sure you want to delete this wallet? This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <div className="text-sm text-gray-400 font-mono bg-gray-800 p-3 rounded-md break-all">{walletAddress}</div>
+                    <div className="py-2">
+                        <div className="text-[12px] text-[var(--text-secondary)] font-mono bg-[var(--surface-panel)] border border-[var(--border-faint)] p-3 rounded-lg break-all">
+                            {walletAddress}
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteMutation.isPending} className="border-gray-600">
+                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteMutation.isPending}>
                             Cancel
                         </Button>
-                        <Button onClick={handleConfirmDelete} disabled={deleteMutation.isPending} className="bg-red-600 hover:bg-red-700">
+                        <Button
+                            onClick={handleConfirmDelete}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-600/80 dark:hover:bg-red-600"
+                        >
                             {deleteMutation.isPending ? "Deleting..." : "Delete"}
                         </Button>
                     </DialogFooter>

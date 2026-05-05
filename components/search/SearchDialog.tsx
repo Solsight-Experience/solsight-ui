@@ -43,8 +43,7 @@ const poolSorts: SortItem[] = [
 ];
 
 export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
-    // Local state
-    const [activeTab, setActiveTab] = useState<TabType>("token");
+    //const [activeTab, setActiveTab] = useState<TabType>("token");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<SortBy | PoolSortBy | "">("");
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -53,13 +52,8 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
         tokens: TokenOverview[];
         pools: PoolOverview[];
         total: number;
-    }>({
-        tokens: [],
-        pools: [],
-        total: 0
-    });
+    }>({ tokens: [], pools: [], total: 0 });
 
-    // React Query hook
     const { searchTokens, searchPools, isSearchingTokens, isSearchingPools } = useSearchWithFilters();
 
     const isLoading = isSearchingTokens || isSearchingPools;
@@ -77,12 +71,9 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
     const performSearch = useCallback(async () => {
         const query = searchQuery.trim();
-
-        // Check if we have any filters applied
         const hasFilters = filterFormData !== null;
         const hasSearchQuery = query.length >= 2;
 
-        // If no search query and no filters, clear results
         if (!hasSearchQuery && !hasFilters) {
             setResults({ tokens: [], pools: [], total: 0 });
             return;
@@ -91,41 +82,27 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
         try {
             if (activeTab === "token") {
                 const filters = filterFormData ? getFilterRequestBody(filterFormData, "token") : {};
-
                 const response = await searchTokens({
                     searchQuery: query,
                     filters,
-                    params: {
-                        sort_by: (sortBy as SortBy) || "market_cap",
-                        sort_order: sortOrder,
-                        limit: 50
-                    }
+                    params: { sort_by: (sortBy as SortBy) || "market_cap", sort_order: sortOrder, limit: 50 }
                 });
-
                 setResults({ tokens: response.tokens, pools: [], total: response.total });
             } else {
                 const filters = filterFormData ? getFilterRequestBody(filterFormData, "pool") : {};
-
                 const response = await searchPools({
                     searchQuery: query,
                     filters,
-                    params: {
-                        sort_by: (sortBy as PoolSortBy) || "liquidity",
-                        sort_order: sortOrder,
-                        limit: 50
-                    }
+                    params: { sort_by: (sortBy as PoolSortBy) || "liquidity", sort_order: sortOrder, limit: 50 }
                 });
-
                 setResults({ tokens: [], pools: response.pools, total: response.total });
             }
         } catch (error) {
-            // Error already handled by toast in hook
             console.error("Search error:", error);
         }
     }, [searchQuery, filterFormData, activeTab, sortBy, sortOrder, searchTokens, searchPools]);
 
     const handleFilterApply = (response: TokenFilterResponse | PoolFilterResponse) => {
-        // Update results with filter response
         if ("tokens" in response) {
             setResults({ tokens: response.tokens, pools: [], total: response.total });
         } else {
@@ -133,7 +110,6 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
         }
     };
 
-    // Reset on dialog open/close
     useEffect(() => {
         if (!isOpen) {
             setSearchQuery("");
@@ -144,125 +120,115 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
         }
     }, [isOpen]);
 
-    // Debounced search on query change
     useEffect(() => {
         if (!isOpen) return;
-
-        // Clear previous timer
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
-
-        // Set new timer
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(() => {
             performSearch();
         }, 300);
-
         return () => {
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         };
     }, [searchQuery, filterFormData, isOpen, performSearch]);
 
-    // Trigger search when sort changes (only if we have query or filters)
     useEffect(() => {
         if (!isOpen) return;
         const hasContent = searchQuery.trim().length >= 2 || filterFormData !== null;
-        if (hasContent) {
-            performSearch();
-        }
+        if (hasContent) performSearch();
     }, [sortBy, sortOrder, activeTab, isOpen, performSearch]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent showCloseButton={false} className="min-w-250 bg-slate-950 border border-slate-700">
-                <DialogTitle className="sr-only">Search Dialog</DialogTitle>
-                <DialogDescription className="sr-only">Search dialog: find token and pool.</DialogDescription>
-                <div className="flex gap-2">
-                    <InputGroup>
-                        <InputGroupInput
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search token symbol, address, or pool..."
-                            className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
-                            autoFocus
-                        />
-                        <InputGroupAddon align={"inline-end"}>
-                            <Search className="text-slate-500" />
-                        </InputGroupAddon>
-                    </InputGroup>
-                    <DialogClose asChild>
-                        <Button variant={"outline"} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600">
-                            Cancel
-                        </Button>
-                    </DialogClose>
-                </div>
-                <div className="grid grid-cols-[1fr_2fr] items-center gap-2">
-                    <div className="text-xs text-slate-500 font-medium">Sort by:</div>
-                    <div className="flex items-center justify-end">
-                        <div className="px-0 py-2 flex gap-2 justify-end">
-                            {currentSorts.map((item) => (
-                                <div key={item.id} onClick={() => handleSortClick(item.id)}>
-                                    <SortButton label={item.label} type={sortBy === item.id ? sortOrder : "none"} />
-                                </div>
-                            ))}
-                        </div>
-                        <FilterButton
-                            filterOptions={{
-                                filterType: activeTab,
-                                sort_by: sortBy || undefined,
-                                sort_order: sortOrder,
-                                limit: 50
-                            }}
-                            onApply={handleFilterApply}
-                            onReset={() => {
-                                setFilterFormData(null);
-                                // Re-run search with query only (without filters)
-                                if (searchQuery.trim().length >= 2) {
-                                    performSearch();
-                                } else {
-                                    setResults({ tokens: [], pools: [], total: 0 });
-                                }
-                            }}
-                        />
+            <DialogContent
+                showCloseButton={false}
+                className="flex flex-col bg-[var(--surface-card)] border border-[var(--border-subtle)] shadow-[var(--shadow-dropdown)]
+                           w-full sm:max-w-[700px]
+                           max-h-[min(90svh,calc(100svh-2rem))] overflow-hidden p-0"
+            >
+                <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-hidden flex-1 min-h-0">
+                    <DialogTitle className="sr-only">Search Dialog</DialogTitle>
+                    <DialogDescription className="sr-only">Search dialog: find token and pool.</DialogDescription>
+
+                    <div className="flex gap-2">
+                        <InputGroup className="border-[var(--border-subtle)] bg-[var(--surface-panel)]">
+                            <InputGroupInput
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search token symbol, address, or pool..."
+                                className="text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                                autoFocus
+                            />
+                            <InputGroupAddon align={"inline-end"}>
+                                <Search className="text-[var(--text-muted)]" />
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <DialogClose asChild>
+                            <Button
+                                variant={"outline"}
+                                className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--surface-btn-hover)] hover:border-[var(--border-default)]"
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
                     </div>
-                </div>
 
-                {/* Results Area */}
-                <div className="mt-4 min-h-56 max-h-96 overflow-auto rounded-lg border border-slate-700 bg-slate-900/50 p-3">
-                    {isLoading && (
-                        <div className="flex items-center justify-center gap-3 text-slate-400 py-8">
-                            <RotateCw className="animate-spin w-5 h-5" />
-                            <span className="font-medium text-sm">Searching…</span>
-                        </div>
-                    )}
-
-                    {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
-                        <div className="flex items-center justify-center py-8 text-center">
-                            <div>
-                                <Search className="w-8 h-8 text-slate-600 mx-auto mb-3 opacity-60" />
-                                <p className="text-slate-300 text-sm font-medium">Start searching</p>
-                                <p className="text-slate-500 text-xs mt-2">Type at least 2 characters to find tokens</p>
+                    <div className="grid grid-cols-[auto_1fr] items-start gap-y-1 gap-x-2">
+                        <div className="text-xs text-[var(--text-muted)] font-medium pt-2">Sort by:</div>
+                        <div className="flex items-center justify-end flex-wrap gap-1">
+                            <div className="flex items-center flex-wrap gap-1 justify-end">
+                                {currentSorts.map((item) => (
+                                    <div key={item.id} onClick={() => handleSortClick(item.id)}>
+                                        <SortButton label={item.label} type={sortBy === item.id ? sortOrder : "none"} />
+                                    </div>
+                                ))}
                             </div>
+                            <FilterButton
+                                filterOptions={{ filterType: activeTab, sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
+                                onApply={handleFilterApply}
+                                onReset={() => {
+                                    setFilterFormData(null);
+                                    if (searchQuery.trim().length >= 2) performSearch();
+                                    else setResults({ tokens: [], pools: [], total: 0 });
+                                }}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
-                        <div className="flex items-center justify-center py-8 text-center">
-                            <div>
-                                <p className="text-slate-300 text-sm font-medium">No results</p>
-                                <p className="text-slate-500 text-xs mt-2">Try different keywords</p>
+                    {/* Results Area */}
+                    <div className="flex-1 min-h-0 min-h-56 overflow-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
+                        {isLoading && (
+                            <div className="flex items-center justify-center gap-3 text-[var(--text-muted)] py-8">
+                                <RotateCw className="animate-spin w-5 h-5" />
+                                <span className="font-medium text-sm">Searching…</span>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {!isLoading && results.total > 0 && (
-                        <>
-                            {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onClose} />}
-                            {activeTab === "pool" && <PoolResults pools={results.pools} />}
-                        </>
-                    )}
+                        {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
+                            <div className="flex items-center justify-center py-8 text-center">
+                                <div>
+                                    <Search className="w-8 h-8 text-[var(--text-disabled)] mx-auto mb-3" />
+                                    <p className="text-[var(--text-primary)] text-sm font-medium">Start searching</p>
+                                    <p className="text-[var(--text-muted)] text-xs mt-2">Type at least 2 characters to find tokens</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
+                            <div className="flex items-center justify-center py-8 text-center">
+                                <div>
+                                    <p className="text-[var(--text-primary)] text-sm font-medium">No results</p>
+                                    <p className="text-[var(--text-muted)] text-xs mt-2">Try different keywords</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoading && results.total > 0 && (
+                            <>
+                                {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onClose} />}
+                                {activeTab === "pool" && <PoolResults pools={results.pools} />}
+                            </>
+                        )}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
@@ -271,7 +237,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
 function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (open: boolean) => void }) {
     const router = useRouter();
-    if (!tokens?.length) return <div className="text-slate-400 text-sm">No tokens found</div>;
+    if (!tokens?.length) return <div className="text-[var(--text-muted)] text-sm">No tokens found</div>;
 
     const formatAge = (seconds: number) => {
         const days = Math.floor(seconds / 86400);
@@ -282,16 +248,11 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
         return `${minutes}m`;
     };
 
-    const formatAddress = (address: string) => {
-        return `${address.slice(0, 6)}...${address.slice(-4)}`;
-    };
+    const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
     const formatPrice = (value: number) => {
-        if (value >= 1) {
-            return formatCurrency(value);
-        } else {
-            return `$${value.toFixed(2)}`;
-        }
+        if (value >= 1) return formatCurrency(value);
+        return `$${value.toFixed(2)}`;
     };
 
     const handleTokenClick = (address: string) => {
@@ -304,63 +265,52 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
             {tokens.map((t) => (
                 <div
                     key={t.address}
-                    className="flex items-center gap-4 p-3 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 cursor-pointer transition-all duration-200"
+                    className="flex items-center gap-4 p-3 rounded-lg border border-[var(--border-subtle)] hover:border-[var(--border-default)] bg-[var(--surface-card)] hover:bg-[var(--surface-btn)] cursor-pointer transition-all duration-200"
                     onClick={() => handleTokenClick(t.address)}
                 >
                     {/* Token Info - Left Side */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar className="size-10 rounded-full border border-slate-700 bg-slate-800 shrink-0">
+                        <Avatar className="size-10 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-btn)] shrink-0">
                             <AvatarImage src={t.logo_uri || ""} alt={t.symbol} className="object-cover" />
-                            <AvatarFallback delayMs={0} className="text-slate-400 font-medium text-sm">
+                            <AvatarFallback delayMs={0} className="text-[var(--text-muted)] font-medium text-sm">
                                 {t.symbol?.slice(0, 2).toUpperCase() || "?"}
                             </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-slate-200 truncate">{t.symbol}</div>
-                            <div className="text-xs text-slate-400 truncate">{t.name}</div>
-                            <div className="text-xs text-slate-500 font-mono">{formatAddress(t.address)}</div>
+                            <div className="font-semibold text-[var(--text-primary)] truncate">{t.symbol}</div>
+                            <div className="text-xs text-[var(--text-muted)] truncate">{t.name}</div>
+                            <div className="text-xs text-[var(--text-muted)] font-mono">{formatAddress(t.address)}</div>
                         </div>
                     </div>
 
                     {/* Data Metrics - Right Side */}
-                    <div className="flex gap-8 flex-shrink-0">
-                        {/* Market Cap */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">MCAP</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.market_cap))}</div>
+                    <div className="flex gap-3 sm:gap-6 flex-shrink-0 overflow-x-auto">
+                        <div className="text-right shrink-0">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">MCAP</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCurrency(Number(t.market_cap))}</div>
                         </div>
-
-                        {/* Transactions */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">TXN 24h</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.txns_24h.total))}</div>
+                        <div className="text-right shrink-0 hidden sm:block">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">TXN 24h</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCompact(Number(t.txns_24h.total))}</div>
                         </div>
-
-                        {/* Holders */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Holders</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCompact(Number(t.holders.count))}</div>
+                        <div className="text-right shrink-0 hidden md:block">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Holders</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCompact(Number(t.holders.count))}</div>
                         </div>
-
-                        {/* Volume */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Volume</div>
-                            <div className="text-sm font-medium text-slate-200">{formatCurrency(Number(t.volume_24h))}</div>
+                        <div className="text-right shrink-0 hidden sm:block">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Volume</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCurrency(Number(t.volume_24h))}</div>
                         </div>
-
-                        {/* Age */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Age</div>
-                            <div className="text-sm font-medium text-slate-200">{formatAge(Number(t.age_seconds))}</div>
+                        <div className="text-right shrink-0 hidden md:block">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Age</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatAge(Number(t.age_seconds))}</div>
                         </div>
-
-                        {/* Price Change */}
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 uppercase tracking-wide">Price</div>
+                        <div className="text-right shrink-0">
+                            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Price</div>
                             <div className="text-sm font-medium">
-                                <span className="text-slate-200">{formatPrice(Number(t.price))}</span>
-                                <span className="mx-1 text-slate-500">/</span>
-                                <span className={`${Number(t.price_change_24h) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                <span className="text-[var(--text-primary)]">{formatPrice(Number(t.price))}</span>
+                                <span className="mx-1 text-[var(--text-muted)]">/</span>
+                                <span className={Number(t.price_change_24h) >= 0 ? "text-emerald-500" : "text-red-500"}>
                                     {formatPercent(Number(t.price_change_24h))}
                                 </span>
                             </div>
@@ -384,39 +334,39 @@ function PoolResults({
         fee_percent?: number;
     }>;
 }) {
-    if (!pools?.length) return <div className="text-slate-400 text-sm">No pools found</div>;
+    if (!pools?.length) return <div className="text-[var(--text-muted)] text-sm">No pools found</div>;
     return (
         <div className="space-y-2">
             {pools.map((p) => (
                 <div
                     key={p.address}
-                    className="flex items-center justify-between gap-3 p-3 border border-slate-700 rounded-lg hover:border-slate-600 bg-slate-900/30 hover:bg-slate-800/40 transition-all duration-200"
+                    className="flex items-center justify-between gap-3 p-3 border border-[var(--border-subtle)] rounded-lg hover:border-[var(--border-default)] bg-[var(--surface-card)] hover:bg-[var(--surface-btn)] transition-all duration-200"
                 >
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex -space-x-3 isolate items-center shrink-0">
-                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-10 hover:z-20 transition-all">
+                            <Avatar className="size-8 rounded-full border-2 border-[var(--surface-card)] bg-[var(--surface-btn)] z-10 hover:z-20 transition-all">
                                 <AvatarImage src={p.base_token?.logo_uri || ""} alt={p.base_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                <AvatarFallback delayMs={0} className="text-[var(--text-muted)] font-bold text-[10px]">
                                     {p.base_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
                                 </AvatarFallback>
                             </Avatar>
-                            <Avatar className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 z-0 hover:z-20 transition-all">
+                            <Avatar className="size-8 rounded-full border-2 border-[var(--surface-card)] bg-[var(--surface-btn)] z-0 hover:z-20 transition-all">
                                 <AvatarImage src={p.quote_token?.logo_uri || ""} alt={p.quote_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-slate-400 font-bold text-[10px]">
+                                <AvatarFallback delayMs={0} className="text-[var(--text-muted)] font-bold text-[10px]">
                                     {p.quote_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
                                 </AvatarFallback>
                             </Avatar>
                         </div>
                         <div className="min-w-0">
-                            <div className="font-medium text-slate-200 truncate">
+                            <div className="font-medium text-[var(--text-primary)] truncate">
                                 {p.base_token?.symbol} / {p.quote_token?.symbol}
                             </div>
-                            <div className="text-xs text-slate-400 truncate">{p.protocol}</div>
+                            <div className="text-xs text-[var(--text-muted)] truncate">{p.protocol}</div>
                         </div>
                     </div>
-                    <div className="text-right text-sm text-slate-200 flex-shrink-0">
-                        {typeof p.fee_percent === "number" ? <div className="text-xs text-slate-500">Fee {p.fee_percent}%</div> : null}
-                        {typeof p.volume_24h === "number" ? <div className="font-medium">Vol ${p.volume_24h.toLocaleString()}</div> : null}
+                    <div className="text-right text-sm text-[var(--text-primary)] flex-shrink-0">
+                        {typeof p.fee_percent === "number" && <div className="text-xs text-[var(--text-muted)]">Fee {p.fee_percent}%</div>}
+                        {typeof p.volume_24h === "number" && <div className="font-medium">Vol ${p.volume_24h.toLocaleString()}</div>}
                     </div>
                 </div>
             ))}

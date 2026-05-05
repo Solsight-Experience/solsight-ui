@@ -150,7 +150,6 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     }, [limitPrice, enablePriceRuler, orderType, setRulerPrice]);
 
     const hasData = initPoints && initPoints.length > 0;
-    const chartH = isMulti ? 200 : 460;
 
     // ── Drawing helpers ─────────────────────────────────────────────────────────
     const drawShape = useCallback((ctx: CanvasRenderingContext2D, start: { x: number; y: number }, end: { x: number; y: number }, mode: DrawingMode) => {
@@ -245,8 +244,10 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     useEffect(() => {
         if (!containerRef.current) return;
 
-        const chart = createChart(containerRef.current, {
-            height: chartH,
+        const container = containerRef.current;
+        const chart = createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight,
             layout: {
                 background: { type: ColorType.Solid, color: "transparent" },
                 textColor: "#9ca3af"
@@ -259,14 +260,24 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         });
 
         chartRef.current = chart;
+
+        const observer = new ResizeObserver(() => {
+            chart.applyOptions({
+                width: container.clientWidth,
+                height: container.clientHeight
+            });
+        });
+        observer.observe(container);
+
         return () => {
+            observer.disconnect();
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
             isInitRef.current = false;
             dataRef.current = [];
         };
-    }, [chartH]);
+    }, []);
 
     // ── Switch chart type ───────────────────────────────────────────────────────
     useEffect(() => {
@@ -452,7 +463,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         <div className="flex gap-2 w-full h-full">
             {/* ── Left sidebar ── */}
             {!isMulti && (
-                <div className="flex flex-col items-center gap-1 p-2 bg-gray-900 border-r border-gray-700 rounded-l-lg w-fit overflow-auto scrollbar-thin">
+                <div className="flex flex-col items-center gap-1 p-2 bg-[var(--surface-card)] border-r border-[var(--border-faint)] rounded-l-lg w-fit">
                     {/* Chart type group */}
                     <SideBtn active={type === "candles"} title="Candles" onClick={() => setType("candles")} variant="purple">
                         <CandlestickChart size={15} />
@@ -522,16 +533,11 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             )}
 
             {/* ── Chart + canvas ── */}
-            <div
-                className="relative rounded-r-lg flex-1 overflow-hidden"
-                style={{
-                    minHeight: chartH
-                }}
-            >
+            <div className="relative rounded-r-lg flex-1 overflow-hidden">
                 {/* No-data overlay */}
                 {!hasData && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-b from-gray-900/95 to-gray-900/98 rounded-r-lg">
-                        <p className="text-gray-400 text-sm font-medium">No chart data available</p>
+                        <p className="text-[var(--text-muted)] text-sm font-medium">No chart data available</p>
                     </div>
                 )}
 
