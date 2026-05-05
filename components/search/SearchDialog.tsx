@@ -43,7 +43,7 @@ const poolSorts: SortItem[] = [
 ];
 
 export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
-    //const [activeTab, setActiveTab] = useState<TabType>("token");
+    const [activeTab, setActiveTab] = useState<TabType>("token");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<SortBy | PoolSortBy | "">("");
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
