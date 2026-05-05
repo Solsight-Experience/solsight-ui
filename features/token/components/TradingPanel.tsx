@@ -8,7 +8,7 @@ import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
-import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, AlertTriangle } from "lucide-react";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
@@ -60,7 +60,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setLimitPrice,
         resetTradingPanel,
         pendingTradeAction,
-        setPendingTradeAction
+        setPendingTradeAction,
+        pendingSlippageAction,
+        setPendingSlippageAction
     } = useTokenUIStore();
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
@@ -133,10 +135,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         if (pendingTradeAction.mint === token.address) {
             setTradeMode(pendingTradeAction.mode);
             setPayAmount(pendingTradeAction.amount);
+            if (pendingTradeAction.slippageBps !== undefined) {
+                setSlippageBps(pendingTradeAction.slippageBps);
+            }
             setLastEdited("pay");
             setPendingTradeAction(null);
         }
     }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+
+    useEffect(() => {
+        if (!pendingSlippageAction) return;
+
+        if (!pendingSlippageAction.warnOnly) {
+            setSlippageBps(pendingSlippageAction.slippageBps);
+        }
+
+        if (pendingSlippageAction.isHigh) {
+            const pct = (pendingSlippageAction.slippageBps / 100).toFixed(2);
+            toast.warning(`High slippage: ${pendingSlippageAction.slippageBps} bps (${pct}%). Trades may execute at a worse price.`);
+        }
+
+        setPendingSlippageAction(null);
+    }, [pendingSlippageAction, setSlippageBps, setPendingSlippageAction]);
 
     const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
@@ -1031,7 +1051,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 <div className="mb-4 text-sm bg-[var(--surface-btn)] rounded-lg p-3 border border-[var(--border-subtle)] space-y-2">
                     <div className="flex items-center justify-between text-[var(--text-secondary)]">
                         <span className="text-[var(--text-muted)]">Price Impact</span>
-                        <span className="font-semibold">{quoteState.priceImpactPct === null ? "--" : `${(quoteState.priceImpactPct * 100).toFixed(2)}%`}</span>
+                        {quoteState.priceImpactPct === null ? (
+                            <span className="font-semibold">--</span>
+                        ) : (
+                            (() => {
+                                const pct = quoteState.priceImpactPct * 100;
+                                const severity = pct > 15 ? "critical" : pct > 10 ? "danger" : pct > 3 ? "warning" : "safe";
+                                const colorClass =
+                                    severity === "critical"
+                                        ? "text-red-400 font-bold animate-pulse"
+                                        : severity === "danger"
+                                          ? "text-red-400 font-bold"
+                                          : severity === "warning"
+                                            ? "text-amber-400 font-semibold"
+                                            : "font-semibold";
+                                return (
+                                    <span className={colorClass}>
+                                        {severity !== "safe" && <AlertTriangle className="inline-block w-3.5 h-3.5 mr-1 relative top-[-1px]" />}
+                                        {pct.toFixed(2)}%
+                                    </span>
+                                );
+                            })()
+                        )}
                     </div>
                     <div className="flex items-center justify-between text-[var(--text-secondary)]">
                         <span className="text-[var(--text-muted)]">{lastEdited === "receive" ? "Maximum Paid" : "Minimum Received"}</span>

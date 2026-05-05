@@ -44,8 +44,12 @@ interface TokenUIState {
     toggleHoldersTableColumn: (columnId: string) => void;
 
     // Pending auto-action from Chat
-    pendingTradeAction: { mint: string; amount: string; mode: TradeMode } | null;
-    setPendingTradeAction: (action: { mint: string; amount: string; mode: TradeMode } | null) => void;
+    pendingTradeAction: { mint: string; amount: string; mode: TradeMode; slippageBps?: number } | null;
+    setPendingTradeAction: (action: { mint: string; amount: string; mode: TradeMode; slippageBps?: number } | null) => void;
+
+    // Pending slippage action from Chat
+    pendingSlippageAction: { slippageBps: number; warnOnly: boolean; isHigh: boolean } | null;
+    setPendingSlippageAction: (action: { slippageBps: number; warnOnly: boolean; isHigh: boolean } | null) => void;
 }
 
 export const useTokenUIStore = create<TokenUIState>()(
@@ -123,7 +127,10 @@ export const useTokenUIStore = create<TokenUIState>()(
                 })),
 
             pendingTradeAction: null,
-            setPendingTradeAction: (action) => set({ pendingTradeAction: action })
+            setPendingTradeAction: (action) => set({ pendingTradeAction: action }),
+
+            pendingSlippageAction: null,
+            setPendingSlippageAction: (action) => set({ pendingSlippageAction: action })
         }),
         {
             name: "token-ui-state",

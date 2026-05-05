@@ -97,11 +97,13 @@ export interface AuthResponseDto {
 
 // Chat DTOs
 export interface ChatMessageDto {
-    role: "user" | "assistant";
+    role: "user" | "assistant" | "tool";
     content: string;
-    type?: "text" | "token_brief" | "portfolio_summary" | "navigation" | "trade_intent";
+    type?: "text" | "token_brief" | "portfolio_summary" | "portfolio_activities" | "portfolio_performance" | "navigation" | "trade_intent" | "slippage_action";
     data?: Record<string, unknown>;
     timestamp: number;
+    toolCallId?: string;
+    toolName?: string;
 }
 
 export interface ChatPageContext {
@@ -121,7 +123,7 @@ export interface SendChatMessageDto {
 
 export interface ChatResponseDto {
     sessionId: string;
-    type: "text" | "token_brief" | "portfolio_summary" | "navigation" | "trade_intent";
+    type: "text" | "token_brief" | "portfolio_summary" | "portfolio_activities" | "portfolio_performance" | "navigation" | "trade_intent" | "slippage_action";
     content?: string;
     data?: Record<string, unknown>;
 }

@@ -43,13 +43,13 @@ export const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({ data
                             const colors = ["bg-violet-500", "bg-indigo-400", "bg-purple-400"];
                             return (
                                 <div key={idx}>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className={`w-2 h-2 rounded-full ${colors[idx]}`} />
-                                            <span className="text-xs font-medium">{token.symbol}</span>
-                                            <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{token.name}</span>
+                                    <div className="flex items-center justify-between gap-2 mb-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                                            <div className={`w-2 h-2 rounded-full shrink-0 ${colors[idx]}`} />
+                                            <span className="text-xs font-medium shrink-0">{token.symbol}</span>
+                                            <span className="text-[10px] text-muted-foreground truncate">{token.name}</span>
                                         </div>
-                                        <span className="text-xs font-mono font-medium">{currencyFormatter.format(token.value_usd)}</span>
+                                        <span className="text-xs font-mono font-medium shrink-0">{currencyFormatter.format(token.value_usd)}</span>
                                     </div>
                                     <div className="h-1 rounded-full bg-muted/40 overflow-hidden">
                                         <div className={`h-full rounded-full ${colors[idx]} transition-all duration-500`} style={{ width: `${pct}%` }} />
