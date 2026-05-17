@@ -18,12 +18,13 @@ import {
     formatDisplay,
     formatFromBaseUnits,
     formatInputValue,
-    getSwapApiConfig,
     isValidAmount,
     parseInputNumber,
     sanitizeInput,
     toBaseUnits
 } from "@/features/swap";
+import { apiClient } from "@/lib/api-client";
+import { SWAP_ENDPOINTS } from "@/lib/constants";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -99,19 +100,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
     const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
 
-    // Fetch SOL price in USD
     useEffect(() => {
-        fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd")
-            .then((r) => r.json())
-            .then((data) => {
-                if (data?.solana?.usd) {
-                    setSolPriceUsd(data.solana.usd);
-                }
-            })
-            .catch((err) => console.error("Failed to fetch SOL price:", err));
+        apiClient
+            .get<{ usd: number }>(SWAP_ENDPOINTS.SOL_PRICE)
+            .then((data) => setSolPriceUsd(data.usd))
+            .catch(() => {});
     }, []);
-
-    const swapConfig = useMemo(() => getSwapApiConfig(), []);
     const internalUpdateRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const previousBuyPayMintRef = useRef(selectedBuyPayMint);
@@ -142,11 +136,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
     useEffect(() => {
         if (token.decimals != null) return;
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === token.address) : null;
-                if (found && typeof found.decimals === "number") setFetchedDecimals(found.decimals);
+        apiClient
+            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(token.address))
+            .then((data) => {
+                if (data?.decimals != null) setFetchedDecimals(data.decimals);
             })
             .catch(() => {});
     }, [token.address, token.decimals]);
@@ -315,15 +308,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         if (selectedBuyPayToken.decimals != null) return;
         if (buyTokenDecimalsByMint[selectedMint] != null) return;
 
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
+        apiClient
+            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(selectedMint))
+            .then((data) => {
+                if (data?.decimals != null) {
+                    setBuyTokenDecimalsByMint((prev) => ({ ...prev, [selectedMint]: data.decimals }));
                 }
             })
             .catch(() => {});
@@ -338,15 +327,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         if (selectedSellReceiveToken.decimals != null) return;
         if (buyTokenDecimalsByMint[selectedMint] != null) return;
 
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
+        apiClient
+            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(selectedMint))
+            .then((data) => {
+                if (data?.decimals != null) {
+                    setBuyTokenDecimalsByMint((prev) => ({ ...prev, [selectedMint]: data.decimals }));
                 }
             })
             .catch(() => {});
@@ -539,7 +524,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     },
                     {
                         signal: controller.signal,
-                        config: swapConfig,
                         payTokenSymbol: payToken,
                         receiveTokenSymbol: receiveToken
                     }
@@ -596,7 +580,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         payMint,
         receiveMint,
         slippageBps,
-        swapConfig,
         setPayAmount,
         setReceiveAmount,
         payToken,
@@ -641,14 +624,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: true, error: null, signature: null });
 
         try {
-            const { signature } = await executeJupiterSwap(
-                {
-                    quoteResponse: quoteState.rawQuote,
-                    userPublicKey: publicKey,
-                    signTransaction: (tx) => provider.signTransaction(tx)
-                },
-                { config: swapConfig }
-            );
+            const { signature } = await executeJupiterSwap({
+                quoteResponse: quoteState.rawQuote,
+                userPublicKey: publicKey,
+                signTransaction: (tx) => provider.signTransaction(tx)
+            });
 
             setSwapState({ loading: false, error: null, signature });
             await refreshBalancesAfterSwap();

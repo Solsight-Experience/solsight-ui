@@ -158,6 +158,15 @@ export const PORTFOLIO_WATCH_ENDPOINTS = {
     PNL_CHART: "/api/portfolio/watch/pnl-chart"
 } as const;
 
+// Swap API Endpoints
+export const SWAP_ENDPOINTS = {
+    QUOTE: "/api/swap/quote",
+    TRANSACTION: "/api/swap/transaction",
+    EXECUTE: "/api/swap/execute",
+    SOL_PRICE: "/api/swap/sol-price",
+    TOKEN_INFO: (mint: string) => `/api/swap/token-info/${mint}`
+} as const;
+
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
     MESSAGE: "/api/chat/message"
