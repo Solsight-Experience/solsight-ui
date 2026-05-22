@@ -23,8 +23,7 @@ import {
     sanitizeInput,
     toBaseUnits
 } from "@/features/swap";
-import { apiClient } from "@/lib/api-client";
-import { SWAP_ENDPOINTS } from "@/lib/constants";
+import { useSolPrice } from "@/features/swap/hooks/useSolPrice";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -68,7 +67,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const [copiedMint, setCopiedMint] = useState<string | null>(null);
     const [selectedBuyPayMint, setSelectedBuyPayMint] = useState<string>(COMMON_TOKENS.SOL.mint);
     const [selectedSellReceiveMint, setSelectedSellReceiveMint] = useState<string>(COMMON_TOKENS.SOL.mint);
-    const [buyTokenDecimalsByMint, setBuyTokenDecimalsByMint] = useState<Record<string, number>>({});
     const [swapState, setSwapState] = useState<{
         loading: boolean;
         error: string | null;
@@ -98,14 +96,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         rawQuote: null
     });
 
-    const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
-
-    useEffect(() => {
-        apiClient
-            .get<{ usd: number }>(SWAP_ENDPOINTS.SOL_PRICE)
-            .then((data) => setSolPriceUsd(data.usd))
-            .catch(() => {});
-    }, []);
+    const { data: solPriceData } = useSolPrice();
+    const solPriceUsd = solPriceData?.price_usd ?? null;
     const internalUpdateRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const previousBuyPayMintRef = useRef(selectedBuyPayMint);
@@ -132,19 +124,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: false, error: null, signature: null });
     }, [token.address, resetTradingPanel, isViewingSolToken]);
 
-    const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
+    const resolvedTokenDecimals = token.decimals ?? 9;
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
-    useEffect(() => {
-        if (token.decimals != null) return;
-        apiClient
-            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(token.address))
-            .then((data) => {
-                if (data?.decimals != null) setFetchedDecimals(data.decimals);
-            })
-            .catch(() => {});
-    }, [token.address, token.decimals]);
-
-    const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
     const selectedWalletAddress = useMemo(() => {
         const wallets = walletsData?.wallets ?? [];
         if (!wallets.length) return publicKey ?? "";
@@ -299,44 +280,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         }));
     }, [tradeMode, selectedSellReceiveMint, setPayAmount, setReceiveAmount]);
 
-    useEffect(() => {
-        if (tradeMode !== "buy") return;
-        if (!selectedBuyPayToken) return;
-
-        const selectedMint = selectedBuyPayToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedBuyPayToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        apiClient
-            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(selectedMint))
-            .then((data) => {
-                if (data?.decimals != null) {
-                    setBuyTokenDecimalsByMint((prev) => ({ ...prev, [selectedMint]: data.decimals }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedBuyPayToken, buyTokenDecimalsByMint]);
-
-    useEffect(() => {
-        if (tradeMode !== "sell") return;
-        if (!selectedSellReceiveToken) return;
-
-        const selectedMint = selectedSellReceiveToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedSellReceiveToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        apiClient
-            .get<{ decimals: number }>(SWAP_ENDPOINTS.TOKEN_INFO(selectedMint))
-            .then((data) => {
-                if (data?.decimals != null) {
-                    setBuyTokenDecimalsByMint((prev) => ({ ...prev, [selectedMint]: data.decimals }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedSellReceiveToken, buyTokenDecimalsByMint]);
-
     const payToken = tradeMode === "buy" ? (selectedBuyPayToken?.symbol ?? "") : token.symbol;
     const receiveToken = tradeMode === "buy" ? token.symbol : (selectedSellReceiveToken?.symbol ?? "");
     const payTokenLogo = tradeMode === "buy" ? (selectedBuyPayToken?.logoUri ?? "") : token.logo_uri;
@@ -346,23 +289,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
     const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
     const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
-    const payDecimals =
-        tradeMode === "buy"
-            ? (selectedBuyPayToken?.decimals ??
-              (selectedBuyPayToken ? buyTokenDecimalsByMint[selectedBuyPayToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals)
-            : resolvedTokenDecimals;
-    const receiveDecimals =
-        tradeMode === "buy"
-            ? resolvedTokenDecimals
-            : (selectedSellReceiveToken?.decimals ??
-              (selectedSellReceiveToken ? buyTokenDecimalsByMint[selectedSellReceiveToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals);
+    const payDecimals = tradeMode === "buy" ? (selectedBuyPayToken?.decimals ?? COMMON_TOKENS.SOL.decimals) : resolvedTokenDecimals;
+    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : (selectedSellReceiveToken?.decimals ?? COMMON_TOKENS.SOL.decimals);
 
     const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
     const getOptionDecimals = (option: BuyPayTokenOption): number =>
-        option.decimals ?? buyTokenDecimalsByMint[option.mint] ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+        option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
