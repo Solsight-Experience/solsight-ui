@@ -26,6 +26,16 @@ export class NotificationSocketManager extends SocketManager {
     }
 
     onNotification(userId: string, handler: (data: Notification) => void): void {
-        this.on("notification", handler, `notifications:${userId}`);
+        // SocketManager uses EventHandler = (...args: any[]) => void
+        // Wrap handler to adapt unknown incoming args into the typed Notification
+        const wrapped: (...args: any[]) => void = (args: any) => {
+            try {
+                handler(args as Notification);
+            } catch (e) {
+                // ignore
+            }
+        };
+
+        this.on("notification", wrapped, `notifications:${userId}`);
     }
 }

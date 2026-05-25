@@ -372,7 +372,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             else if (receiveAmount) setLastEdited("receive");
         }
         // Note: Do not add payAmount/receiveAmount to dependencies to avoid infinite loops when they change
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderType]);
 
     useEffect(() => {
@@ -619,7 +618,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = typeof publicKey?.toBase58 === "function" ? publicKey.toBase58() : typeof publicKey === "string" ? publicKey : "";
+            const walletAddress = typeof (publicKey as any)?.toBase58 === "function" ? (publicKey as any).toBase58() : String(publicKey ?? "");
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }

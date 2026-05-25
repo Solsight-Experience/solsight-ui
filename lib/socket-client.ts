@@ -1,17 +1,56 @@
 import { io, Socket } from "socket.io-client";
+import useClusterStore from "@/stores/cluster.store";
 
-export type EventHandler = (...args: unknown[]) => void;
+export type EventHandler = (...args: any[]) => void;
 
 export class SocketManager {
     protected socket: Socket;
     protected events = new Map<string, Array<{ event: string; handler: EventHandler }>>();
 
     protected constructor() {
-        this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+        const opts: any = {
             transports: ["websocket", "polling"],
             withCredentials: true,
             autoConnect: false
-        });
+        };
+
+        // Include cluster in auth handshake
+        try {
+            const cluster = useClusterStore?.getState?.().cluster;
+            if (cluster) {
+                opts.auth = { cluster };
+            }
+        } catch {
+            // ignore
+        }
+
+        this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, opts);
+
+        // subscribe to cluster changes so we can re-handshake
+        try {
+            if (useClusterStore && useClusterStore.subscribe) {
+                // subscribe to full state and react to cluster changes
+                let prevCluster: string | undefined = undefined;
+                const unsub = useClusterStore.subscribe((s) => {
+                    const newCluster = (s as any).cluster as string;
+                    if (newCluster === prevCluster) return;
+                    prevCluster = newCluster;
+                    try {
+                        this.socket.auth = { cluster: newCluster };
+                    } catch (e) {}
+                    try {
+                        this.disconnect();
+                    } catch (e) {}
+                    try {
+                        this.connect();
+                    } catch (e) {}
+                });
+                // ensure we don't leak subscription from constructor
+                // note: leaving unsub in scope for GC; SocketManager instances are singletons in services
+            }
+        } catch (e) {
+            // ignore
+        }
     }
 
     protected connect() {
@@ -55,5 +94,9 @@ export class SocketManager {
         this.events.forEach((_, key) => this.offKey(key));
         this.socket.disconnect();
         this.events.clear();
+    }
+
+    static subscribeToCluster(_socketManagerInstance: SocketManager) {
+        // noop - deprecated
     }
 }

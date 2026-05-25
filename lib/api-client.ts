@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import Cookies from "js-cookie";
+import useClusterStore from "@/stores/cluster.store";
 
 // API client configuration for NestJS backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -28,6 +29,10 @@ class ApiClient {
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
+
+                // Inject cluster param if not explicitly provided
+                this.injectClusterParam(config);
+
                 return config;
             },
             (error) => Promise.reject(error)
@@ -45,6 +50,20 @@ class ApiClient {
                 return Promise.reject(error);
             }
         );
+    }
+
+    private injectClusterParam(config: AxiosRequestConfig) {
+        try {
+            const cluster = useClusterStore?.getState?.().cluster;
+            if (cluster) {
+                config.params = config.params ?? {};
+                if (config.params.cluster == null) {
+                    config.params.cluster = cluster;
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
     }
 
     // Generic HTTP methods

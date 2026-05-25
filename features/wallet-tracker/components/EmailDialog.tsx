@@ -2,18 +2,8 @@
 
 import { useState } from "react";
 import { CheckCircle2, Loader2, Mail, Unlink } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import {
-    useEmailSubscription,
-    useSubmitEmail,
-    useEmailStatus,
-    useDisconnectEmail,
-} from "../hooks/useEmailSubscription";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEmailSubscription, useSubmitEmail, useEmailStatus, useDisconnectEmail } from "../hooks/useEmailSubscription";
 
 type Step = "idle" | "entering" | "pending" | "verified";
 
@@ -68,8 +58,10 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-[#0c1018] border border-white/[0.08] rounded-2xl w-[420px] max-w-[95vw]
-                                      shadow-[0_24px_60px_rgba(0,0,0,0.7)]">
+            <DialogContent
+                className="bg-[#0c1018] border border-white/[0.08] rounded-2xl w-[420px] max-w-[95vw]
+                                      shadow-[0_24px_60px_rgba(0,0,0,0.7)]"
+            >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2.5 text-[14px] font-semibold text-white/90">
                         <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-500/15 ring-1 ring-violet-500/25">
@@ -92,18 +84,9 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
                             disconnecting={disconnecting}
                         />
                     ) : step === "pending" ? (
-                        <PendingState
-                            email={subscription!.email!}
-                            onResend={handleResend}
-                            resending={submitting}
-                        />
+                        <PendingState email={subscription!.email!} onResend={handleResend} resending={submitting} />
                     ) : (
-                        <EnteringState
-                            email={inputEmail}
-                            onEmailChange={setInputEmail}
-                            onSubmit={handleSubmit}
-                            submitting={submitting}
-                        />
+                        <EnteringState email={inputEmail} onEmailChange={setInputEmail} onSubmit={handleSubmit} submitting={submitting} />
                     )}
                 </div>
             </DialogContent>
@@ -115,7 +98,7 @@ function EnteringState({
     email,
     onEmailChange,
     onSubmit,
-    submitting,
+    submitting
 }: {
     email: string;
     onEmailChange: (v: string) => void;
@@ -125,8 +108,7 @@ function EnteringState({
     return (
         <div className="flex flex-col gap-4">
             <p className="text-[12px] text-white/50 leading-relaxed">
-                Enter your email address to receive wallet alert notifications.
-                We'll send a verification link to confirm.
+                Enter your email address to receive wallet alert notifications. We&apos;ll send a verification link to confirm.
             </p>
             <input
                 type="email"
@@ -154,15 +136,7 @@ function EnteringState({
     );
 }
 
-function PendingState({
-    email,
-    onResend,
-    resending,
-}: {
-    email: string;
-    onResend: () => void;
-    resending: boolean;
-}) {
+function PendingState({ email, onResend, resending }: { email: string; onResend: () => void; resending: boolean }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center gap-3 py-6 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -170,7 +144,8 @@ function PendingState({
                 <div className="text-center">
                     <p className="text-[13px] font-semibold text-white/80">Check your inbox</p>
                     <p className="text-[11px] text-white/40 mt-1">
-                        Verification email sent to<br />
+                        Verification email sent to
+                        <br />
                         <span className="text-white/60 font-medium">{email}</span>
                     </p>
                 </div>
@@ -186,7 +161,7 @@ function PendingState({
                 disabled={resending}
                 className="text-[11px] text-white/30 hover:text-white/60 transition-colors disabled:opacity-50 text-left"
             >
-                Didn't receive it? Resend email
+                Didn&apos;t receive it? Resend email
             </button>
         </div>
     );
@@ -196,7 +171,7 @@ function VerifiedState({
     email,
     verifiedAt,
     onDisconnect,
-    disconnecting,
+    disconnecting
 }: {
     email: string;
     verifiedAt: string;
@@ -206,7 +181,7 @@ function VerifiedState({
     const date = new Date(verifiedAt).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: "numeric"
     });
 
     return (
@@ -220,9 +195,7 @@ function VerifiedState({
                 </div>
             </div>
 
-            <p className="text-[12px] text-white/40 text-center">
-                Wallet alert notifications will be sent to your email.
-            </p>
+            <p className="text-[12px] text-white/40 text-center">Wallet alert notifications will be sent to your email.</p>
 
             <button
                 onClick={onDisconnect}

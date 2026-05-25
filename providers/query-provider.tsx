@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import useClusterStore from "@/stores/cluster.store";
 
 export default function QueryProvider({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -42,6 +43,28 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             key: "solsight-query-cache"
         })
     );
+
+    // Invalidate queries when cluster changes to avoid mixing caches
+    const cluster = useClusterStore((s) => s.cluster);
+    // We intentionally use subscribe here to avoid re-creating queryClient
+    // on every cluster change; invalidateQueries will clear old cluster data
+    // use subscribe(listener) since our store doesn't expose selector overload in this build
+    useState(() => {
+        try {
+            let prev: string | undefined = undefined;
+            const unsub = useClusterStore.subscribe((s) => {
+                const next = (s as any).cluster as string;
+                if (prev !== next) {
+                    prev = next;
+                    queryClient.invalidateQueries();
+                }
+            });
+            return () => unsub?.();
+        } catch (e) {
+            // ignore
+        }
+        return () => {};
+    });
 
     return (
         <PersistQueryClientProvider

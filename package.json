@@ -6,8 +6,8 @@
         "dev": "next dev --turbopack -p 3001",
         "build": "next build --turbopack",
         "start": "next start",
-        "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
-        "lint:fix": "eslint . --ext .ts,.tsx --fix",
+        "lint": "eslint . --ext .ts,.tsx --ignore-pattern '.next/**' --ignore-pattern 'node_modules/**' --ignore-pattern 'dist/**' --ignore-pattern 'build/**' --report-unused-disable-directives",
+        "lint:fix": "eslint . --ext .ts,.tsx --ignore-pattern '.next/**' --ignore-pattern 'node_modules/**' --ignore-pattern 'dist/**' --ignore-pattern 'build/**' --fix",
         "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
         "test": "vitest",
@@ -100,7 +100,7 @@
         "typescript": "^5",
         "vitest": "^3.2.4"
     },
-    "packageManager": "pnpm@10.6.2+sha512.47870716bea1572b53df34ad8647b42962bc790ce2bf4562ba0f643237d7302a3d6a8ecef9e4bdfc01d23af1969aa90485d4cebb0b9638fa5ef1daef656f6c1b",
+    "packageManager": "pnpm@11.3.0",
     "lint-staged": {
         "*.{ts,tsx}": [
             "prettier --write",

@@ -12,6 +12,7 @@ import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDial
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
+import ClusterToggle from "@/components/layout/cluster-toggle";
 
 const TICKERS = [
     { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
@@ -36,9 +37,7 @@ export default function Header() {
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
 
-    const handleDisConnectWallets = useCallback(() => {
-        setConfirmDisconnectWalletsOpen(true);
-    }, []);
+    // removed unused handleDisConnectWallets (was opening disconnect dialog)
 
     const handleLogout = async () => {
         await logout();
@@ -65,7 +64,7 @@ export default function Header() {
                             <span key={i} className="inline-flex items-center gap-1.5 px-5 text-[10px] border-r border-white/5">
                                 <span className="text-white/40 tracking-wide">{t.symbol}</span>
                                 <span className="text-white/80 font-semibold">{t.price}</span>
-                                <span className={t.up ? "text-emerald-400" : "text-red-400"}>{t.change}</span>
+                                <span className={t.change >= 0 ? "text-emerald-400" : "text-red-400"}>{t.change}</span>
                             </span>
                         ))}
                     </div>
@@ -76,6 +75,9 @@ export default function Header() {
             <div className="flex items-center justify-between px-8 h-14">
                 <div className="flex items-center">
                     <HeaderIcon />
+                    <div className="ml-4">
+                        <ClusterToggle />
+                    </div>
                     <div className="w-px h-5 bg-white/10 mx-6" />
                     <NavLinks />
                 </div>
@@ -187,7 +189,7 @@ export default function Header() {
             {/* Ticker keyframe — one tiny <style> tag just for the @keyframes rule */}
             <style>{`@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
 
-            <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+            <SearchDialog isOpen={searchOpen} onCloseAction={handleDialogChange} />
             <DisconnectWalletsConfirmDialog
                 isOpen={confirmDisconnectWalletsOpen}
                 onClose={() => setConfirmDisconnectWalletsOpen(false)}
