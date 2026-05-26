@@ -1,56 +1,35 @@
 import { io, Socket } from "socket.io-client";
 import useClusterStore from "@/stores/cluster.store";
 
-export type EventHandler = (...args: any[]) => void;
+export type EventHandler<T = unknown> = { bivarianceHack(payload: T): void }["bivarianceHack"];
 
 export class SocketManager {
     protected socket: Socket;
-    protected events = new Map<string, Array<{ event: string; handler: EventHandler }>>();
+    protected events = new Map<string, Array<{ event: string; handler: EventHandler<unknown> }>>();
 
     protected constructor() {
-        const opts: any = {
+        const opts: Record<string, unknown> = {
             transports: ["websocket", "polling"],
             withCredentials: true,
             autoConnect: false
         };
 
-        // Include cluster in auth handshake
-        try {
-            const cluster = useClusterStore?.getState?.().cluster;
-            if (cluster) {
-                opts.auth = { cluster };
-            }
-        } catch {
-            // ignore
+        const cluster = useClusterStore.getState().cluster;
+        if (cluster) {
+            opts.auth = { cluster };
         }
 
         this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, opts);
 
         // subscribe to cluster changes so we can re-handshake
-        try {
-            if (useClusterStore && useClusterStore.subscribe) {
-                // subscribe to full state and react to cluster changes
-                let prevCluster: string | undefined = undefined;
-                const unsub = useClusterStore.subscribe((s) => {
-                    const newCluster = (s as any).cluster as string;
-                    if (newCluster === prevCluster) return;
-                    prevCluster = newCluster;
-                    try {
-                        this.socket.auth = { cluster: newCluster };
-                    } catch (e) {}
-                    try {
-                        this.disconnect();
-                    } catch (e) {}
-                    try {
-                        this.connect();
-                    } catch (e) {}
-                });
-                // ensure we don't leak subscription from constructor
-                // note: leaving unsub in scope for GC; SocketManager instances are singletons in services
-            }
-        } catch (e) {
-            // ignore
-        }
+        let prevCluster = cluster;
+        useClusterStore.subscribe((state) => {
+            if (state.cluster === prevCluster) return;
+            prevCluster = state.cluster;
+            this.socket.auth = { cluster: prevCluster };
+            this.disconnect();
+            this.connect();
+        });
     }
 
     protected connect() {
@@ -59,7 +38,7 @@ export class SocketManager {
         }
     }
 
-    on(event: string, handler: EventHandler, key?: string) {
+    on<T = unknown>(event: string, handler: EventHandler<T>, key?: string) {
         this.connect();
         this.socket.on(event, handler);
 
@@ -81,7 +60,7 @@ export class SocketManager {
         this.events.delete(key);
     }
 
-    emit(event: string, data?: unknown) {
+    emit<T = unknown>(event: string, data?: T) {
         this.connect();
         this.socket.emit(event, data);
     }

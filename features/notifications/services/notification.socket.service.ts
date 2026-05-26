@@ -1,4 +1,4 @@
-import { SocketManager } from "@/lib/socket-client";
+import { SocketManager, type EventHandler } from "@/lib/socket-client";
 import { Notification } from "../types/notification.types";
 
 export class NotificationSocketManager extends SocketManager {
@@ -26,16 +26,6 @@ export class NotificationSocketManager extends SocketManager {
     }
 
     onNotification(userId: string, handler: (data: Notification) => void): void {
-        // SocketManager uses EventHandler = (...args: any[]) => void
-        // Wrap handler to adapt unknown incoming args into the typed Notification
-        const wrapped: (...args: any[]) => void = (args: any) => {
-            try {
-                handler(args as Notification);
-            } catch (e) {
-                // ignore
-            }
-        };
-
-        this.on("notification", wrapped, `notifications:${userId}`);
+        this.on<Notification>("notification", handler, `notifications:${userId}`);
     }
 }
