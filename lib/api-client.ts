@@ -53,16 +53,10 @@ class ApiClient {
     }
 
     private injectClusterParam(config: AxiosRequestConfig) {
-        try {
-            const cluster = useClusterStore?.getState?.().cluster;
-            if (cluster) {
-                config.params = config.params ?? {};
-                if (config.params.cluster == null) {
-                    config.params.cluster = cluster;
-                }
-            }
-        } catch (e) {
-            // ignore
+        const cluster = useClusterStore.getState().cluster;
+        config.params = config.params ?? {};
+        if (config.params.cluster == null) {
+            config.params.cluster = cluster;
         }
     }
 

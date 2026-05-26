@@ -45,25 +45,15 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
     );
 
     // Invalidate queries when cluster changes to avoid mixing caches
-    const cluster = useClusterStore((s) => s.cluster);
-    // We intentionally use subscribe here to avoid re-creating queryClient
-    // on every cluster change; invalidateQueries will clear old cluster data
-    // use subscribe(listener) since our store doesn't expose selector overload in this build
     useState(() => {
-        try {
-            let prev: string | undefined = undefined;
-            const unsub = useClusterStore.subscribe((s) => {
-                const next = (s as any).cluster as string;
-                if (prev !== next) {
-                    prev = next;
-                    queryClient.invalidateQueries();
-                }
-            });
-            return () => unsub?.();
-        } catch (e) {
-            // ignore
-        }
-        return () => {};
+        let prev = useClusterStore.getState().cluster;
+        const unsub = useClusterStore.subscribe((state) => {
+            if (state.cluster !== prev) {
+                prev = state.cluster;
+                queryClient.invalidateQueries();
+            }
+        });
+        return () => unsub?.();
     });
 
     return (
