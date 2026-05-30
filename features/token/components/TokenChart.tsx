@@ -303,13 +303,13 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                 } catch (e) {
                     // fallback: some typings expect (seriesType, options)
                     // determine seriesType from legacyMethod
-                    const seriesTypeMap: Record<string, string> = {
-                        addCandlestickSeries: "Candlestick",
-                        addLineSeries: "Line",
-                        addAreaSeries: "Area",
-                        addBarSeries: "Bar",
-                        addBaselineSeries: "Baseline",
-                        addHistogramSeries: "Histogram"
+                    const seriesTypeMap: Record<string, any> = {
+                        addCandlestickSeries: CandlestickSeries,
+                        addLineSeries: LineSeries,
+                        addAreaSeries: AreaSeries,
+                        addBarSeries: BarSeries,
+                        addBaselineSeries: BaselineSeries,
+                        addHistogramSeries: HistogramSeries
                     };
                     return anyChart.addSeries(seriesTypeMap[legacyMethod], options) as ISeriesApi<SeriesType>;
                 }
