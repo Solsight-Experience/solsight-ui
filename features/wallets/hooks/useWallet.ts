@@ -1,59 +1,53 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { WalletService } from "../services/wallet.service";
-import { phantomWallet } from "@/lib/wallet";
 import { WalletResponseDto } from "@/types/dto";
 import { getErrorMessage } from "@/lib/error-utils";
 import { toast } from "sonner";
+import { useWallet as useAdapterWallet } from "@solana/wallet-adapter-react";
+import { PhantomWalletName } from "@solana/wallet-adapter-phantom";
 
 export function useWallet() {
-    const [isConnecting, setIsConnecting] = useState(false);
     const queryClient = useQueryClient();
+    const { publicKey, connected, connect: adapterConnect, disconnect: adapterDisconnect, wallet, select, connecting } = useAdapterWallet();
 
-    // Connect to Phantom wallet and register with backend
-    const connectWallet = useMutation({
-        mutationFn: async () => {
-            setIsConnecting(true);
+    const [isUserInitiated, setIsUserInitiated] = useState(false);
 
-            // Connect to Phantom wallet to get public key
-            await phantomWallet.connect();
-
-            if (!phantomWallet.publicKey) {
-                throw new Error("Failed to get public key from wallet");
-            }
-
-            // Register wallet with backend
-            const walletData = await WalletService.connectWallet(phantomWallet.publicKey, "phantom");
-
-            return walletData;
-        },
-        onSuccess: (data) => {
-            toast.success("Wallet connected successfully!");
-            queryClient.invalidateQueries({ queryKey: ["wallets"] });
-            queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
-        },
-        onError: (error: unknown) => {
-            toast.error(getErrorMessage(error, "Failed to connect wallet"));
-        },
-        onSettled: () => {
-            setIsConnecting(false);
+    useEffect(() => {
+        if (isUserInitiated && publicKey && connected) {
+            WalletService.connectWallet(publicKey.toBase58(), wallet?.adapter.name?.toLowerCase() ?? "phantom")
+                .then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["wallets"] });
+                    toast.success("Wallet connected!");
+                })
+                .catch((err) => toast.error(getErrorMessage(err, "Failed to register wallet")))
+                .finally(() => setIsUserInitiated(false));
         }
-    });
+    }, [isUserInitiated, publicKey, connected, wallet, queryClient]);
 
-    // Disconnect wallet
+    const connectWallet = useCallback(() => {
+        setIsUserInitiated(true);
+        if (!wallet) {
+            select(PhantomWalletName);
+        }
+        adapterConnect().catch((err) => {
+            setIsUserInitiated(false);
+            toast.error(getErrorMessage(err, "Connect failed"));
+        });
+    }, [wallet, select, adapterConnect]);
+
     const disconnectWallet = useMutation({
         mutationFn: async () => {
-            if (phantomWallet.publicKey) {
-                await WalletService.disconnectWallet(phantomWallet.publicKey);
+            if (publicKey) {
+                await WalletService.disconnectWallet(publicKey.toBase58());
             }
-            await phantomWallet.disconnect();
+            await adapterDisconnect();
         },
         onSuccess: () => {
             toast.success("Wallet disconnected");
             queryClient.invalidateQueries({ queryKey: ["wallets"] });
-            queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, "Failed to disconnect wallet"));
@@ -61,12 +55,12 @@ export function useWallet() {
     });
 
     return {
-        connectWallet: connectWallet.mutate,
+        connectWallet,
         disconnectWallet: disconnectWallet.mutate,
-        isConnecting: isConnecting || connectWallet.isPending,
+        isConnecting: connecting || isUserInitiated,
         isDisconnecting: disconnectWallet.isPending,
-        connected: phantomWallet.connected,
-        publicKey: phantomWallet.publicKey
+        connected,
+        publicKey: publicKey ? publicKey.toBase58() : null
     };
 }
 

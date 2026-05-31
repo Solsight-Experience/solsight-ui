@@ -1,4 +1,4 @@
-import type { Connection } from "@solana/web3.js";
+import type { Connection, VersionedTransaction } from "@solana/web3.js";
 
 export type SwapMode = "ExactIn" | "ExactOut";
 
@@ -29,7 +29,7 @@ export interface QuoteResult {
 export interface ExecuteSwapRequest {
     quoteResponse: Record<string, unknown>;
     userPublicKey: string;
-    signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    signTransaction: <T extends VersionedTransaction>(transaction: T) => Promise<T>;
     connection: Connection;
     gaslessFeeToken?: string;
 }

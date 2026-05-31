@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { phantomWallet } from "@/lib/wallet";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto } from "@/types/dto";
 
@@ -14,6 +14,7 @@ export function useChat() {
     const sessionIdRef = useRef<string>(crypto.randomUUID());
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
+    const { publicKey } = useWallet();
 
     useEffect(() => {
         const sessionId = sessionIdRef.current;
@@ -70,7 +71,7 @@ export function useChat() {
             message: text,
             sessionId: sessionIdRef.current,
             userId: user?.id,
-            walletAddress: phantomWallet.publicKey ?? undefined
+            walletAddress: publicKey?.toBase58() ?? undefined
         });
     };
 

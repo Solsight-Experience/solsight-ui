@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { LimitOrderService } from "@/features/limit-orders";
 import type { LimitOrder } from "@/features/limit-orders";
+import { useWallet as useAdapterWallet } from "@solana/wallet-adapter-react";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ interface ActiveLimitOrdersProps {
 
 export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddress, inputMint, outputMint }) => {
     const { connected, publicKey } = useWallet();
+    const { signTransaction } = useAdapterWallet();
     const [orders, setOrders] = useState<LimitOrder[]>([]);
     const [loading, setLoading] = useState(false);
     const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
@@ -49,11 +51,6 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
 
         setCancellingOrder(orderAccount);
         try {
-            const provider = (window as Window & { solana?: { isPhantom?: boolean; signTransaction: (tx: unknown) => Promise<unknown> } }).solana;
-            if (!provider?.isPhantom) {
-                throw new Error("Phantom wallet not found");
-            }
-
             const walletAddress = typeof publicKey === "string" ? publicKey : (publicKey as { toBase58(): string }).toBase58();
 
             // Get cancel transaction
@@ -63,7 +60,12 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
             const txBuffer = Buffer.from(cancelResponse.transaction, "base64");
             const { VersionedTransaction } = await import("@solana/web3.js");
             const transaction = VersionedTransaction.deserialize(txBuffer);
-            const signedTx = (await provider.signTransaction(transaction)) as any;
+
+            if (!signTransaction) {
+                throw new Error("Wallet not connected or does not support signing");
+            }
+
+            const signedTx = await signTransaction(transaction);
             const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Execute cancel

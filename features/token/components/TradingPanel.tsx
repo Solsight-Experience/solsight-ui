@@ -32,18 +32,12 @@ import { SwapConfigSection } from "@/features/swap-config/components/SwapConfigS
 import { AdvancedStrategySection } from "@/features/swap-config/advanced-strategy/AdvancedStrategySection";
 import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
-import { Connection, VersionedTransaction, clusterApiUrl } from "@solana/web3.js";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import useClusterStore from "@/stores/cluster.store";
+import { useWallet as useAdapterWallet, useConnection } from "@solana/wallet-adapter-react";
+import { VersionedTransaction, Transaction } from "@solana/web3.js";
 
 interface TradingPanelProps {
     token: TokenDetail;
 }
-
-type PhantomProvider = {
-    isPhantom?: boolean;
-    signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
-};
 
 type BuyPayTokenOption = {
     mint: string;
@@ -70,11 +64,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
-    const cluster = useClusterStore((s) => s.cluster);
-    const connection = useMemo(
-        () => new Connection(clusterApiUrl(cluster === "devnet" ? WalletAdapterNetwork.Devnet : WalletAdapterNetwork.Mainnet), "confirmed"),
-        [cluster]
-    );
+    const { signTransaction } = useAdapterWallet();
+    const { connection } = useConnection();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
@@ -568,9 +559,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!signTransaction) {
+            toast.info("Please connect your wallet first.");
+            connectWallet();
             return;
         }
 
@@ -587,7 +578,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             const { signature } = await executeJupiterSwap({
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx),
+                signTransaction,
                 connection,
                 gaslessFeeToken
             });
@@ -620,9 +611,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!signTransaction) {
+            toast.info("Please connect your wallet first.");
+            connectWallet();
             return;
         }
 
@@ -648,7 +639,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = typeof (publicKey as any)?.toBase58 === "function" ? (publicKey as any).toBase58() : String(publicKey ?? "");
+            const walletAddress = publicKey ?? "";
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }
@@ -671,7 +662,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             // Step 2: Sign transaction
             const txBuffer = Buffer.from(createResponse.transaction, "base64");
             const transaction = VersionedTransaction.deserialize(txBuffer);
-            const signedTx = await provider.signTransaction(transaction);
+            const signedTx = await signTransaction(transaction);
             const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Step 3: Execute

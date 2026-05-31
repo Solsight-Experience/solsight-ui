@@ -1,53 +1,22 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useMemo, useRef, useEffect } from "react";
 import bs58 from "bs58";
 import apiClient from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { portfolioKeys } from "./portfolio.hooks";
 import { getErrorMessage } from "@/lib/error-utils";
-
-// Define Phantom types
-type PhantomEvent = "connect" | "disconnect" | "accountChanged";
-
-interface PublicKey {
-    toString: () => string;
-    toBase58: () => string;
-}
-
-interface PhantomProvider {
-    isPhantom: boolean;
-    publicKey: PublicKey;
-    isConnected: boolean;
-    signMessage: (message: Uint8Array, display?: string) => Promise<{ signature: Uint8Array; publicKey: PublicKey }>;
-    connect: (opts?: { onlyIfTrusted: boolean }) => Promise<{ publicKey: PublicKey }>;
-    disconnect: () => Promise<void>;
-    on: (event: PhantomEvent, handler: (args: PublicKey | null) => void) => void;
-    request: (method: Record<string, unknown>) => Promise<unknown>;
-}
+import { useWallet } from "@solana/wallet-adapter-react";
+import { PhantomWalletName } from "@solana/wallet-adapter-phantom";
+import { useClusterStore } from "@/stores/cluster.store";
 
 // Define MetaMask/Ethereum types
 interface EthereumProvider {
     isMetaMask?: boolean;
     isPhantom?: boolean;
     providers?: EthereumProvider[];
-    request: (args: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
+    request: (args: { method: string; params?: Record<string, unknown> | unknown[] }) => Promise<unknown>;
 }
-
-const getProvider = (): PhantomProvider | undefined => {
-    if (typeof window !== "undefined") {
-        if ("phantom" in window) {
-            const provider = (window as Window & { phantom?: { solana?: PhantomProvider } }).phantom?.solana;
-            if (provider?.isPhantom) {
-                return provider;
-            }
-        }
-        // Fallback to window.solana for older versions or other wallets mimicking
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (provider?.isPhantom) {
-            return provider;
-        }
-    }
-    return undefined;
-};
 
 const getMetaMaskProvider = (): EthereumProvider | undefined => {
     if (typeof window === "undefined") return undefined;
@@ -71,85 +40,39 @@ const getMetaMaskProvider = (): EthereumProvider | undefined => {
 
 const SOLANA_SNAP_ID = "npm:@solflare-wallet/solana-snap";
 
+const createSiwsMessage = (address: string, nonce: string, cluster: string): string => {
+    const domain = typeof window !== "undefined" ? window.location.host : "solsight.io";
+    const uri = typeof window !== "undefined" ? window.location.origin : "https://solsight.io";
+    const issuedAt = new Date().toISOString();
+
+    return `${domain} wants you to sign in with your Solana account:
+${address}
+
+Sign in to access your portfolio.
+
+URI: ${uri}
+Version: 1
+Chain ID: solana:${cluster}
+Nonce: ${nonce}
+Issued At: ${issuedAt}`;
+};
+
 export const useWalletAuth = () => {
     const queryClient = useQueryClient();
-    const [provider, setProvider] = useState<PhantomProvider | undefined>(undefined);
-    const [walletKey, setWalletKey] = useState<string | null>(null);
-    const [connected, setConnected] = useState(false);
-
+    const { publicKey, connected, connect, signMessage, select, wallet } = useWallet();
+    const publicKeyRef = useRef(publicKey);
     useEffect(() => {
-        const provider = getProvider();
-        if (provider) setProvider(provider);
-    }, []);
+        publicKeyRef.current = publicKey;
+    }, [publicKey]);
+    const { cluster } = useClusterStore();
 
-    useEffect(() => {
-        if (!provider) return;
+    // Eager reconnect handled by WalletProvider autoConnect
+    const walletKey = useMemo(() => publicKey?.toBase58() || null, [publicKey]);
 
-        // Eager connect
-        provider
-            .connect({ onlyIfTrusted: true })
-            .then(({ publicKey }) => {
-                setWalletKey(publicKey.toString());
-                setConnected(true);
-            })
-            .catch(() => {});
-
-        const handleConnect = (publicKey: PublicKey | null) => {
-            if (publicKey) {
-                setWalletKey(publicKey.toString());
-                setConnected(true);
-                console.log("Connected to Phantom:", publicKey.toString());
-            }
-        };
-
-        const handleDisconnect = () => {
-            setWalletKey(null);
-            setConnected(false);
-            console.log("Disconnected from Phantom");
-        };
-
-        const handleAccountChanged = (publicKey: PublicKey | null) => {
-            if (publicKey) {
-                setWalletKey(publicKey.toString());
-                setConnected(true);
-                console.log("Switched account:", publicKey.toString());
-            } else {
-                // Attempt reconnect or handle disconnect
-                provider.connect().catch((err) => {
-                    console.error("Failed to reconnect:", err);
-                });
-            }
-        };
-
-        provider.on("connect", handleConnect);
-        provider.on("disconnect", handleDisconnect);
-        provider.on("accountChanged", handleAccountChanged);
-
-        return () => {};
-    }, [provider]);
-
-    const connectPhantom = async () => {
-        const provider = getProvider();
-        if (provider) {
-            try {
-                const resp = await provider.connect();
-                setWalletKey(resp.publicKey.toString());
-                setConnected(true);
-                return resp.publicKey;
-            } catch (err) {
-                console.error("User rejected or error:", err);
-                throw err;
-            }
-        } else {
-            window.open("https://phantom.app/", "_blank");
-        }
-    };
-
-    const connectMetaMask = async () => {
+    const connectMetaMask = async (): Promise<string | null> => {
         const provider = getMetaMaskProvider();
 
         if (!provider) {
-            // Check if the issue is conflict with Phantom
             const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
             if (ethereum?.isPhantom) {
                 alert("Phantom Wallet is intercepting MetaMask calls. Please disable Phantom's Ethereum support in its settings or use the Phantom button.");
@@ -161,7 +84,6 @@ export const useWalletAuth = () => {
         }
 
         try {
-            // 1. Request Snap
             await provider.request({
                 method: "wallet_requestSnaps",
                 params: {
@@ -169,7 +91,6 @@ export const useWalletAuth = () => {
                 }
             });
 
-            // 2. Get Account
             const result = await provider.request({
                 method: "wallet_invokeSnap",
                 params: {
@@ -180,10 +101,7 @@ export const useWalletAuth = () => {
                 }
             });
 
-            // Result contains publicKey
             const publicKey = (result as { publicKey: string }).publicKey;
-            setWalletKey(publicKey);
-            setConnected(true);
             return publicKey;
         } catch (error) {
             console.error("MetaMask connection error:", error);
@@ -192,108 +110,101 @@ export const useWalletAuth = () => {
     };
 
     const handleWalletConnect = async (walletName: string, userId?: string): Promise<boolean> => {
-        if (walletName === "Phantom") {
-            try {
-                const pubKey = await connectPhantom();
-                if (pubKey) {
-                    const walletAddress = pubKey.toString();
+        try {
+            let walletAddress: string | null = null;
+            let signature: string;
+            let messageToSign: string;
+            let walletIcon: string;
 
-                    // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-
-                    // 2. Sign Nonce
-                    const messageBytes = new TextEncoder().encode(nonce);
-                    if (!provider) throw new Error("Provider not found");
-
-                    const { signature } = await provider.signMessage(messageBytes);
-                    const signatureStr = bs58.encode(signature);
-
-                    // 3. Verify
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
-                        walletAddress,
-                        signature: signatureStr,
-                        walletIcon: "phantom",
-                        userId
-                    });
-
-                    if (response.success) {
-                        // Wait a bit for backend to process the wallet addition
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-
-                        // Invalidate and refetch all portfolio queries
-                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
-                        await queryClient.refetchQueries({
-                            queryKey: portfolioKeys.all,
-                            type: "active"
-                        });
-
-                        return true;
-                    }
+            if (walletName === "Phantom") {
+                if (!wallet || wallet.adapter.name !== PhantomWalletName) {
+                    select(PhantomWalletName);
+                    // The wallet selection might take a moment to propagate.
+                    // We will proceed, and the next steps will use the selected wallet.
+                    // A small delay might be needed if the wallet object isn't updated immediately.
+                    await new Promise((resolve) => setTimeout(resolve, 100));
                 }
-                return false;
-            } catch (error: unknown) {
-                console.error("Wallet connection/login error:", error);
-                throw new Error(getErrorMessage(error));
-            }
-        } else if (walletName === "MetaMask") {
-            try {
-                const walletAddress = await connectMetaMask();
-                if (walletAddress) {
-                    // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
 
-                    // 2. Sign Nonce
-                    const provider = getMetaMaskProvider();
-                    if (!provider) throw new Error("MetaMask provider not found");
+                if (!publicKey) {
+                    await connect();
+                }
 
-                    const messageBytes = new TextEncoder().encode(nonce);
+                let attempts = 0;
+                while (!publicKeyRef.current && attempts < 20) {
+                    await new Promise((r) => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (!publicKeyRef.current) {
+                    throw new Error("Phantom wallet connection failed: public key not available after connect.");
+                }
+                walletAddress = publicKeyRef.current.toBase58();
+                walletIcon = "phantom";
 
-                    // Solflare Snap expects message as Uint8Array (serialized as array) or string.
-                    const snapResult = await provider.request({
-                        method: "wallet_invokeSnap",
-                        params: {
-                            snapId: SOLANA_SNAP_ID,
-                            request: {
-                                method: "signMessage",
-                                params: {
-                                    message: Array.from(messageBytes),
-                                    display: "utf8"
-                                }
+                if (!signMessage) {
+                    throw new Error("Phantom wallet does not support signMessage.");
+                }
+
+                const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+                messageToSign = createSiwsMessage(walletAddress, nonce, cluster);
+                const messageBytes = new TextEncoder().encode(messageToSign);
+                const signedBytes = await signMessage(messageBytes);
+                signature = bs58.encode(signedBytes);
+            } else if (walletName === "MetaMask") {
+                walletAddress = await connectMetaMask();
+                if (!walletAddress) return false;
+                walletIcon = "metamask";
+
+                const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+                messageToSign = createSiwsMessage(walletAddress, nonce, cluster);
+                const messageBytes = new TextEncoder().encode(messageToSign);
+
+                const provider = getMetaMaskProvider();
+                if (!provider) throw new Error("MetaMask provider not found");
+
+                const snapResult = await provider.request({
+                    method: "wallet_invokeSnap",
+                    params: {
+                        snapId: SOLANA_SNAP_ID,
+                        request: {
+                            method: "signMessage",
+                            params: {
+                                message: Array.from(messageBytes),
+                                display: "utf8"
                             }
                         }
-                    });
-                    const { signature } = snapResult as { signature: string };
-
-                    const signatureStr = signature;
-
-                    // 3. Verify & Login
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
-                        walletAddress,
-                        signature: signatureStr,
-                        userId
-                    });
-
-                    if (response.success) {
-                        // Wait a bit for backend to process the wallet addition
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-
-                        // Invalidate and refetch all portfolio queries
-                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
-                        await queryClient.refetchQueries({
-                            queryKey: portfolioKeys.all,
-                            type: "active"
-                        });
-
-                        return true;
                     }
-                }
-                return false;
-            } catch (error: unknown) {
-                console.error("MetaMask connection/login error:", error);
-                throw new Error(getErrorMessage(error));
+                });
+                signature = (snapResult as { signature: string }).signature;
+            } else {
+                throw new Error(`Connect ${walletName} coming soon!`);
             }
-        } else {
-            throw new Error(`Connect ${walletName} coming soon!`);
+
+            if (!walletAddress) {
+                return false;
+            }
+
+            // TODO(security): backend must derive userId from authenticated session, not trust this client value
+            const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
+                walletAddress,
+                signature,
+                message: messageToSign,
+                walletIcon,
+                userId
+            });
+
+            if (response.success) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+                await queryClient.refetchQueries({
+                    queryKey: portfolioKeys.all,
+                    type: "active"
+                });
+                return true;
+            }
+            return false;
+        } catch (error: unknown) {
+            console.error(`Wallet connection/login error (${walletName}):`, error);
+            throw new Error(getErrorMessage(error));
         }
     };
 
