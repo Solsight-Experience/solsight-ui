@@ -2,7 +2,7 @@ import axios from "axios";
 import { VersionedTransaction } from "@solana/web3.js";
 import { apiClient } from "@/lib/api-client";
 import { SWAP_ENDPOINTS } from "@/lib/constants";
-import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult } from "./types";
+import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse } from "./types";
 import { buildRoutePathTokens, getRouteDetails } from "./utils";
 
 export async function fetchJupiterQuote(
@@ -56,7 +56,8 @@ export async function fetchJupiterQuote(
 export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<ExecuteSwapResult> {
     const txData = await apiClient.post<{ swapTransaction: string }>(SWAP_ENDPOINTS.TRANSACTION, {
         quoteResponse: request.quoteResponse,
-        userPublicKey: request.userPublicKey
+        userPublicKey: request.userPublicKey,
+        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {})
     });
 
     if (!txData.swapTransaction) {
@@ -68,7 +69,8 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     const signedTxBase64 = Buffer.from(signed.serialize()).toString("base64");
 
     const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
-        signedTransaction: signedTxBase64
+        signedTransaction: signedTxBase64,
+        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {})
     });
 
     return { signature: result.signature };
@@ -108,4 +110,13 @@ function base64ToBytes(base64: string): Uint8Array {
         bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
+}
+
+export async function getSwapInfo(params: { inputMint: string; outputMint: string }): Promise<SwapInfoResponse> {
+    return apiClient.get<SwapInfoResponse>(SWAP_ENDPOINTS.INFO, {
+        params: {
+            inputMint: params.inputMint,
+            outputMint: params.outputMint
+        }
+    });
 }

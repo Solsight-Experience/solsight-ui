@@ -25,9 +25,6 @@ interface TokenUIState {
     receiveAmount: string;
     setReceiveAmount: (amount: string) => void;
 
-    slippageBps: number;
-    setSlippageBps: (bps: number) => void;
-
     limitPrice: string;
     setLimitPrice: (price: string) => void;
 
@@ -72,9 +69,6 @@ export const useTokenUIStore = create<TokenUIState>()(
 
             receiveAmount: "",
             setReceiveAmount: (amount) => set({ receiveAmount: amount }),
-
-            slippageBps: 50,
-            setSlippageBps: (bps) => set({ slippageBps: bps }),
 
             limitPrice: "0.00",
             setLimitPrice: (price) => set({ limitPrice: price }),

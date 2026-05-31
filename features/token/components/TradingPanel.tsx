@@ -24,6 +24,13 @@ import {
     toBaseUnits
 } from "@/features/swap";
 import { useSolPrice } from "@/features/swap/hooks/useSolPrice";
+import { useSwapInfo } from "@/features/swap/hooks/use-swap-info";
+import { useSwapConfigStore } from "@/features/swap-config/store";
+import { useSwapConfigCtx } from "@/features/swap-config/use-swap-config-ctx";
+import { serializeAllSwapConfig } from "@/features/swap-config/serialize";
+import { SwapConfigSection } from "@/features/swap-config/components/SwapConfigSection";
+import { AdvancedStrategySection } from "@/features/swap-config/advanced-strategy/AdvancedStrategySection";
+import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -54,12 +61,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setPayAmount,
         receiveAmount,
         setReceiveAmount,
-        slippageBps,
-        setSlippageBps,
         limitPrice,
         setLimitPrice,
         resetTradingPanel
     } = useTokenUIStore();
+    const swapConfigStates = useSwapConfigStore((s) => s.items);
+    const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
@@ -296,6 +303,20 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
     const getOptionDecimals = (option: BuyPayTokenOption): number =>
         option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+
+    const swapPair = useMemo<TokenPair | undefined>(() => {
+        if (!payMint || !receiveMint) return undefined;
+        return {
+            quote: { mint: payMint, symbol: payToken, decimals: payDecimals, logoUri: payTokenLogo || null },
+            receive: { mint: receiveMint, symbol: receiveToken, decimals: receiveDecimals, logoUri: receiveTokenLogo || null }
+        };
+    }, [payMint, receiveMint, payToken, receiveToken, payDecimals, receiveDecimals, payTokenLogo, receiveTokenLogo]);
+
+    const { data: swapInfo } = useSwapInfo({ inputMint: payMint, outputMint: receiveMint });
+    const swapConfigCtx = useSwapConfigCtx({ swapInfo, pair: swapPair });
+    const swapConfigFragment = useMemo(() => serializeAllSwapConfig(swapConfigStates, swapConfigCtx), [swapConfigStates, swapConfigCtx]);
+    const slippageBps = swapConfigFragment.slippageBps ?? 50;
+    const gaslessFeeToken = swapConfigFragment.gaslessFeeToken;
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -559,7 +580,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             const { signature } = await executeJupiterSwap({
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx)
+                signTransaction: (tx) => provider.signTransaction(tx),
+                gaslessFeeToken
             });
 
             setSwapState({ loading: false, error: null, signature });
@@ -996,19 +1018,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             </div>
 
             <div className="mb-4">
-                <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">Slippage</Label>
-                <div className="border border-[var(--border-subtle)] rounded-lg p-3 bg-[var(--surface-btn)] backdrop-blur flex items-center gap-2 hover:bg-[var(--surface-btn)] transition-colors">
-                    <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={slippageBps}
-                        onChange={(e) => setSlippageBps(Number(e.target.value))}
-                        className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]"
-                    />
-                    <span className="text-sm text-[var(--text-muted)] font-semibold">bps</span>
-                </div>
-                <div className="mt-2 text-xs text-[var(--text-muted)]">Example: 50 bps = 0.5%</div>
+                <SwapConfigSection
+                    states={swapConfigStates}
+                    onItemChange={setSwapConfigItem}
+                    inputMint={payMint || undefined}
+                    outputMint={receiveMint || undefined}
+                    pair={swapPair}
+                />
+            </div>
+
+            <div className="mb-4">
+                <AdvancedStrategySection />
             </div>
 
             {/* Quote Summary */}

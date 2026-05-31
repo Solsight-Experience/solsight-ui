@@ -165,7 +165,8 @@ export const PORTFOLIO_WATCH_ENDPOINTS = {
 export const SWAP_ENDPOINTS = {
     QUOTE: "/api/swap/quote",
     TRANSACTION: "/api/swap/transaction",
-    EXECUTE: "/api/swap/execute"
+    EXECUTE: "/api/swap/execute",
+    INFO: "/api/swap/info"
 } as const;
 
 // Chat API Endpoints
