@@ -23,7 +23,7 @@ function SkeletonItem() {
 }
 
 export function NotificationPanel() {
-    const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
+    const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, setPanelOpen } = useNotifications();
     const {
         confirming: confirmingClear,
         request: handleClearAllClick,
@@ -146,6 +146,7 @@ export function NotificationPanel() {
                     <div className="px-4 py-3">
                         <Link
                             href="/notifications"
+                            onClick={() => setPanelOpen(false)}
                             className="flex items-center justify-center w-full py-2 rounded-lg
                          text-[11px] font-medium text-white/40 hover:text-violet-300
                          hover:bg-violet-500/[0.08] border border-transparent hover:border-violet-500/15
