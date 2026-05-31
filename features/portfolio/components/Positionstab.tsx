@@ -81,11 +81,17 @@ const WalletPositions: React.FC<{ walletAddress: string; walletName: string }> =
                                 >
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <img
-                                            src={position.token.logo_uri}
-                                            alt={position.token.symbol}
-                                            className="w-10 h-10 rounded-full border border-[var(--border-default)] relative z-10 shadow-sm bg-[var(--surface-card)]"
-                                        />
+                                        {position.token.logo_uri ? (
+                                            <img
+                                                src={position.token.logo_uri}
+                                                alt={position.token.symbol}
+                                                className="w-10 h-10 rounded-full border border-[var(--border-default)] relative z-10 shadow-sm bg-[var(--surface-card)]"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full border border-[var(--border-default)] relative z-10 shadow-sm bg-violet-500/10 flex items-center justify-center font-bold text-xs text-violet-500 select-none">
+                                                {position.token.symbol.slice(0, 2)}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <div className="font-bold text-[var(--text-primary)] tracking-wide">{position.token.symbol}</div>
@@ -210,7 +216,13 @@ export const PositionsTab: React.FC = () => {
                         >
                             <div className="flex gap-4 items-center flex-1">
                                 <div className="p-1.5 bg-[var(--surface-btn)] rounded-2xl border border-[var(--border-subtle)] shadow-sm">
-                                    <img src={wallet.icon} alt={wallet.name} className="h-10 w-10 rounded-xl object-contain" />
+                                    {wallet.icon ? (
+                                        <img src={wallet.icon} alt={wallet.name} className="h-10 w-10 rounded-xl object-contain" />
+                                    ) : (
+                                        <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center font-bold text-xs text-violet-500 select-none">
+                                            {wallet.name.slice(0, 2)}
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <div className="font-bold text-lg text-[var(--text-primary)] tracking-tight flex items-center gap-2">

@@ -797,7 +797,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                 {selectedBuyPayToken ? (
                                                     <>
                                                         <Avatar className="w-5 h-5">
-                                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                                            {payTokenLogo ? <AvatarImage src={payTokenLogo} alt={payToken} /> : null}
                                                             <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <span className="leading-4">{payToken}</span>
@@ -819,7 +819,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
                                                     <Avatar className="w-5 h-5">
-                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        {option.logoUri ? <AvatarImage src={option.logoUri} alt={option.symbol} /> : null}
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
@@ -841,7 +841,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 ) : (
                                     <>
                                         <Avatar className="w-5 h-5">
-                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                            {payTokenLogo ? <AvatarImage src={payTokenLogo} alt={payToken} /> : null}
                                             <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-semibold text-[var(--text-primary)] tracking-wide">{payToken}</span>
@@ -921,7 +921,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                 {selectedSellReceiveToken ? (
                                                     <>
                                                         <Avatar className="w-5 h-5">
-                                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                                            {receiveTokenLogo ? <AvatarImage src={receiveTokenLogo} alt={receiveToken} /> : null}
                                                             <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <span className="leading-4">{receiveToken}</span>
@@ -943,7 +943,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
                                                     <Avatar className="w-5 h-5">
-                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        {option.logoUri ? <AvatarImage src={option.logoUri} alt={option.symbol} /> : null}
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
@@ -965,7 +965,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 ) : (
                                     <>
                                         <Avatar className="w-5 h-5">
-                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                            {receiveTokenLogo ? <AvatarImage src={receiveTokenLogo} alt={receiveToken} /> : null}
                                             <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-semibold text-[var(--text-primary)] tracking-wide">{receiveToken}</span>
