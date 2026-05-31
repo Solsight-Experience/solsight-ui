@@ -1,3 +1,5 @@
+import type { Connection } from "@solana/web3.js";
+
 export type SwapMode = "ExactIn" | "ExactOut";
 
 export interface RouteHopToken {
@@ -28,6 +30,7 @@ export interface ExecuteSwapRequest {
     quoteResponse: Record<string, unknown>;
     userPublicKey: string;
     signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    connection: Connection;
     gaslessFeeToken?: string;
 }
 

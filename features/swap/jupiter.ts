@@ -65,6 +65,10 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     }
 
     const tx = VersionedTransaction.deserialize(base64ToBytes(txData.swapTransaction));
+
+    const { blockhash } = await request.connection.getLatestBlockhash();
+    tx.message.recentBlockhash = blockhash;
+
     const signed = await request.signTransaction(tx);
     const signedTxBase64 = Buffer.from(signed.serialize()).toString("base64");
 

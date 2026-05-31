@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
@@ -26,6 +27,7 @@ type PhantomProvider = {
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
+    const { connection } = useConnection();
     const [slippageBps, setSlippageBps] = useState(50);
     const [decimals, setDecimals] = useState(9);
     const [quoteLoading, setQuoteLoading] = useState(false);
@@ -144,7 +146,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
             const result = await executeJupiterSwap({
                 quoteResponse: quote.rawQuote,
                 userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx)
+                signTransaction: (tx) => provider.signTransaction(tx),
+                connection
             });
             setSignature(result.signature);
             toast.success("Swap submitted!");

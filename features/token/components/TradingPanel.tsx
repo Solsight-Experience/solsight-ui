@@ -33,6 +33,7 @@ import { AdvancedStrategySection } from "@/features/swap-config/advanced-strateg
 import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
+import { useConnection } from "@solana/wallet-adapter-react";
 
 interface TradingPanelProps {
     token: TokenDetail;
@@ -68,6 +69,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
+    const { connection } = useConnection();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
@@ -581,6 +583,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: publicKey,
                 signTransaction: (tx) => provider.signTransaction(tx),
+                connection,
                 gaslessFeeToken
             });
 
