@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { TradeMode, OrderType } from "../types/token.types";
 import type { ChartInterval, TradeTab } from "@/lib/constants";
+import { COMMON_TOKENS } from "@/lib/constants";
 
 interface TokenUIState {
     // Chart state
@@ -27,6 +28,12 @@ interface TokenUIState {
 
     limitPrice: string;
     setLimitPrice: (price: string) => void;
+
+    selectedBuyPayMint: string;
+    setSelectedBuyPayMint: (mint: string) => void;
+
+    selectedSellReceiveMint: string;
+    setSelectedSellReceiveMint: (mint: string) => void;
 
     // Reset trading panel
     resetTradingPanel: () => void;
@@ -73,11 +80,19 @@ export const useTokenUIStore = create<TokenUIState>()(
             limitPrice: "0.00",
             setLimitPrice: (price) => set({ limitPrice: price }),
 
+            selectedBuyPayMint: COMMON_TOKENS.SOL.mint,
+            setSelectedBuyPayMint: (mint) => set({ selectedBuyPayMint: mint }),
+
+            selectedSellReceiveMint: COMMON_TOKENS.SOL.mint,
+            setSelectedSellReceiveMint: (mint) => set({ selectedSellReceiveMint: mint }),
+
             resetTradingPanel: () =>
                 set({
                     payAmount: "",
                     receiveAmount: "",
-                    limitPrice: "0.00"
+                    limitPrice: "0.00",
+                    selectedBuyPayMint: COMMON_TOKENS.SOL.mint,
+                    selectedSellReceiveMint: COMMON_TOKENS.SOL.mint
                 }),
 
             // Favorites

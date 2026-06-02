@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { VersionedTransaction } from "@solana/web3.js";
 import type {
     CreateLimitOrderRequest,
     CreateLimitOrderResponse,
@@ -29,6 +30,30 @@ export class LimitOrderService {
             throw new Error("Failed to execute limit order");
         }
         return response.data;
+    }
+
+    /**
+     * Create, sign, and execute a limit order in a single call.
+     */
+    static async createSignAndExecuteOrder(args: {
+        request: CreateLimitOrderRequest;
+        signTransaction: <T extends VersionedTransaction>(transaction: T) => Promise<T>;
+    }): Promise<{ signature: string; order: string; requestId: string }> {
+        const createResponse = await this.createOrder(args.request);
+        const txBuffer = Buffer.from(createResponse.transaction, "base64");
+        const transaction = VersionedTransaction.deserialize(txBuffer);
+        const signedTx = await args.signTransaction(transaction);
+        const signedTransaction = Buffer.from(signedTx.serialize()).toString("base64");
+        const executeResponse = await this.executeOrder({
+            requestId: createResponse.requestId,
+            signedTransaction
+        });
+
+        return {
+            signature: executeResponse.signature,
+            order: createResponse.order,
+            requestId: createResponse.requestId
+        };
     }
 
     /**
