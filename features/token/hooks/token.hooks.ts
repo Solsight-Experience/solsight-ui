@@ -150,9 +150,9 @@ export function useTopTraders(address: string, timeFrame: "24h" | "7d" | "30d" |
         queryKey: tokenKeys.topTraders(address, timeFrame),
         queryFn: () => tokenApi.getTopTraders(address, { time_frame: timeFrame, limit: 10 }),
         enabled: !!address,
-        staleTime: 30000 // 30 seconds
+        staleTime: 30000
     });
-    const newTrader = useTopTradersStream(address, timeFrame);
+    const streamTraders = useTopTradersStream(address);
     const [data, setData] = useState<{ traders: TopTrader[] }>({ traders: [] });
 
     useEffect(() => {
@@ -160,13 +160,10 @@ export function useTopTraders(address: string, timeFrame: "24h" | "7d" | "30d" |
     }, [initial.data, timeFrame]);
 
     useEffect(() => {
-        if (!newTrader) return;
+        if (!streamTraders) return;
+        setData({ traders: streamTraders });
+    }, [streamTraders]);
 
-        setData((prev) => {
-            return { traders: [newTrader, ...prev.traders].slice(0, 10) };
-        });
-    }, [newTrader, timeFrame]);
-    console.log("data", data);
     return { ...initial, data };
 }
 
