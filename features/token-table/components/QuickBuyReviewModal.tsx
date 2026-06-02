@@ -12,6 +12,8 @@ import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -27,6 +29,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
 
     const [slippageBps, setSlippageBps] = useState(50);
     const [decimals, setDecimals] = useState(9);
+    const slippageFormatter = useMemo(() => new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 }), []);
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
     const [swapLoading, setSwapLoading] = useState(false);
@@ -212,13 +215,15 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                             <Label htmlFor="quick-buy-slippage" className="text-xs text-muted-foreground">
                                 Slippage (bps)
                             </Label>
-                            <input
+                            <NumbericInput
                                 id="quick-buy-slippage"
-                                type="number"
-                                min="1"
-                                step="1"
+                                formatter={slippageFormatter}
+                                min={1}
+                                max={10000}
+                                step={10}
+                                showStepper
                                 value={slippageBps}
-                                onChange={(e) => setSlippageBps(Number(e.target.value))}
+                                onChange={(value) => setSlippageBps(value ?? 0)}
                                 className="mt-2 w-full rounded-md border border-border bg-transparent p-2"
                             />
                         </div>

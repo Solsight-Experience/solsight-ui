@@ -1,13 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { useFilterStore } from "@/stores/filter.stores";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 
 export const MetricsTab = () => {
     const { activeTab, tokenMetrics, poolMetrics, setTokenMetric, setPoolMetric } = useFilterStore();
 
     const isTokenTab = activeTab === "token";
+
+    const formatter = useMemo(() => new DecimalFormatter({ locale: "en-US" }), []);
 
     const tokenFields = [
         { key: "age_min_minutes" as const, label: "Token Age (min)", placeholder: "Min age" },
@@ -50,14 +54,11 @@ export const MetricsTab = () => {
                             <div key={key} className="grid grid-cols-4 items-center gap-2">
                                 <Label className="col-span-1 text-xs">{label}</Label>
                                 <div className="col-span-3">
-                                    <Input
-                                        type="number"
+                                    <NumbericInput
+                                        formatter={formatter}
                                         placeholder={placeholder}
-                                        value={tokenMetrics[key] === "" ? "" : String(tokenMetrics[key])}
-                                        onChange={(e) => {
-                                            const value = e.target.value === "" ? "" : Number(e.target.value);
-                                            setTokenMetric(key, value);
-                                        }}
+                                        value={tokenMetrics[key] === "" ? null : (tokenMetrics[key] as number)}
+                                        onChange={(value) => setTokenMetric(key, value === null ? "" : value)}
                                         className="text-right text-xs h-8"
                                     />
                                 </div>
@@ -70,14 +71,11 @@ export const MetricsTab = () => {
                             <div key={key} className="grid grid-cols-4 items-center gap-2">
                                 <Label className="col-span-1 text-xs">{label}</Label>
                                 <div className="col-span-3">
-                                    <Input
-                                        type="number"
+                                    <NumbericInput
+                                        formatter={formatter}
                                         placeholder={placeholder}
-                                        value={poolMetrics[key] === "" ? "" : String(poolMetrics[key])}
-                                        onChange={(e) => {
-                                            const value = e.target.value === "" ? "" : Number(e.target.value);
-                                            setPoolMetric(key, value);
-                                        }}
+                                        value={poolMetrics[key] === "" ? null : (poolMetrics[key] as number)}
+                                        onChange={(value) => setPoolMetric(key, value === null ? "" : value)}
                                         className="text-right text-xs h-8"
                                     />
                                 </div>

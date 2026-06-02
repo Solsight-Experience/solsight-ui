@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Bell, BellOff, Plus, Trash2, AlertTriangle, ArrowRightLeft, Coins, Zap, ChevronDown, ChevronUp, Loader2, MessageCircle, Mail } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Bell, BellOff, Plus, Trash2, AlertTriangle, ArrowRightLeft, Coins, Zap, Loader2, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useWalletAlerts, useCreateWalletAlert, useUpdateWalletAlert, useDeleteWalletAlert } from "../hooks/useWalletAlerts";
 import { useZaloSubscription } from "../hooks/useZaloSubscription";
@@ -9,6 +9,8 @@ import { useEmailSubscription } from "../hooks/useEmailSubscription";
 import { WalletAlert, WalletAlertType, CreateWalletAlertDto } from "../types/watchlist.types";
 import { ZaloBotDialog } from "./ZaloBotDialog";
 import { EmailDialog } from "./EmailDialog";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 
 // ── Alert type config ─────────────────────────────────────────────────────────
 
@@ -39,6 +41,8 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
     const [threshold, setThreshold] = useState("");
     const [direction, setDirection] = useState<"increase" | "decrease" | "any">("any");
     const [minAmountSol, setMinAmountSol] = useState("");
+
+    const decimalFormatter = useMemo(() => new DecimalFormatter({ locale: "en-US" }), []);
 
     const { mutateAsync: createAlert, isPending } = useCreateWalletAlert(walletAddress);
 
@@ -137,16 +141,13 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Min Change Amount</label>
-                            <input
-                                type="number"
-                                value={threshold}
-                                onChange={(e) => setThreshold(e.target.value)}
+                            <NumbericInput
+                                formatter={decimalFormatter}
+                                min={0}
                                 placeholder="0"
-                                min="0"
-                                step="any"
-                                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                           text-[12px] text-white placeholder:text-white/25 outline-none
-                           focus:border-violet-500/50 transition-colors"
+                                value={threshold === "" ? null : Number(threshold)}
+                                onChange={(value) => setThreshold(value === null ? "" : String(value))}
+                                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-violet-500/50 transition-colors"
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -170,16 +171,13 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
             {alertType === WalletAlertType.LARGE_TRANSFER && (
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Minimum SOL Amount</label>
-                    <input
-                        type="number"
-                        value={minAmountSol}
-                        onChange={(e) => setMinAmountSol(e.target.value)}
+                    <NumbericInput
+                        formatter={decimalFormatter}
+                        min={0}
                         placeholder="1"
-                        min="0"
-                        step="any"
-                        className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                       text-[12px] text-white placeholder:text-white/25 outline-none
-                       focus:border-violet-500/50 transition-colors"
+                        value={minAmountSol === "" ? null : Number(minAmountSol)}
+                        onChange={(value) => setMinAmountSol(value === null ? "" : String(value))}
+                        className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-violet-500/50 transition-colors"
                     />
                 </div>
             )}

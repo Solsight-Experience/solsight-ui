@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import { formatInputValue, sanitizeInput } from "@/features/swap";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { useTokenUIStore } from "../../stores/token.stores";
 
 export interface LimitPriceInputProps {
@@ -17,6 +19,8 @@ export function LimitPriceInput({ payToken, receiveToken, tokenPrice, solPriceUs
     const limitPrice = useTokenUIStore((s) => s.limitPrice);
     const setLimitPrice = useTokenUIStore((s) => s.setLimitPrice);
 
+    const formatter = useMemo(() => new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 15 }), []);
+
     if (orderType !== "limit") return null;
 
     return (
@@ -24,15 +28,14 @@ export function LimitPriceInput({ payToken, receiveToken, tokenPrice, solPriceUs
             <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">Limit Price (USD per {tradeMode === "buy" ? receiveToken : payToken})</Label>
             <div className="rounded-lg p-3 bg-[var(--surface-btn)] backdrop-blur transition-all border border-yellow-600/50 flex items-center">
                 <span className="text-[var(--text-muted)] mr-2">$</span>
-                <input
-                    type="text"
+                <NumbericInput
+                    mode="string"
+                    decimals={15}
+                    formatter={formatter}
                     value={limitPrice}
-                    onChange={(e) => {
-                        setLimitPrice(sanitizeInput(e.target.value, 15));
-                    }}
+                    onChange={setLimitPrice}
                     placeholder="0.00"
-                    className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]"
-                    onBlur={() => setLimitPrice(formatInputValue(limitPrice, 15))}
+                    className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] border-0 shadow-none focus-visible:ring-0 px-0 py-0 h-auto"
                 />
                 {tokenPrice && (
                     <button

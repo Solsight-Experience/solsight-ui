@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { ExpandedFormProps, SwapConfigItem } from "./swap-config-item";
 import type { ConfigCtx } from "./types";
 
@@ -84,6 +86,9 @@ export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" 
 export abstract class NumericFieldItem extends SwapConfigItem<{ value: number | null }> {
     abstract suffix: string;
     abstract placeholder(ctx: ConfigCtx): number | null;
+
+    private static readonly formatter = new DecimalFormatter({ locale: "en-US" });
+
     getDefaultState() {
         return { value: null };
     }
@@ -93,11 +98,11 @@ export abstract class NumericFieldItem extends SwapConfigItem<{ value: number | 
         return (
             <div className="space-y-2">
                 <div className="relative">
-                    <Input
-                        type="number"
-                        value={state.value ?? ""}
+                    <NumbericInput
+                        formatter={NumericFieldItem.formatter}
+                        value={state.value}
                         placeholder={this.placeholder(ctx)?.toString() ?? "0"}
-                        onChange={(e) => onChange({ value: e.target.value === "" ? null : Number(e.target.value) })}
+                        onChange={(value) => onChange({ value })}
                         className="bg-zinc-800 border-zinc-700 pr-12"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-zinc-400">{this.suffix}</div>

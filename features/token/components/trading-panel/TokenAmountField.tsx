@@ -1,8 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { formatDisplay, sanitizeInput } from "@/features/swap";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
+import { formatDisplay } from "@/features/swap";
 import { TokenSelectDropdown } from "./TokenSelectDropdown";
 import type { BuyPayTokenOption } from "../../hooks/trading/useTradingTokenOptions";
 
@@ -39,6 +42,8 @@ export function TokenAmountField({
     helperText,
     helperClassName
 }: TokenAmountFieldProps) {
+    const formatter = useMemo(() => new DecimalFormatter({ locale: "en-US", maximumFractionDigits: Math.min(decimals, 6) }), [decimals]);
+
     return (
         <div>
             <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">{label}</Label>
@@ -71,13 +76,15 @@ export function TokenAmountField({
                         </div>
                     </div>
                 </div>
-                <input
-                    type="text"
+                <NumbericInput
+                    mode="string"
+                    decimals={decimals}
+                    formatter={formatter}
                     value={amount}
-                    onChange={(e) => onAmountChange(sanitizeInput(e.target.value, decimals))}
+                    onChange={onAmountChange}
+                    onBlur={onAmountBlur}
                     placeholder="0.00"
                     className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-btn)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-disabled)] focus:border-[var(--border-default)]"
-                    onBlur={onAmountBlur}
                 />
                 <div className={helperClassName ?? "mt-2 text-xs text-[var(--text-muted)]"}>{helperText}</div>
             </div>
