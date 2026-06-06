@@ -62,6 +62,7 @@ export const ChartsGrid: React.FC<ChartsGridProps> = ({ charts, onRemoveChart, o
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(index, e)}
                     onDrop={(e) => handleDrop(index, e)}
+                    onDragEnd={handleDragEnd}
                 />
             ))}
         </div>

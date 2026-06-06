@@ -13,9 +13,10 @@ interface ChartCardProps {
     onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
     onDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDragEnd?: (e: React.DragEvent<HTMLDivElement>) => void;
 }
 
-export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, onRemove, isDragging, onDragStart, onDragOver, onDrop }) => {
+export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, onRemove, isDragging, onDragStart, onDragOver, onDrop, onDragEnd }) => {
     const router = useRouter();
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -53,6 +54,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, 
             onDragStart={onDragStart}
             onDragOver={onDragOver}
             onDrop={onDrop}
+            onDragEnd={onDragEnd}
             className={`border border-violet-500/20 rounded-lg hover:border-violet-500/40 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 overflow-hidden flex flex-col h-[280px] cursor-grab active:cursor-grabbing bg-[var(--surface-card)] ${
                 isDragging ? "opacity-50" : ""
             }`}

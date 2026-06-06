@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi } from "@/features/auth/authservice";
 
@@ -32,7 +33,7 @@ export default function SocialAuthButtons() {
         try {
             if (!response || !response.credential) {
                 console.error("Google Sign-In did not return a credential", response);
-                alert("Google login failed. No credential returned.");
+                toast.error("Google login failed. No credential returned.");
                 return;
             }
 
@@ -50,7 +51,7 @@ export default function SocialAuthButtons() {
             router.push("/");
         } catch (error) {
             console.error("Google login failed:", error);
-            alert("Google login failed. Please try again.");
+            toast.error("Google login failed. Please try again.");
         }
     };
 

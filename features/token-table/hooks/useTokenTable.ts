@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from "@tanstack/react-table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import { TimeFilterValue } from "../components/TimeFilters";
 import { TokenTableTabOption } from "../components/TokenTabs";
 import { SortOption, SortDirection } from "../components/SortPanel";
@@ -26,6 +28,8 @@ export interface TokenTableFilters {
 }
 
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
+    const { user } = useAuth();
+    const isLoggedIn = !!user;
     const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
         timeFilter: "1m",
@@ -41,7 +45,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    // Fetch favorites from backend
+    // Fetch favorites from backend — only when logged in
     const { data: favoritesData } = useQuery({
         queryKey: queryKeys.user.favorites(),
         queryFn: async () => {
@@ -53,6 +57,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 return [];
             }
         },
+        enabled: isLoggedIn,
         staleTime: 5 * 60 * 1000 // Cache for 5 minutes
     });
 
@@ -107,18 +112,24 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     });
 
+    // Only expose toggleFavourite when the user is authenticated.
+    // Passing undefined to createColumns omits the star column entirely.
     const toggleFavourite = useCallback(
         (tokenId: string) => {
+            if (!isLoggedIn) {
+                toast.info("Sign in to save favourite tokens.");
+                return;
+            }
             const isFavorite = filters.favouriteIds.has(tokenId);
             toggleFavoriteMutation.mutate({ tokenId, isFavorite });
         },
-        [filters.favouriteIds, toggleFavoriteMutation]
+        [isLoggedIn, filters.favouriteIds, toggleFavoriteMutation]
     );
 
-    // Memoize columns
+    // Memoize columns — pass undefined for toggleFavourite when not logged in
     const columns = useMemo(
-        () => createColumns(toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy),
-        [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
+        () => createColumns(isLoggedIn ? toggleFavourite : undefined, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy),
+        [isLoggedIn, toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
     );
 
     // Map time filter to API TimeFrame
@@ -286,9 +297,16 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({ ...prev, timeFilter }));
     }, []);
 
-    const setActiveTab = useCallback((activeTab: TokenTableTabOption) => {
-        setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
-    }, []);
+    const setActiveTab = useCallback(
+        (activeTab: TokenTableTabOption) => {
+            if (activeTab === "FAVOURITES" && !isLoggedIn) {
+                toast.info("Sign in to view your favourite tokens.");
+                return;
+            }
+            setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
+        },
+        [isLoggedIn]
+    );
 
     const setSelectedCategorySlug = useCallback((selectedCategorySlug: string | null) => {
         setFilters((prev) => ({ ...prev, selectedCategorySlug }));

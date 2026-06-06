@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { MultiChartToolbar } from "./MultiChartToolbar";
 import { AddTokenChartModal } from "./AddTokenChartModal";
 import { ChartsGrid } from "./ChartsGrid";
@@ -43,13 +44,17 @@ export const MultiChartPage: React.FC = () => {
         }
     }, [charts, isLoaded]);
 
-    const handleAddChart = useCallback((tokenAddress: string, symbol?: string) => {
-        setCharts((prev) => {
-            if (prev.length >= MAX_CHARTS) return prev;
+    const handleAddChart = useCallback(
+        (tokenAddress: string, symbol?: string) => {
+            // Check for duplicate before updating state so we can show feedback
+            if (charts.some((chart) => chart.address === tokenAddress)) {
+                toast.warning(`${symbol || "This token"} is already on your dashboard.`);
+                return; // Keep modal open
+            }
 
-            // Prevent duplicate tokens
-            if (prev.some((chart) => chart.address === tokenAddress)) {
-                return prev;
+            if (charts.length >= MAX_CHARTS) {
+                toast.warning(`Maximum ${MAX_CHARTS} charts reached.`);
+                return; // Keep modal open
             }
 
             const newChart: TokenChartItem = {
@@ -58,11 +63,11 @@ export const MultiChartPage: React.FC = () => {
                 symbol: symbol || "Unknown"
             };
 
-            return [...prev, newChart];
-        });
-
-        setIsAddModalOpen(false);
-    }, []);
+            setCharts((prev) => [...prev, newChart]);
+            setIsAddModalOpen(false);
+        },
+        [charts]
+    );
 
     const handleRemoveChart = useCallback((id: string) => {
         setCharts((prev) => prev.filter((chart) => chart.id !== id));
