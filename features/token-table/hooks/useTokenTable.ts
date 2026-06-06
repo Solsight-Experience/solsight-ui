@@ -345,7 +345,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     }, []);
 
     const resetFilters = useCallback(() => {
-        setFilters({
+        setFilters((prev) => ({
             timeFilter: "1m",
             activeTab: "TRENDING",
             quickBuyAmount: "0.1",
@@ -353,9 +353,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             selectedCategorySlug: null,
             sortOption: "volumes",
             sortDirection: "none",
-            favouriteIds: new Set(),
+            // Preserve favouriteIds — they are synced from the server,
+            // not a UI filter, and should not be wiped on reset.
+            favouriteIds: prev.favouriteIds,
             filteredData: undefined
-        });
+        }));
     }, []);
 
     return {
