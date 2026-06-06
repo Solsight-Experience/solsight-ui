@@ -31,9 +31,10 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
 
         try {
             const data = await loginApi({ email, password });
-            if (data.user) {
-                login(data.user);
+            if (!data.user) {
+                throw new Error("Invalid login response: missing user data");
             }
+            login(data.user);
             router.push(redirectTo);
         } catch (err: unknown) {
             setError(getErrorMessage(err, "Login Failed"));
