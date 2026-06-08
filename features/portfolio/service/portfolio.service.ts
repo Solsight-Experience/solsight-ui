@@ -54,8 +54,7 @@ interface PositionsApiResponse {
         roi_percent?: number;
         pnl_percent?: number;
         percent_of_portfolio?: number;
-        token_decimals?: number;
-        decimals?: number;
+        decimals: number;
     }>;
     summary?: {
         total_value_usd: number;
@@ -170,7 +169,7 @@ export const portfolioApi = {
                         symbol: item.symbol || "",
                         name: item.name || "",
                         logo_uri: item.logo || item.logo_uri || "",
-                        decimals: typeof item.decimals === "number" ? item.decimals : item.token_decimals
+                        decimals: item.decimals
                     },
                     balance: item.amount || item.balance || 0,
                     avg_buy_price: item.avg_buy_price || 0,

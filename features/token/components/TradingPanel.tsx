@@ -47,7 +47,7 @@ type BuyPayTokenOption = {
     mint: string;
     symbol: string;
     logoUri: string;
-    decimals?: number;
+    decimals: number;
     balance: number;
 };
 
@@ -186,7 +186,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             positionsData?.positions
                 ?.filter((position) => {
                     const mint = position.token.address?.toLowerCase();
-                    return Boolean(mint) && mint !== token.address.toLowerCase() && position.balance > 0;
+                    return Boolean(mint) && mint !== token.address.toLowerCase() && position.balance > 0 && typeof position.token.decimals === "number";
                 })
                 .map((position) => ({
                     mint: position.token.address,
@@ -296,13 +296,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
     const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
     const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
-    const payDecimals = tradeMode === "buy" ? (selectedBuyPayToken?.decimals ?? COMMON_TOKENS.SOL.decimals) : resolvedTokenDecimals;
-    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : (selectedSellReceiveToken?.decimals ?? COMMON_TOKENS.SOL.decimals);
+    const payDecimals = tradeMode === "buy" && selectedBuyPayToken ? selectedBuyPayToken.decimals : resolvedTokenDecimals;
+    const receiveDecimals = tradeMode === "sell" && selectedSellReceiveToken ? selectedSellReceiveToken.decimals : resolvedTokenDecimals;
 
     const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
-    const getOptionDecimals = (option: BuyPayTokenOption): number =>
-        option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+    const getOptionDecimals = (option: BuyPayTokenOption): number => option.decimals;
 
     const swapPair = useMemo<TokenPair | undefined>(() => {
         if (!payMint || !receiveMint) return undefined;
