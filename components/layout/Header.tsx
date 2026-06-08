@@ -114,7 +114,7 @@ export default function Header() {
                                         <NotificationBadge count={unreadCount} />
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent align="end" sideOffset={8} className="p-0 border-0 shadow-none bg-transparent">
+                                <PopoverContent align="end" sideOffset={8} className="p-0 border-0 shadow-none bg-transparent w-auto">
                                     <NotificationPanel />
                                 </PopoverContent>
                             </Popover>
