@@ -61,12 +61,12 @@ export default function TokenTable() {
         const sentinel = sentinelRef.current;
         if (!sentinel) return;
 
-        // FAVOURITES are filtered client-side — there is nothing more to load.
-        if (filters.activeTab === "FAVOURITES") return;
+        // Favourites and API-filtered results are complete lists — no infinite scroll.
+        if (filters.activeTab === "FAVOURITES" || filters.filteredData) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && !isFetching) {
                     fetchNextPage();
                 }
             },
@@ -75,7 +75,7 @@ export default function TokenTable() {
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [filters.activeTab, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [filters.activeTab, filters.filteredData, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
 
     const isRefetching = isFetching && !isLoading;
 

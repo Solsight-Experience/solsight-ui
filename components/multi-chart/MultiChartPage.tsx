@@ -10,12 +10,18 @@ import type { TokenChartItem } from "@/features/multi-chart/types";
 const MAX_CHARTS = 6;
 const CHARTS_STORAGE_KEY = "solsight_charts";
 
-const SAMPLE_TOKENS: TokenChartItem[] = [
-    //{ id: '1', address: 'MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', symbol: 'MANGO' },
-];
+function ChartsGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+            {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-72 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] animate-pulse" />
+            ))}
+        </div>
+    );
+}
 
 export const MultiChartPage: React.FC = () => {
-    const [charts, setCharts] = useState<TokenChartItem[]>(SAMPLE_TOKENS);
+    const [charts, setCharts] = useState<TokenChartItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -92,7 +98,9 @@ export const MultiChartPage: React.FC = () => {
 
             {/* Content Area */}
             <div className="px-4 sm:px-6 lg:px-8">
-                {charts.length === 0 ? (
+                {!isLoaded ? (
+                    <ChartsGridSkeleton />
+                ) : charts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-96">
                         <div className="text-center">
                             <div className="w-16 h-16 rounded-full bg-[var(--surface-btn)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">

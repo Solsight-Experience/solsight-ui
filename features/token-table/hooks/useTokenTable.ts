@@ -14,6 +14,34 @@ import { queryKeys } from "@/lib/react-query-keys";
 import { apiClient } from "@/lib/api-client";
 import { USER_ENDPOINTS } from "@/lib/constants";
 import type { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+import type { TrendingResponse } from "../services/token-discovery.service";
+
+const PAGE_SIZE = 20;
+
+type TokenPage = Pick<TrendingResponse, "tokens" | "total">;
+
+function resolveNextPageParam(lastPage: TokenPage | undefined, allPages: TokenPage[], activeTab: TokenTableTabOption): number | undefined {
+    // Favourites filter client-side from trending data — never paginate.
+    if (activeTab === "FAVOURITES") return undefined;
+
+    const lastTokens = lastPage?.tokens;
+    if (!lastTokens?.length) return undefined;
+    if (lastTokens.length < PAGE_SIZE) return undefined;
+
+    // Stop when the API repeats tokens from earlier pages (offset past end).
+    if (allPages.length > 1) {
+        const seen = new Set(allPages.slice(0, -1).flatMap((page) => (page?.tokens ?? []).map((token) => token.address)));
+        if (!lastTokens.some((token) => !seen.has(token.address))) return undefined;
+    }
+
+    const total = allPages[0]?.total;
+    if (total != null && total > 0) {
+        const loadedCount = allPages.reduce((acc, page) => acc + (page?.tokens?.length ?? 0), 0);
+        if (loadedCount >= total) return undefined;
+    }
+
+    return allPages.length;
+}
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -168,8 +196,6 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     };
 
-    const PAGE_SIZE = 20;
-
     // Fetch tokens based on active tab — with infinite scroll pagination
     const {
         data: infiniteData,
@@ -241,23 +267,15 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             }
         },
         initialPageParam: 0,
-        getNextPageParam: (lastPage, allPages) => {
-            const lastTokens = lastPage?.tokens;
-
-            // Primary signal: if last page returned fewer tokens than PAGE_SIZE, no more pages exist
-            if (!lastTokens || lastTokens.length < PAGE_SIZE) return undefined;
-
-            // Secondary check: use total if the API provides it
-            const total = lastPage?.total;
-            if (total !== undefined && total !== null) {
-                const loadedCount = allPages.reduce((acc, page) => acc + (page?.tokens?.length ?? 0), 0);
-                if (loadedCount >= total) return undefined;
-            }
-
-            return allPages.length;
-        },
+        getNextPageParam: (lastPage, allPages) => resolveNextPageParam(lastPage, allPages, filters.activeTab),
         staleTime: 30000,
-        refetchInterval: 60000
+        refetchInterval: (query) => {
+            const pages = query.state.data?.pages;
+            if (!pages?.length) return 60_000;
+
+            const lastPage = pages[pages.length - 1];
+            return resolveNextPageParam(lastPage, pages, filters.activeTab) !== undefined ? 60_000 : false;
+        }
     });
 
     // Flatten all pages into a single token array
@@ -404,10 +422,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }));
     }, []);
 
-    // The FAVOURITES tab filters client-side from already-loaded trending data.
-    // hasNextPage from the API is meaningless here and would cause the sentinel
-    // to keep triggering fetchNextPage on an already-complete list.
     const isFavouritesTab = filters.activeTab === "FAVOURITES";
+    const isFilteredResults = filters.filteredData != null && filters.filteredData.length > 0;
+    const canLoadMore = !isFavouritesTab && !isFilteredResults && hasNextPage;
 
     return {
         table,
@@ -423,9 +440,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         applyFilterResults,
         isLoading: isPending,
         isFetching,
-        isFetchingNextPage: isFavouritesTab ? false : isFetchingNextPage,
+        isFetchingNextPage: canLoadMore ? isFetchingNextPage : false,
         fetchNextPage,
-        hasNextPage: isFavouritesTab ? false : hasNextPage,
+        hasNextPage: canLoadMore,
         error,
         dataUpdatedAt,
         refetch
