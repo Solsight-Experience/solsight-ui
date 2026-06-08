@@ -32,9 +32,7 @@ import { SwapConfigSection } from "@/features/swap-config/components/SwapConfigS
 import { AdvancedStrategySection } from "@/features/swap-config/advanced-strategy/AdvancedStrategySection";
 import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
-import { Connection, VersionedTransaction, clusterApiUrl } from "@solana/web3.js";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import useClusterStore from "@/stores/cluster.store";
+import { VersionedTransaction } from "@solana/web3.js";
 
 interface TradingPanelProps {
     token: TokenDetail;
@@ -70,11 +68,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
-    const cluster = useClusterStore((s) => s.cluster);
-    const connection = useMemo(
-        () => new Connection(clusterApiUrl(cluster === "devnet" ? WalletAdapterNetwork.Devnet : WalletAdapterNetwork.Mainnet), "confirmed"),
-        [cluster]
-    );
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
@@ -588,7 +581,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: publicKey,
                 signTransaction: (tx) => provider.signTransaction(tx),
-                connection,
                 gaslessFeeToken
             });
 
