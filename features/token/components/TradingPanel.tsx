@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -43,6 +44,19 @@ type BuyPayTokenOption = {
     decimals?: number;
     balance: number;
 };
+
+function NetworkStatusBadge() {
+    const isOnline = useOnlineStatus();
+    return (
+        <div className="flex items-center justify-between mt-4 text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-3">
+            <span>Powered by Jupiter API</span>
+            <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                <span className={isOnline ? "text-[var(--text-muted)]" : "text-red-400"}>{isOnline ? "Connected: Solana Mainnet" : "Offline"}</span>
+            </div>
+        </div>
+    );
+}
 
 export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const {
@@ -1197,13 +1211,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 )}
             </Button>
 
-            <div className="flex items-center justify-between mt-4 text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-3">
-                <span>Powered by Jupiter API</span>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span>Connected: Solana Mainnet</span>
-                </div>
-            </div>
+            <NetworkStatusBadge />
 
             <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
                 <DialogContent className="sm:max-w-lg border-2 border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xl shadow-black/50">

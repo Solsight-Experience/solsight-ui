@@ -29,6 +29,7 @@ import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDial
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 const TICKERS = [
     { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
@@ -57,6 +58,7 @@ export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
     const { theme, setTheme } = useTheme();
+    const isOnline = useOnlineStatus();
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -112,12 +114,14 @@ export default function Header() {
                 {/* ── Ticker strip ─────────────────────────────────────────── */}
                 <div className="flex items-center h-[26px] border-b border-white/[0.04] overflow-hidden bg-black/30">
                     <div
-                        className="flex items-center gap-1 px-3 h-full shrink-0
+                        className={`flex items-center gap-1 px-3 h-full shrink-0
                             text-[9px] font-bold tracking-[0.12em] uppercase
-                            text-violet-400 bg-violet-500/10 border-r border-violet-500/20"
+                            border-r ${
+                                isOnline ? "text-violet-400 bg-violet-500/10 border-violet-500/20" : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                            }`}
                     >
                         <Zap size={10} />
-                        <span>Live</span>
+                        <span>{isOnline ? "Live" : "..."}</span>
                     </div>
 
                     <div className="flex-1 overflow-hidden">

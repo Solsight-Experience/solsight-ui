@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from "@tanstack/react-table";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { TimeFilterValue } from "../components/TimeFilters";
@@ -68,6 +68,17 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             setFilters((prev) => ({ ...prev, favouriteIds: favoriteIds }));
         }
     }, [favoritesData]);
+
+    // If the user logs out while viewing FAVOURITES, redirect to TRENDING
+    useEffect(() => {
+        if (!isLoggedIn) {
+            setFilters((prev) => ({
+                ...prev,
+                activeTab: prev.activeTab === "FAVOURITES" ? "TRENDING" : prev.activeTab,
+                favouriteIds: new Set()
+            }));
+        }
+    }, [isLoggedIn]);
 
     // Mutation for toggling favorites
     const toggleFavoriteMutation = useMutation({
@@ -157,48 +168,63 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     };
 
-    // Fetch tokens based on active tab
+    const PAGE_SIZE = 20;
+
+    // Fetch tokens based on active tab — with infinite scroll pagination
     const {
-        data: apiData,
+        data: infiniteData,
         isPending,
         isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage,
         error,
         dataUpdatedAt,
         refetch
-    } = useQuery({
+    } = useInfiniteQuery({
         queryKey:
             filters.activeTab === "CATEGORIES" && filters.selectedCategorySlug
-                ? queryKeys.tokens.categoryDetail(filters.selectedCategorySlug, {
-                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-                      sortBy: mapSortOptionToSortBy(filters.sortOption)
-                  })
-                : queryKeys.tokens.trending({
-                      tab: filters.activeTab,
-                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-                      sortBy: mapSortOptionToSortBy(filters.sortOption)
-                  }),
-        queryFn: async () => {
+                ? [
+                      "infinite",
+                      ...queryKeys.tokens.categoryDetail(filters.selectedCategorySlug, {
+                          timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                          sortBy: mapSortOptionToSortBy(filters.sortOption)
+                      })
+                  ]
+                : [
+                      "infinite",
+                      ...queryKeys.tokens.trending({
+                          tab: filters.activeTab,
+                          timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                          sortBy: mapSortOptionToSortBy(filters.sortOption)
+                      })
+                  ],
+        queryFn: async ({ pageParam = 0 }) => {
             const timeFrame = mapTimeFilterToTimeFrame(filters.timeFilter);
+            const offset = (pageParam as number) * PAGE_SIZE;
 
             switch (filters.activeTab) {
                 case "TRENDING":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: "volume_24h",
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
 
                 case "TOP":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: mapSortOptionToSortBy(filters.sortOption),
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
 
                 case "CATEGORIES":
                     if (filters.selectedCategorySlug) {
                         const res = await TokenDiscoveryService.getCategoryDetail(filters.selectedCategorySlug, {
-                            limit: 20,
+                            limit: PAGE_SIZE,
+                            offset,
                             sort_by: mapSortOptionToSortBy(filters.sortOption)
                         });
                         return { tokens: res.tokens, total: res.total, updated_at: res.category.updated_at };
@@ -207,17 +233,44 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
                 case "FAVOURITES":
                 default:
-                    // For favourites, still fetch trending data
-                    // and filter client-side
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
             }
         },
-        staleTime: 30000, // 30 seconds
-        refetchInterval: 60000 // Refetch every minute
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            const lastTokens = lastPage?.tokens;
+
+            // Primary signal: if last page returned fewer tokens than PAGE_SIZE, no more pages exist
+            if (!lastTokens || lastTokens.length < PAGE_SIZE) return undefined;
+
+            // Secondary check: use total if the API provides it
+            const total = lastPage?.total;
+            if (total !== undefined && total !== null) {
+                const loadedCount = allPages.reduce((acc, page) => acc + (page?.tokens?.length ?? 0), 0);
+                if (loadedCount >= total) return undefined;
+            }
+
+            return allPages.length;
+        },
+        staleTime: 30000,
+        refetchInterval: 60000
     });
+
+    // Flatten all pages into a single token array
+    const apiData = useMemo(() => {
+        if (!infiniteData?.pages?.length) return undefined;
+        const allTokens = infiniteData.pages.flatMap((p) => p?.tokens ?? []);
+        const firstPage = infiniteData.pages[0];
+        return {
+            tokens: allTokens,
+            total: firstPage?.total ?? 0,
+            updated_at: firstPage?.updated_at ?? ""
+        };
+    }, [infiniteData]);
 
     // Process and filter data
     const data = useMemo(() => {
@@ -232,16 +285,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
         // Filter by favourites
         if (filters.activeTab === "FAVOURITES") {
-            console.log("Filtering favorites - Total tokens:", transformedData.length);
-            console.log("Favorite IDs:", Array.from(filters.favouriteIds));
-            transformedData = transformedData.filter((token) => {
-                const isFavorite = filters.favouriteIds.has(token.id);
-                if (isFavorite) {
-                    console.log("Found favorite token:", token.id, token.token.ticker);
-                }
-                return isFavorite;
-            });
-            console.log("Filtered favorites count:", transformedData.length);
+            transformedData = transformedData.filter((token) => filters.favouriteIds.has(token.id));
         }
 
         // Filter by category search
@@ -360,6 +404,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }));
     }, []);
 
+    // The FAVOURITES tab filters client-side from already-loaded trending data.
+    // hasNextPage from the API is meaningless here and would cause the sentinel
+    // to keep triggering fetchNextPage on an already-complete list.
+    const isFavouritesTab = filters.activeTab === "FAVOURITES";
+
     return {
         table,
         filters,
@@ -374,6 +423,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         applyFilterResults,
         isLoading: isPending,
         isFetching,
+        isFetchingNextPage: isFavouritesTab ? false : isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage: isFavouritesTab ? false : hasNextPage,
         error,
         dataUpdatedAt,
         refetch

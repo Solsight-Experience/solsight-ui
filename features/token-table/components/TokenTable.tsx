@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
 import { Clock, RotateCw } from "lucide-react";
@@ -46,10 +46,36 @@ export default function TokenTable() {
         applyFilterResults,
         isLoading,
         isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage,
         error,
         dataUpdatedAt,
         refetch
     } = useTokenTable(handleQuickBuy);
+
+    // Sentinel ref for infinite scroll
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        // FAVOURITES are filtered client-side — there is nothing more to load.
+        if (filters.activeTab === "FAVOURITES") return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [filters.activeTab, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const isRefetching = isFetching && !isLoading;
 
@@ -178,6 +204,21 @@ export default function TokenTable() {
                             ))}
                         </TableBody>
                     </Table>
+
+                    {/* Infinite scroll sentinel */}
+                    <div ref={sentinelRef} className="h-1" />
+                    {isFetchingNextPage && (
+                        <div className="flex items-center justify-center py-4 gap-2 text-white/30 text-xs">
+                            <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Loading more tokens...
+                        </div>
+                    )}
+                    {!hasNextPage && table.getRowModel().rows.length > 0 && (
+                        <div className="flex items-center justify-center py-3 text-white/20 text-xs">All tokens loaded</div>
+                    )}
                 </div>
             );
         }
