@@ -15,6 +15,7 @@ interface ModeCustomState {
 interface SwapConfigState {
     items: ItemStates;
     setItem: <T>(id: SwapConfigId, next: T) => void;
+    setSlippageBps: (slippageBps: number) => void;
     getSlippageBps: (autoFallbackBps?: number) => number;
     reset: () => void;
 }
@@ -55,6 +56,10 @@ export const useSwapConfigStore = create<SwapConfigState>()(
 
                     return { items: updated };
                 });
+            },
+
+            setSlippageBps: (slippageBps) => {
+                get().setItem("slippage", { mode: "custom", custom: slippageBps });
             },
 
             getSlippageBps: (autoFallbackBps = 3000) => {

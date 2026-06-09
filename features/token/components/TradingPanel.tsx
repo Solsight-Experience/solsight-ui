@@ -71,6 +71,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     } = useTokenUIStore();
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
+    const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
@@ -148,7 +149,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             setLastEdited("pay");
             setPendingTradeAction(null);
         }
-    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setSlippageBps, setPendingTradeAction]);
 
     useEffect(() => {
         if (!pendingSlippageAction) return;
