@@ -45,29 +45,22 @@ export const TokenBriefCard: React.FC<TokenBriefCardProps> = ({ data }) => {
                 </Link>
             </div>
 
-            <div className="grid grid-cols-3 divide-x divide-border/40">
-                <div className="p-3 flex flex-col gap-0.5">
+            <div className="grid grid-cols-2 divide-x divide-border/40">
+                <div className="p-3 flex flex-col gap-0.5 min-w-0 overflow-hidden">
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</span>
-                    <span className="text-sm font-semibold font-mono">{typeof price === "number" ? currencyFormatter.format(price) : "—"}</span>
+                    <span className="text-sm font-semibold font-mono truncate">{typeof price === "number" ? currencyFormatter.format(price) : "—"}</span>
                 </div>
 
-                <div className="p-3 flex flex-col gap-0.5">
+                <div className="p-3 flex flex-col gap-0.5 min-w-0 overflow-hidden">
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide">24h</span>
                     {typeof change === "number" ? (
                         <div className={cn("flex items-center gap-0.5 text-sm font-semibold", isPositive ? "text-emerald-400" : "text-red-400")}>
-                            {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                            {percentFormatter.format(change)}
+                            {isPositive ? <TrendingUp className="w-3.5 h-3.5 shrink-0" /> : <TrendingDown className="w-3.5 h-3.5 shrink-0" />}
+                            <span className="truncate">{percentFormatter.format(change)}</span>
                         </div>
                     ) : (
                         <span className="text-sm text-muted-foreground">—</span>
                     )}
-                </div>
-
-                <div className="p-3 flex flex-col gap-0.5">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">MCap</span>
-                    <span className="text-sm font-semibold font-mono">
-                        {typeof marketCap === "number" && marketCap > 0 ? currencyFormatter.format(marketCap) : "—"}
-                    </span>
                 </div>
             </div>
         </div>
