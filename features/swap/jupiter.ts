@@ -66,7 +66,7 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
 
     const tx = VersionedTransaction.deserialize(base64ToBytes(txData.swapTransaction));
     const signed = await request.signTransaction(tx);
-    const signedTxBase64 = Buffer.from(signed.serialize()).toString("base64");
+    const signedTxBase64 = bytesToBase64(signed.serialize());
 
     const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
         signedTransaction: signedTxBase64,

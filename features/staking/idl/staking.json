@@ -1,0 +1,160 @@
+{
+    "address": "BWEVr3uY4g4oTsSAXc5jKKmxBmg5wjfprmaQYZfhTpHv",
+    "metadata": {
+        "address": "BWEVr3uY4g4oTsSAXc5jKKmxBmg5wjfprmaQYZfhTpHv"
+    },
+    "version": "0.1.0",
+    "name": "staking",
+    "instructions": [
+        {
+            "name": "initializeInsuranceFund",
+            "accounts": [
+                { "name": "authority", "isMut": true, "isSigner": true },
+                { "name": "insuranceFund", "isMut": true, "isSigner": false },
+                { "name": "vault", "isMut": true, "isSigner": false },
+                { "name": "vaultTokenAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoSolMint", "isMut": false, "isSigner": false },
+                { "name": "tokenProgram", "isMut": false, "isSigner": false },
+                { "name": "associatedTokenProgram", "isMut": false, "isSigner": false },
+                { "name": "systemProgram", "isMut": false, "isSigner": false }
+            ],
+            "args": [{ "name": "unstakingPeriod", "type": "i64" }]
+        },
+        {
+            "name": "addInsuranceFundStake",
+            "accounts": [
+                { "name": "owner", "isMut": true, "isSigner": true },
+                { "name": "insuranceFund", "isMut": true, "isSigner": false },
+                { "name": "vaultTokenAccount", "isMut": true, "isSigner": false },
+                { "name": "ifStake", "isMut": true, "isSigner": false },
+                { "name": "jitoStakePool", "isMut": true, "isSigner": false },
+                { "name": "jitoWithdrawAuthority", "isMut": false, "isSigner": false },
+                { "name": "jitoReserveStake", "isMut": true, "isSigner": false },
+                { "name": "jitoManagerFeeAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoSolMint", "isMut": true, "isSigner": false },
+                { "name": "stakePoolProgram", "isMut": false, "isSigner": false },
+                { "name": "tokenProgram", "isMut": false, "isSigner": false },
+                { "name": "systemProgram", "isMut": false, "isSigner": false }
+            ],
+            "args": [{ "name": "solAmount", "type": "u64" }]
+        },
+        {
+            "name": "requestRemoveInsuranceFundStake",
+            "accounts": [
+                { "name": "owner", "isMut": true, "isSigner": true },
+                { "name": "insuranceFund", "isMut": false, "isSigner": false },
+                { "name": "ifStake", "isMut": true, "isSigner": false },
+                { "name": "vaultTokenAccount", "isMut": false, "isSigner": false }
+            ],
+            "args": [{ "name": "shares", "type": "u128" }]
+        },
+        {
+            "name": "cancelRequestRemoveInsuranceFundStake",
+            "accounts": [
+                { "name": "owner", "isMut": false, "isSigner": true },
+                { "name": "insuranceFund", "isMut": false, "isSigner": false },
+                { "name": "ifStake", "isMut": true, "isSigner": false }
+            ],
+            "args": []
+        },
+        {
+            "name": "removeInsuranceFundStake",
+            "accounts": [
+                { "name": "owner", "isMut": true, "isSigner": true },
+                { "name": "insuranceFund", "isMut": true, "isSigner": false },
+                { "name": "ifStake", "isMut": true, "isSigner": false },
+                { "name": "vault", "isMut": true, "isSigner": false },
+                { "name": "vaultTokenAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoStakePool", "isMut": true, "isSigner": false },
+                { "name": "jitoWithdrawAuthority", "isMut": false, "isSigner": false },
+                { "name": "jitoReserveStake", "isMut": true, "isSigner": false },
+                { "name": "jitoManagerFeeAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoSolMint", "isMut": true, "isSigner": false },
+                { "name": "clock", "isMut": false, "isSigner": false },
+                { "name": "stakeHistory", "isMut": false, "isSigner": false },
+                { "name": "stakeProgram", "isMut": false, "isSigner": false },
+                { "name": "stakePoolProgram", "isMut": false, "isSigner": false },
+                { "name": "tokenProgram", "isMut": false, "isSigner": false },
+                { "name": "systemProgram", "isMut": false, "isSigner": false }
+            ],
+            "args": []
+        },
+        {
+            "name": "depositRevenue",
+            "accounts": [
+                { "name": "authority", "isMut": true, "isSigner": true },
+                { "name": "insuranceFund", "isMut": true, "isSigner": false },
+                { "name": "vaultTokenAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoStakePool", "isMut": true, "isSigner": false },
+                { "name": "jitoWithdrawAuthority", "isMut": false, "isSigner": false },
+                { "name": "jitoReserveStake", "isMut": true, "isSigner": false },
+                { "name": "jitoManagerFeeAccount", "isMut": true, "isSigner": false },
+                { "name": "jitoSolMint", "isMut": true, "isSigner": false },
+                { "name": "stakePoolProgram", "isMut": false, "isSigner": false },
+                { "name": "tokenProgram", "isMut": false, "isSigner": false },
+                { "name": "systemProgram", "isMut": false, "isSigner": false }
+            ],
+            "args": [{ "name": "solAmount", "type": "u64" }]
+        },
+        {
+            "name": "updateInsuranceFundConfig",
+            "accounts": [
+                { "name": "authority", "isMut": false, "isSigner": true },
+                { "name": "insuranceFund", "isMut": true, "isSigner": false }
+            ],
+            "args": [
+                { "name": "unstakingPeriod", "type": { "option": "i64" } },
+                { "name": "ifPaused", "type": { "option": "bool" } }
+            ]
+        }
+    ],
+    "accounts": [
+        {
+            "name": "InsuranceFund",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    { "name": "authority", "type": "publicKey" },
+                    { "name": "vault", "type": "publicKey" },
+                    { "name": "vaultTokenAccount", "type": "publicKey" },
+                    { "name": "totalShares", "type": "u128" },
+                    { "name": "unstakingPeriod", "type": "i64" },
+                    { "name": "totalRevenue", "type": "u64" },
+                    { "name": "ifPaused", "type": "bool" },
+                    { "name": "bump", "type": "u8" },
+                    { "name": "vaultBump", "type": "u8" }
+                ]
+            }
+        },
+        {
+            "name": "IFStakeAccount",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    { "name": "authority", "type": "publicKey" },
+                    { "name": "ifShares", "type": "u128" },
+                    { "name": "lastWithdrawRequestShares", "type": "u128" },
+                    { "name": "lastWithdrawRequestValue", "type": "u64" },
+                    { "name": "lastWithdrawRequestTs", "type": "i64" },
+                    { "name": "bump", "type": "u8" }
+                ]
+            }
+        },
+        {
+            "name": "SolVault",
+            "type": { "kind": "struct", "fields": [] }
+        }
+    ],
+    "errors": [
+        { "code": 6000, "name": "AmountTooSmall", "msg": "Amount must be greater than zero" },
+        { "code": 6001, "name": "MathOverflow", "msg": "Math overflow" },
+        { "code": 6002, "name": "WithdrawRequestInProgress", "msg": "A withdraw request is already in progress" },
+        { "code": 6003, "name": "NoPendingWithdrawRequest", "msg": "No pending withdraw request found" },
+        { "code": 6004, "name": "CooldownNotElapsed", "msg": "Cooldown period has not elapsed" },
+        { "code": 6005, "name": "InsufficientVaultFunds", "msg": "Insufficient funds in vault" },
+        { "code": 6006, "name": "InsufficientShares", "msg": "Insufficient shares for withdraw request" },
+        { "code": 6007, "name": "Unauthorized", "msg": "Unauthorized" },
+        { "code": 6008, "name": "NoActiveStake", "msg": "No active stake position" },
+        { "code": 6009, "name": "IFStakingDisabled", "msg": "Insurance Fund staking is currently disabled" }
+    ]
+}
