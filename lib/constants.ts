@@ -171,7 +171,8 @@ export const SWAP_ENDPOINTS = {
 
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
-    MESSAGE: "/api/chat/message"
+    MESSAGE: "/api/chat/message",
+    MESSAGES: (sessionId: string) => `/api/chat/sessions/${sessionId}/messages`
 } as const;
 
 // Chat Socket Events

@@ -88,7 +88,7 @@ export interface AllocationItem {
 }
 
 // Activity Types
-export type ActivityType = "SWAP" | "TRANSFER_IN" | "TRANSFER_OUT" | "STAKE" | "UNSTAKE";
+export type ActivityType = "SWAP" | "TRANSFER_IN" | "TRANSFER_OUT" | "STAKE" | "UNSTAKE" | "BURN";
 export type ActivityStatus = "success" | "failed" | "pending";
 
 export interface Activity {
