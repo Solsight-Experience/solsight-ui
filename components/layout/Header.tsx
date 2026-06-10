@@ -30,6 +30,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import ClusterToggle from "@/components/layout/cluster-toggle";
 
 const TICKERS = [
     { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
@@ -73,9 +74,7 @@ export default function Header() {
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
 
-    const handleDisConnectWallets = useCallback(() => {
-        setConfirmDisconnectWalletsOpen(true);
-    }, []);
+    // removed unused handleDisConnectWallets (was opening disconnect dialog)
 
     const handleLogout = async () => {
         await logout();
@@ -145,6 +144,12 @@ export default function Header() {
                     {/* Left: logo + nav */}
                     <div className="flex items-center gap-0">
                         <HeaderIcon />
+
+                        {!isSidebarMode && (
+                            <div className="ml-4">
+                                <ClusterToggle />
+                            </div>
+                        )}
 
                         {/* Divider — hidden in sidebar mode */}
                         {!isSidebarMode && <div className="w-px h-5 bg-white/10 mx-6" />}
@@ -229,7 +234,7 @@ export default function Header() {
 
                 <style>{`@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
 
-                <SearchDialog isOpen={searchOpen} onClose={handleDialogChange} />
+                <SearchDialog isOpen={searchOpen} onCloseAction={handleDialogChange} />
                 <DisconnectWalletsConfirmDialog
                     isOpen={confirmDisconnectWalletsOpen}
                     onClose={() => setConfirmDisconnectWalletsOpen(false)}
@@ -268,7 +273,7 @@ interface SidebarProps {
     open: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     user: any;
     unreadCount: number;
     isPanelOpen: boolean;
@@ -551,7 +556,7 @@ const SignInButton = memo(function SignInButton() {
  * UserDropdown
  * ─────────────────────────────────────────────────────────────────────────── */
 interface UserDropdownProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     user: any;
     open: boolean;
     onToggle: () => void;

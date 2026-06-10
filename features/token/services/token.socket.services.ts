@@ -1,4 +1,4 @@
-import { SocketManager, EventHandler } from "@/lib/socket-client";
+import { SocketManager, type EventHandler } from "@/lib/socket-client";
 
 export interface TokenSubscribeDto {
     domain: string;
@@ -36,11 +36,11 @@ export class TokenSocketManager extends SocketManager {
         this.offKey(this.buildKey(dto));
     }
 
-    onDomainEvent(dto: TokenSubscribeDto, handler: EventHandler) {
+    onDomainEvent<T = unknown>(dto: TokenSubscribeDto, handler: EventHandler<T>) {
         const key = this.buildKey(dto);
         this.subscribe(dto);
 
-        const wrapped = (payload: { room: string; data: unknown }) => {
+        const wrapped = (payload: { room: string; data: T }) => {
             if (payload.room === key) {
                 handler(payload.data);
             }

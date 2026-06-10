@@ -9,13 +9,14 @@ import { SortButton } from "../sort/sort-button/SortButton";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { FilterButton, useSearchWithFilters, type FilterFormData, getFilterRequestBody } from "@/features/token-table/components";
 import type { TokenOverview, PoolOverview, SortBy, PoolSortBy, SortOrder, TokenFilterResponse, PoolFilterResponse } from "@/types/filter";
-import { formatCompact, formatCurrency, formatPercent } from "@/lib/formatters";
+import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type SearchDialogProps = {
     isOpen: boolean;
-    onClose: (arg: boolean) => void;
+    // onClose is a client callback; use Action suffix to avoid Next.js serializability warning
+    onCloseAction: (arg: boolean) => void;
 };
 
 type TabType = "token" | "pool";
@@ -42,8 +43,8 @@ const poolSorts: SortItem[] = [
     { id: "age", label: "Age" }
 ];
 
-export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
-    const [activeTab, setActiveTab] = useState<TabType>("token");
+export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
+    const [activeTab] = useState<TabType>("token");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<SortBy | PoolSortBy | "">("");
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -58,7 +59,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
     const isLoading = isSearchingTokens || isSearchingPools;
     const currentSorts = activeTab === "token" ? tokenSorts : poolSorts;
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const debounceTimerRef = useRef<number | null>(null);
 
     const handleSortClick = (id: SortBy | PoolSortBy) => {
         if (sortBy === id) {
@@ -122,12 +123,12 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
     useEffect(() => {
         if (!isOpen) return;
-        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(() => {
+        if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current as number);
+        debounceTimerRef.current = window.setTimeout(() => {
             performSearch();
         }, 300);
         return () => {
-            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current as number);
         };
     }, [searchQuery, filterFormData, isOpen, performSearch]);
 
@@ -138,7 +139,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
     }, [sortBy, sortOrder, activeTab, isOpen, performSearch]);
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={onCloseAction}>
             <DialogContent
                 showCloseButton={false}
                 className="flex flex-col bg-[var(--surface-card)] border border-[var(--border-subtle)] shadow-[var(--shadow-dropdown)]
@@ -224,7 +225,7 @@ export const SearchDialog = ({ isOpen, onClose }: SearchDialogProps) => {
 
                         {!isLoading && results.total > 0 && (
                             <>
-                                {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onClose} />}
+                                {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onCloseAction} />}
                                 {activeTab === "pool" && <PoolResults pools={results.pools} />}
                             </>
                         )}
@@ -251,7 +252,7 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
     const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
     const formatPrice = (value: number) => {
-        if (value >= 1) return formatCurrency(value);
+        if (value >= 1) return currencyFormatter.formatCompact(value);
         return `$${value.toFixed(2)}`;
     };
 
@@ -287,19 +288,19 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                     <div className="flex gap-3 sm:gap-6 flex-shrink-0 overflow-x-auto">
                         <div className="text-right shrink-0">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">MCAP</div>
-                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCurrency(Number(t.market_cap))}</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{currencyFormatter.formatCompact(Number(t.market_cap))}</div>
                         </div>
                         <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">TXN 24h</div>
-                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCompact(Number(t.txns_24h.total))}</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{compactFormatter.format(Number(t.txns_24h.total))}</div>
                         </div>
                         <div className="text-right shrink-0 hidden md:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Holders</div>
-                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCompact(Number(t.holders.count))}</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{compactFormatter.format(Number(t.holders.count))}</div>
                         </div>
                         <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Volume</div>
-                            <div className="text-sm font-medium text-[var(--text-primary)]">{formatCurrency(Number(t.volume_24h))}</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)]">{currencyFormatter.formatCompact(Number(t.volume_24h))}</div>
                         </div>
                         <div className="text-right shrink-0 hidden md:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Age</div>
@@ -311,7 +312,7 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                                 <span className="text-[var(--text-primary)]">{formatPrice(Number(t.price))}</span>
                                 <span className="mx-1 text-[var(--text-muted)]">/</span>
                                 <span className={Number(t.price_change_24h) >= 0 ? "text-emerald-500" : "text-red-500"}>
-                                    {formatPercent(Number(t.price_change_24h))}
+                                    {percentFormatter.format(Number(t.price_change_24h))}
                                 </span>
                             </div>
                         </div>

@@ -25,6 +25,13 @@ import {
     toBaseUnits
 } from "@/features/swap";
 import { useSolPrice } from "@/features/swap/hooks/useSolPrice";
+import { useSwapInfo } from "@/features/swap/hooks/use-swap-info";
+import { useSwapConfigStore } from "@/features/swap-config/store";
+import { useSwapConfigCtx } from "@/features/swap-config/use-swap-config-ctx";
+import { serializeAllSwapConfig } from "@/features/swap-config/serialize";
+import { SwapConfigSection } from "@/features/swap-config/components/SwapConfigSection";
+import { AdvancedStrategySection } from "@/features/swap-config/advanced-strategy/AdvancedStrategySection";
+import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -41,7 +48,7 @@ type BuyPayTokenOption = {
     mint: string;
     symbol: string;
     logoUri: string;
-    decimals?: number;
+    decimals: number;
     balance: number;
 };
 
@@ -68,8 +75,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setPayAmount,
         receiveAmount,
         setReceiveAmount,
-        slippageBps,
-        setSlippageBps,
         limitPrice,
         setLimitPrice,
         resetTradingPanel,
@@ -78,6 +83,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         pendingSlippageAction,
         setPendingSlippageAction
     } = useTokenUIStore();
+    const swapConfigStates = useSwapConfigStore((s) => s.items);
+    const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
+    const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
@@ -155,7 +163,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             setLastEdited("pay");
             setPendingTradeAction(null);
         }
-    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setSlippageBps, setPendingTradeAction]);
 
     useEffect(() => {
         if (!pendingSlippageAction) return;
@@ -227,7 +235,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             positionsData?.positions
                 ?.filter((position) => {
                     const mint = position.token.address?.toLowerCase();
-                    return Boolean(mint) && mint !== token.address.toLowerCase() && position.balance > 0;
+                    return Boolean(mint) && mint !== token.address.toLowerCase() && position.balance > 0 && typeof position.token.decimals === "number";
                 })
                 .map((position) => ({
                     mint: position.token.address,
@@ -337,13 +345,26 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
     const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
     const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
-    const payDecimals = tradeMode === "buy" ? (selectedBuyPayToken?.decimals ?? COMMON_TOKENS.SOL.decimals) : resolvedTokenDecimals;
-    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : (selectedSellReceiveToken?.decimals ?? COMMON_TOKENS.SOL.decimals);
+    const payDecimals = tradeMode === "buy" && selectedBuyPayToken ? selectedBuyPayToken.decimals : resolvedTokenDecimals;
+    const receiveDecimals = tradeMode === "sell" && selectedSellReceiveToken ? selectedSellReceiveToken.decimals : resolvedTokenDecimals;
 
     const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
-    const getOptionDecimals = (option: BuyPayTokenOption): number =>
-        option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+    const getOptionDecimals = (option: BuyPayTokenOption): number => option.decimals;
+
+    const swapPair = useMemo<TokenPair | undefined>(() => {
+        if (!payMint || !receiveMint) return undefined;
+        return {
+            quote: { mint: payMint, symbol: payToken, decimals: payDecimals, logoUri: payTokenLogo || null },
+            receive: { mint: receiveMint, symbol: receiveToken, decimals: receiveDecimals, logoUri: receiveTokenLogo || null }
+        };
+    }, [payMint, receiveMint, payToken, receiveToken, payDecimals, receiveDecimals, payTokenLogo, receiveTokenLogo]);
+
+    const { data: swapInfo } = useSwapInfo({ inputMint: payMint, outputMint: receiveMint });
+    const swapConfigCtx = useSwapConfigCtx({ swapInfo, pair: swapPair });
+    const swapConfigFragment = useMemo(() => serializeAllSwapConfig(swapConfigStates, swapConfigCtx), [swapConfigStates, swapConfigCtx]);
+    const slippageBps = swapConfigFragment.slippageBps ?? 50;
+    const gaslessFeeToken = swapConfigFragment.gaslessFeeToken;
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -420,7 +441,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             else if (receiveAmount) setLastEdited("receive");
         }
         // Note: Do not add payAmount/receiveAmount to dependencies to avoid infinite loops when they change
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderType]);
 
     useEffect(() => {
@@ -608,7 +628,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             const { signature } = await executeJupiterSwap({
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx)
+                signTransaction: (tx) => provider.signTransaction(tx),
+                gaslessFeeToken
             });
 
             setSwapState({ loading: false, error: null, signature });
@@ -667,7 +688,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = typeof publicKey?.toBase58 === "function" ? publicKey.toBase58() : typeof publicKey === "string" ? publicKey : "";
+            const walletAddress = typeof (publicKey as any)?.toBase58 === "function" ? (publicKey as any).toBase58() : String(publicKey ?? "");
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }
@@ -846,7 +867,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                 {selectedBuyPayToken ? (
                                                     <>
                                                         <Avatar className="w-5 h-5">
-                                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                                            {payTokenLogo ? <AvatarImage src={payTokenLogo} alt={payToken} /> : null}
                                                             <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <span className="leading-4">{payToken}</span>
@@ -868,7 +889,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
                                                     <Avatar className="w-5 h-5">
-                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        {option.logoUri ? <AvatarImage src={option.logoUri} alt={option.symbol} /> : null}
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
@@ -890,7 +911,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 ) : (
                                     <>
                                         <Avatar className="w-5 h-5">
-                                            <AvatarImage src={payTokenLogo} alt={payToken} />
+                                            {payTokenLogo ? <AvatarImage src={payTokenLogo} alt={payToken} /> : null}
                                             <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-semibold text-[var(--text-primary)] tracking-wide">{payToken}</span>
@@ -970,7 +991,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                 {selectedSellReceiveToken ? (
                                                     <>
                                                         <Avatar className="w-5 h-5">
-                                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                                            {receiveTokenLogo ? <AvatarImage src={receiveTokenLogo} alt={receiveToken} /> : null}
                                                             <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <span className="leading-4">{receiveToken}</span>
@@ -992,7 +1013,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                     className="flex items-center gap-3 px-2 py-2"
                                                 >
                                                     <Avatar className="w-5 h-5">
-                                                        <AvatarImage src={option.logoUri} alt={option.symbol} />
+                                                        {option.logoUri ? <AvatarImage src={option.logoUri} alt={option.symbol} /> : null}
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
@@ -1014,7 +1035,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 ) : (
                                     <>
                                         <Avatar className="w-5 h-5">
-                                            <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
+                                            {receiveTokenLogo ? <AvatarImage src={receiveTokenLogo} alt={receiveToken} /> : null}
                                             <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-semibold text-[var(--text-primary)] tracking-wide">{receiveToken}</span>
@@ -1045,19 +1066,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             </div>
 
             <div className="mb-4">
-                <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">Slippage</Label>
-                <div className="border border-[var(--border-subtle)] rounded-lg p-3 bg-[var(--surface-btn)] backdrop-blur flex items-center gap-2 hover:bg-[var(--surface-btn)] transition-colors">
-                    <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={slippageBps}
-                        onChange={(e) => setSlippageBps(Number(e.target.value))}
-                        className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]"
-                    />
-                    <span className="text-sm text-[var(--text-muted)] font-semibold">bps</span>
-                </div>
-                <div className="mt-2 text-xs text-[var(--text-muted)]">Example: 50 bps = 0.5%</div>
+                <SwapConfigSection
+                    states={swapConfigStates}
+                    onItemChange={setSwapConfigItem}
+                    inputMint={payMint || undefined}
+                    outputMint={receiveMint || undefined}
+                    pair={swapPair}
+                />
+            </div>
+
+            <div className="mb-4">
+                <AdvancedStrategySection />
             </div>
 
             {/* Quote Summary */}

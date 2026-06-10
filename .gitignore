@@ -50,3 +50,6 @@ true/
 .sisyphus/
 AGENTS.md
 .omc/
+.agent/
+.artifacts/
+.opencode/

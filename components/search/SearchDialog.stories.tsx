@@ -25,7 +25,7 @@ const meta: Meta<typeof SearchDialog> = {
                     >
                         Open Search Dialog
                     </button>
-                    <Story args={{ ...context.args, isOpen: open, onClose: setOpen }} />
+                    <Story args={{ ...context.args, isOpen: open, onCloseAction: setOpen }} />
                 </div>
             );
         }

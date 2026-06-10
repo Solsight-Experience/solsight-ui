@@ -1,4 +1,4 @@
-import { SocketManager } from "@/lib/socket-client";
+import { SocketManager, type EventHandler } from "@/lib/socket-client";
 import { Notification } from "../types/notification.types";
 
 export class NotificationSocketManager extends SocketManager {
@@ -26,6 +26,6 @@ export class NotificationSocketManager extends SocketManager {
     }
 
     onNotification(userId: string, handler: (data: Notification) => void): void {
-        this.on("notification", handler, `notifications:${userId}`);
+        this.on<Notification>("notification", handler, `notifications:${userId}`);
     }
 }

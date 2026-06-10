@@ -12,16 +12,17 @@ import { CategoriesTab } from "./tabs/CategoriesTab";
 
 type FilterDialogProps = {
     isOpen: boolean;
-    onClose: (arg: boolean) => void;
+    // onClose is a client callback; use Action suffix to avoid Next.js serializability warning
+    onCloseAction: (arg: boolean) => void;
 };
 
-export const FilterDialog = ({ isOpen, onClose }: FilterDialogProps) => {
+export const FilterDialog = ({ isOpen, onCloseAction }: FilterDialogProps) => {
     const { resetFilters } = useFilterStore();
     const [activeTab, setActiveTab] = useState<string>("metrics");
 
     const handleApply = () => {
         // Filter application is handled by the parent component
-        onClose(false);
+        onCloseAction(false);
     };
 
     const handleReset = () => {
@@ -29,7 +30,7 @@ export const FilterDialog = ({ isOpen, onClose }: FilterDialogProps) => {
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={onCloseAction}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
