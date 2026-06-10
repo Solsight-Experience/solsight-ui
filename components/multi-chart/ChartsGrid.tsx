@@ -50,7 +50,7 @@ export const ChartsGrid: React.FC<ChartsGridProps> = ({ charts, onRemoveChart, o
     };
 
     return (
-        <div className="grid grid-cols-3 gap-4 auto-rows-max">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
             {charts.map((chart, index) => (
                 <ChartCard
                     key={chart.id}
@@ -62,6 +62,7 @@ export const ChartsGrid: React.FC<ChartsGridProps> = ({ charts, onRemoveChart, o
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(index, e)}
                     onDrop={(e) => handleDrop(index, e)}
+                    onDragEnd={handleDragEnd}
                 />
             ))}
         </div>

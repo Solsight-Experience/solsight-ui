@@ -1,5 +1,13 @@
 import { create } from "zustand";
-import { fetchNotifications, fetchUnreadCount, markAsRead as apiMarkAsRead, markAllAsRead as apiMarkAllAsRead, deleteNotification as apiDeleteNotification, deleteAllNotifications as apiDeleteAllNotifications } from "../services/notification.service";
+import { toast } from "sonner";
+import {
+    fetchNotifications,
+    fetchUnreadCount,
+    markAsRead as apiMarkAsRead,
+    markAllAsRead as apiMarkAllAsRead,
+    deleteNotification as apiDeleteNotification,
+    deleteAllNotifications as apiDeleteAllNotifications
+} from "../services/notification.service";
 import { Notification } from "../types/notification.types";
 
 const PAGE_LIMIT = 20;
@@ -38,16 +46,13 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
     fetchInitial: async () => {
         set({ isLoading: true });
         try {
-            const [notificationsRes, unreadRes] = await Promise.all([
-                fetchNotifications({ limit: PAGE_LIMIT }),
-                fetchUnreadCount(),
-            ]);
+            const [notificationsRes, unreadRes] = await Promise.all([fetchNotifications({ limit: PAGE_LIMIT }), fetchUnreadCount()]);
             set({
                 notifications: notificationsRes.notifications,
                 hasMore: notificationsRes.hasMore,
                 cursor: notificationsRes.notifications.at(-1)?.id ?? null,
                 unreadCount: unreadRes.count,
-                isLoading: false,
+                isLoading: false
             });
         } catch {
             set({ isLoading: false });
@@ -74,39 +79,66 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
         })),
 
     markAsRead: (id) => {
+        // Snapshot before optimistic update
+        const { notifications, unreadCount } = get();
         set((state) => ({
             notifications: state.notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
             unreadCount: Math.max(0, state.unreadCount - 1)
         }));
-        apiMarkAsRead(id);
+        apiMarkAsRead(id).catch(() => {
+            // Rollback on API failure
+            set({ notifications, unreadCount });
+            toast.error("Failed to mark notification as read. Please try again.");
+        });
     },
 
     markAllAsRead: () => {
+        // Snapshot before optimistic update
+        const { notifications, unreadCount } = get();
         set((state) => ({
             notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
             unreadCount: 0
         }));
-        apiMarkAllAsRead();
+        apiMarkAllAsRead().catch(() => {
+            // Rollback on API failure
+            set({ notifications, unreadCount });
+            toast.error("Failed to mark all as read. Please try again.");
+        });
     },
 
     deleteNotification: (id) => {
+        // Snapshot before optimistic update
+        const { notifications, unreadCount } = get();
         set((state) => {
             let wasUnread = false;
-            const notifications = state.notifications.filter((n) => {
-                if (n.id === id) { wasUnread = !n.isRead; return false; }
+            const next = state.notifications.filter((n) => {
+                if (n.id === id) {
+                    wasUnread = !n.isRead;
+                    return false;
+                }
                 return true;
             });
             return {
-                notifications,
+                notifications: next,
                 unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount
             };
         });
-        apiDeleteNotification(id);
+        apiDeleteNotification(id).catch(() => {
+            // Rollback on API failure
+            set({ notifications, unreadCount });
+            toast.error("Failed to delete notification. Please try again.");
+        });
     },
 
     deleteAllNotifications: () => {
+        // Snapshot before optimistic update
+        const { notifications, unreadCount, hasMore, cursor } = get();
         set({ notifications: [], unreadCount: 0, hasMore: false, cursor: null });
-        apiDeleteAllNotifications();
+        apiDeleteAllNotifications().catch(() => {
+            // Rollback on API failure
+            set({ notifications, unreadCount, hasMore, cursor });
+            toast.error("Failed to clear notifications. Please try again.");
+        });
     },
 
     setPanelOpen: (open) => set({ isPanelOpen: open }),

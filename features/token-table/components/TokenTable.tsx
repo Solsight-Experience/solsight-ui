@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import { Clock, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
+import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
 import { FilterButton } from "./FilterButton";
@@ -16,7 +20,6 @@ import { EmptyState } from "./EmptyState";
 import { CategoryTable } from "./CategoryTable";
 import { CategoryDetailModal } from "./CategoryDetailModal";
 import { useTokenTable } from "../hooks/useTokenTable";
-import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
 import type { TokenTableData } from "../config/types";
 import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
 
@@ -27,6 +30,7 @@ import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
  */
 export default function TokenTable() {
     const router = useRouter();
+    const { isAuthenticated } = useAuth();
     const [quickBuyToken, setQuickBuyToken] = useState<TokenTableData | null>(null);
     const [quickBuyModalOpen, setQuickBuyModalOpen] = useState(false);
     const handleQuickBuy = useCallback((token: TokenTableData) => {
@@ -46,10 +50,36 @@ export default function TokenTable() {
         applyFilterResults,
         isLoading,
         isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage,
         error,
         dataUpdatedAt,
         refetch
     } = useTokenTable(handleQuickBuy);
+
+    // Sentinel ref for infinite scroll
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        // Favourites and API-filtered results are complete lists — no infinite scroll.
+        if (filters.activeTab === "FAVOURITES" || filters.filteredData) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && !isFetching) {
+                    fetchNextPage();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [filters.activeTab, filters.filteredData, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
 
     const isRefetching = isFetching && !isLoading;
 
@@ -178,6 +208,21 @@ export default function TokenTable() {
                             ))}
                         </TableBody>
                     </Table>
+
+                    {/* Infinite scroll sentinel */}
+                    <div ref={sentinelRef} className="h-1" />
+                    {isFetchingNextPage && (
+                        <div className="flex items-center justify-center py-4 gap-2 text-white/30 text-xs">
+                            <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Loading more tokens...
+                        </div>
+                    )}
+                    {!hasNextPage && table.getRowModel().rows.length > 0 && (
+                        <div className="flex items-center justify-center py-3 text-white/20 text-xs">All tokens loaded</div>
+                    )}
                 </div>
             );
         }
@@ -203,7 +248,7 @@ export default function TokenTable() {
                         className="flex flex-col gap-3 px-4 py-3 border-b border-white/[0.05] bg-white/[0.015]
                                     sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} showFavourites={isAuthenticated} />
                         {renderRightPanel()}
                     </div>
 

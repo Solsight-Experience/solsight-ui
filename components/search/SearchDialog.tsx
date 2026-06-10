@@ -142,90 +142,94 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         <Dialog open={isOpen} onOpenChange={onCloseAction}>
             <DialogContent
                 showCloseButton={false}
-                className="min-w-250 bg-[var(--surface-card)] border border-[var(--border-subtle)] shadow-[var(--shadow-dropdown)]"
+                className="flex flex-col bg-[var(--surface-card)] border border-[var(--border-subtle)] shadow-[var(--shadow-dropdown)]
+                           w-full sm:max-w-[700px]
+                           max-h-[min(90svh,calc(100svh-2rem))] overflow-hidden p-0"
             >
-                <DialogTitle className="sr-only">Search Dialog</DialogTitle>
-                <DialogDescription className="sr-only">Search dialog: find token and pool.</DialogDescription>
+                <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-hidden flex-1 min-h-0">
+                    <DialogTitle className="sr-only">Search Dialog</DialogTitle>
+                    <DialogDescription className="sr-only">Search dialog: find token and pool.</DialogDescription>
 
-                <div className="flex gap-2">
-                    <InputGroup className="border-[var(--border-subtle)] bg-[var(--surface-panel)]">
-                        <InputGroupInput
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search token symbol, address, or pool..."
-                            className="text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-                            autoFocus
-                        />
-                        <InputGroupAddon align={"inline-end"}>
-                            <Search className="text-[var(--text-muted)]" />
-                        </InputGroupAddon>
-                    </InputGroup>
-                    <DialogClose asChild>
-                        <Button
-                            variant={"outline"}
-                            className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--surface-btn-hover)] hover:border-[var(--border-default)]"
-                        >
-                            Cancel
-                        </Button>
-                    </DialogClose>
-                </div>
-
-                <div className="grid grid-cols-[1fr_2fr] items-center gap-2">
-                    <div className="text-xs text-[var(--text-muted)] font-medium">Sort by:</div>
-                    <div className="flex items-center justify-end">
-                        <div className="px-0 py-2 flex gap-2 justify-end">
-                            {currentSorts.map((item) => (
-                                <div key={item.id} onClick={() => handleSortClick(item.id)}>
-                                    <SortButton label={item.label} type={sortBy === item.id ? sortOrder : "none"} />
-                                </div>
-                            ))}
-                        </div>
-                        <FilterButton
-                            filterOptions={{ filterType: activeTab, sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
-                            onApply={handleFilterApply}
-                            onReset={() => {
-                                setFilterFormData(null);
-                                if (searchQuery.trim().length >= 2) performSearch();
-                                else setResults({ tokens: [], pools: [], total: 0 });
-                            }}
-                        />
+                    <div className="flex gap-2">
+                        <InputGroup className="border-[var(--border-subtle)] bg-[var(--surface-panel)]">
+                            <InputGroupInput
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search token symbol, address, or pool..."
+                                className="text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                                autoFocus
+                            />
+                            <InputGroupAddon align={"inline-end"}>
+                                <Search className="text-[var(--text-muted)]" />
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <DialogClose asChild>
+                            <Button
+                                variant={"outline"}
+                                className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--surface-btn-hover)] hover:border-[var(--border-default)]"
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
                     </div>
-                </div>
 
-                {/* Results Area */}
-                <div className="mt-4 min-h-56 max-h-96 overflow-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
-                    {isLoading && (
-                        <div className="flex items-center justify-center gap-3 text-[var(--text-muted)] py-8">
-                            <RotateCw className="animate-spin w-5 h-5" />
-                            <span className="font-medium text-sm">Searching…</span>
-                        </div>
-                    )}
-
-                    {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
-                        <div className="flex items-center justify-center py-8 text-center">
-                            <div>
-                                <Search className="w-8 h-8 text-[var(--text-disabled)] mx-auto mb-3" />
-                                <p className="text-[var(--text-primary)] text-sm font-medium">Start searching</p>
-                                <p className="text-[var(--text-muted)] text-xs mt-2">Type at least 2 characters to find tokens</p>
+                    <div className="grid grid-cols-[auto_1fr] items-start gap-y-1 gap-x-2">
+                        <div className="text-xs text-[var(--text-muted)] font-medium pt-2">Sort by:</div>
+                        <div className="flex items-center justify-end flex-wrap gap-1">
+                            <div className="flex items-center flex-wrap gap-1 justify-end">
+                                {currentSorts.map((item) => (
+                                    <div key={item.id} onClick={() => handleSortClick(item.id)}>
+                                        <SortButton label={item.label} type={sortBy === item.id ? sortOrder : "none"} />
+                                    </div>
+                                ))}
                             </div>
+                            <FilterButton
+                                filterOptions={{ filterType: activeTab, sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
+                                onApply={handleFilterApply}
+                                onReset={() => {
+                                    setFilterFormData(null);
+                                    if (searchQuery.trim().length >= 2) performSearch();
+                                    else setResults({ tokens: [], pools: [], total: 0 });
+                                }}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
-                        <div className="flex items-center justify-center py-8 text-center">
-                            <div>
-                                <p className="text-[var(--text-primary)] text-sm font-medium">No results</p>
-                                <p className="text-[var(--text-muted)] text-xs mt-2">Try different keywords</p>
+                    {/* Results Area */}
+                    <div className="flex-1 min-h-0 min-h-56 overflow-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
+                        {isLoading && (
+                            <div className="flex items-center justify-center gap-3 text-[var(--text-muted)] py-8">
+                                <RotateCw className="animate-spin w-5 h-5" />
+                                <span className="font-medium text-sm">Searching…</span>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {!isLoading && results.total > 0 && (
-                        <>
-                            {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onCloseAction} />}
-                            {activeTab === "pool" && <PoolResults pools={results.pools} />}
-                        </>
-                    )}
+                        {!isLoading && searchQuery.trim().length < 2 && !filterFormData && (
+                            <div className="flex items-center justify-center py-8 text-center">
+                                <div>
+                                    <Search className="w-8 h-8 text-[var(--text-disabled)] mx-auto mb-3" />
+                                    <p className="text-[var(--text-primary)] text-sm font-medium">Start searching</p>
+                                    <p className="text-[var(--text-muted)] text-xs mt-2">Type at least 2 characters to find tokens</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoading && (searchQuery.trim().length >= 2 || filterFormData) && results.total === 0 && (
+                            <div className="flex items-center justify-center py-8 text-center">
+                                <div>
+                                    <p className="text-[var(--text-primary)] text-sm font-medium">No results</p>
+                                    <p className="text-[var(--text-muted)] text-xs mt-2">Try different keywords</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoading && results.total > 0 && (
+                            <>
+                                {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onCloseAction} />}
+                                {activeTab === "pool" && <PoolResults pools={results.pools} />}
+                            </>
+                        )}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
@@ -281,28 +285,28 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                     </div>
 
                     {/* Data Metrics - Right Side */}
-                    <div className="flex gap-8 flex-shrink-0">
-                        <div className="text-right">
+                    <div className="flex gap-3 sm:gap-6 flex-shrink-0 overflow-x-auto">
+                        <div className="text-right shrink-0">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">MCAP</div>
                             <div className="text-sm font-medium text-[var(--text-primary)]">{currencyFormatter.formatCompact(Number(t.market_cap))}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">TXN 24h</div>
                             <div className="text-sm font-medium text-[var(--text-primary)]">{compactFormatter.format(Number(t.txns_24h.total))}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 hidden md:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Holders</div>
                             <div className="text-sm font-medium text-[var(--text-primary)]">{compactFormatter.format(Number(t.holders.count))}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Volume</div>
                             <div className="text-sm font-medium text-[var(--text-primary)]">{currencyFormatter.formatCompact(Number(t.volume_24h))}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 hidden md:block">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Age</div>
                             <div className="text-sm font-medium text-[var(--text-primary)]">{formatAge(Number(t.age_seconds))}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                             <div className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Price</div>
                             <div className="text-sm font-medium">
                                 <span className="text-[var(--text-primary)]">{formatPrice(Number(t.price))}</span>

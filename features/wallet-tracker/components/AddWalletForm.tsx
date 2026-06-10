@@ -29,7 +29,7 @@ export const AddWalletForm: React.FC = () => {
                     setLabel("");
                     setIsOpen(false);
                 },
-                onError: (err: any) => {
+                onError: (err: Error & { response?: { status?: number; data?: { message?: string } } }) => {
                     const message = err?.response?.data?.message || err?.message || "Failed to add wallet";
                     if (err?.response?.status === 409) {
                         toast.error("This wallet is already in your watchlist");

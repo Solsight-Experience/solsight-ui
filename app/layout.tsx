@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import QueryProvider from "@/providers/query-provider";
 import Header from "@/components/layout/Header";
+import SmallScreenModal from "@/components/layout/SmallScreenModal";
 import ChatWidget from "@/features/ai-chat/components/ChatWidget";
 import { usePathname } from "next/navigation";
 import MockProvider from "@/providers/mock-provider";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         {/* Bọc AuthProvider trước Header */}
                         <MockProvider>
                             <AuthProvider>
+                                <SmallScreenModal />
                                 {showHeader && <Header />}
                                 <main>{children}</main>
                                 <ChatGate />

@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTitle, DialogTrigger, DialogContent, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogTitle, DialogTrigger, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import FilterDialog, { FilterFormData, getFilterRequestBody } from "./FilterDialog";
 import { TokenFilterParams, PoolFilterParams } from "../services/filter.service";
 import { TokenFilterResponse, PoolFilterResponse, SortBy, PoolSortBy, SortOrder } from "@/types/filter";
@@ -98,14 +98,20 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog
+            open={isOpen}
+            onOpenChange={(open) => {
+                if (!open && isLoading) return;
+                setIsOpen(open);
+            }}
+        >
             <DialogTrigger asChild>
                 <Button variant="ghost" className="flex items-center px-4" aria-label="Open filters">
                     <Filter fill="var(--color-brand-200)" stroke="none" size="1rem" />
                     <span>Filter</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent aria-describedby="filter-description">
+            <DialogContent aria-describedby="filter-description" showCloseButton={!isLoading}>
                 <DialogTitle className="text-brand-200">Filter</DialogTitle>
                 <p id="filter-description" className="sr-only">
                     Apply filters to {filterType} data
@@ -124,11 +130,9 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Reset
                             </Button>
-                            <DialogClose asChild>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading ? "Applying..." : "Apply"}
-                                </Button>
-                            </DialogClose>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Applying..." : "Apply"}
+                            </Button>
                         </div>
                     </DialogFooter>
                 </form>
