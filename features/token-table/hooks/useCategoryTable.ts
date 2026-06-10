@@ -87,14 +87,14 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         if (!rawArray || rawArray.length === 0) return [];
 
         // Map API response to CategoryOverview format
-        const mappedCategories = rawArray.map((cat: CategoryApiItem) => ({
+        const mappedCategories: CategoryOverview[] = rawArray.map((cat: CategoryApiItem) => ({
             id: cat.id || "",
             name: cat.name || "",
             slug: cat.id || cat.slug || "",
             content: cat.content || cat.description || "",
             market_cap: cat.market_cap || 0,
-            market_cap_change_24h: cat.market_cap_change_24h || 0,
-            volume_24h: cat.volume_24h || cat.volume || 0,
+            market_cap_change_24h: cat.market_cap_change_24h ?? 0,
+            volume_24h: cat.volume_24h ?? cat.volume ?? 0,
             top_3_coins_id: cat.top_3_coins_id || [],
             top_3_coins: cat.top_3_coins || cat.top_tokens || [], // Contains image URLs
             updated_at: cat.updated_at || ""

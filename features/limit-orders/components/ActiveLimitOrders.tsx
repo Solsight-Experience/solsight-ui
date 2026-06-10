@@ -63,7 +63,7 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
             const txBuffer = Buffer.from(cancelResponse.transaction, "base64");
             const { VersionedTransaction } = await import("@solana/web3.js");
             const transaction = VersionedTransaction.deserialize(txBuffer);
-            const signedTx = await provider.signTransaction(transaction);
+            const signedTx = (await provider.signTransaction(transaction)) as any;
             const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Execute cancel

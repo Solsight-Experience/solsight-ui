@@ -6,6 +6,7 @@ import { WalletService } from "../services/wallet.service";
 import { phantomWallet } from "@/lib/wallet";
 import { WalletResponseDto } from "@/types/dto";
 import { getErrorMessage } from "@/lib/error-utils";
+import { toast } from "sonner";
 
 export function useWallet() {
     const [isConnecting, setIsConnecting] = useState(false);

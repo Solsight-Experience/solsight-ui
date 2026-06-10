@@ -23,7 +23,6 @@ export function useNotifications() {
             });
         },
         // store actions are stable (zustand), safe to omit from deps
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
 
@@ -61,15 +60,14 @@ export function useNotifications() {
 
         // Re-subscribe after reconnect so client rejoins the user room
         const handleReconnect = () => socket.subscribe(userId);
-        socket.getSocket().on('connect', handleReconnect);
+        socket.getSocket().on("connect", handleReconnect);
         subscribedUserIdRef.current = userId;
 
         return () => {
-            socket.getSocket().off('connect', handleReconnect);
+            socket.getSocket().off("connect", handleReconnect);
             socket.unsubscribe(userId);
             subscribedUserIdRef.current = null;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
 
     return {

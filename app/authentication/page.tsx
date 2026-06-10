@@ -1,7 +1,8 @@
 "use client";
 
-import SignInForm from "@/components/auth/sign-in-form";
-import SignUpForm from "@/components/auth/sign-up-form";
+import nextDynamic from "next/dynamic";
+const SignInForm = nextDynamic(() => import("@/components/auth/sign-in-form"), { ssr: false });
+const SignUpForm = nextDynamic(() => import("@/components/auth/sign-up-form"), { ssr: false });
 import AuthBackground from "@/components/auth/auth-background";
 import { useState } from "react";
 import Link from "next/link";
@@ -219,3 +220,7 @@ export default function Authentication() {
         </div>
     );
 }
+
+// Avoid SSR prerender issues caused by client-only hooks used inside child components
+// Force dynamic rendering for this page so next does not attempt prerendering
+export const dynamic = "force-dynamic";

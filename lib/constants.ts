@@ -165,7 +165,8 @@ export const PORTFOLIO_WATCH_ENDPOINTS = {
 export const SWAP_ENDPOINTS = {
     QUOTE: "/api/swap/quote",
     TRANSACTION: "/api/swap/transaction",
-    EXECUTE: "/api/swap/execute"
+    EXECUTE: "/api/swap/execute",
+    INFO: "/api/swap/info"
 } as const;
 
 // Chat API Endpoints
@@ -183,3 +184,11 @@ export const CHAT_SOCKET_EVENTS = {
     ERROR: "chat:error",
     TOOL_PROGRESS: "chat:tool_progress"
 } as const;
+
+export const CLUSTERS = ["mainnet", "devnet"] as const;
+export type Cluster = (typeof CLUSTERS)[number];
+
+export const CLUSTER_RPC_URLS: Record<(typeof CLUSTERS)[number], string> = {
+    mainnet: "https://api.mainnet-beta.solana.com",
+    devnet: "https://api.devnet.solana.com"
+};

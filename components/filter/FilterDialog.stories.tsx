@@ -24,7 +24,7 @@ const meta: Meta<typeof FilterDialog> = {
                     >
                         Open Filter Dialog
                     </button>
-                    <Story args={{ ...context.args, isOpen: open, onClose: setOpen }} />
+                    <Story args={{ ...context.args, isOpen: open, onCloseAction: setOpen }} />
                 </div>
             );
         }

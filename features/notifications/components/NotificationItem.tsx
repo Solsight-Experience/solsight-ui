@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
-import { Notification, NotificationEventType } from "../types/notification.types";
+import { NotificationEventType } from "../types/notification.types";
 
 function relativeTime(dateStr: string): string {
     const normalized = /[Zz]|[+-]\d{2}:\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
@@ -40,7 +40,6 @@ function TokenLogo({ mint, logo, symbol, size = "size-7" }: { mint?: string; log
     );
 }
 
-
 const BADGE_CONFIG: Partial<Record<NotificationEventType, { label: string; color: string }>> = {
     [NotificationEventType.SWAP_EXECUTED]: { label: "Swap", color: "text-violet-400 bg-violet-500/10 border-violet-500/20" },
     [NotificationEventType.SWAP_FAILED]: { label: "Failed", color: "text-red-400 bg-red-500/10 border-red-500/20" },
@@ -56,9 +55,8 @@ function TypeBadge({ type }: { type: NotificationEventType }) {
     return <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-semibold shrink-0 ${cfg.color}`}>{cfg.label}</span>;
 }
 
-
-function LogoArea({ notification }: { notification: Notification }) {
-    const meta = notification.metadata ?? {};
+function LogoArea({ notification }: { notification: any }) {
+    const meta = (notification.metadata ?? {}) as Record<string, any>;
 
     if (notification.type === NotificationEventType.SWAP_EXECUTED) {
         return (
@@ -85,7 +83,6 @@ function LogoArea({ notification }: { notification: Notification }) {
     );
 }
 
-
 function CopyBtn({ value, display }: { value: string; display: string }) {
     const [copied, setCopied] = useState(false);
     function handleCopy(e: React.MouseEvent) {
@@ -107,9 +104,9 @@ function CopyBtn({ value, display }: { value: string; display: string }) {
     );
 }
 
-
 interface NotificationItemProps {
-    notification: Notification;
+    // notifications may be received from sockets with loose shapes; accept any
+    notification: any;
     onClick: () => void;
     onDelete?: (id: string) => void;
     isLast?: boolean;
@@ -134,7 +131,10 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
             {/* Delete button — right edge, vertically centered */}
             {onDelete && (
                 <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(notification.id);
+                    }}
                     title="Delete notification"
                     className="absolute right-3 top-1/2 -translate-y-1/2
                                opacity-0 group-hover:opacity-100
@@ -162,15 +162,17 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
                 </div>
 
                 {/* Row 2: message */}
-                <p className="text-[11px] text-white/40 mt-0.5 truncate">{notification.message}</p>
+                <p className="text-[11px] text-white/40 mt-0.5 truncate">{String(notification?.message ?? "")}</p>
 
                 {/* Row 3: wallet + solscan */}
                 {(meta.walletShort || meta.txUrl) && (
                     <div className="flex items-center gap-2 mt-1.5">
-                        {meta.walletAddress && meta.walletShort && <CopyBtn value={meta.walletAddress as string} display={meta.walletShort as string} />}
+                        {meta.walletAddress && meta.walletShort && (
+                            <CopyBtn value={String(meta.walletAddress ?? "")} display={String(meta.walletShort ?? "")} />
+                        )}
                         {meta.txUrl && (
                             <a
-                                href={meta.txUrl as string}
+                                href={String(meta.txUrl ?? "")}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
