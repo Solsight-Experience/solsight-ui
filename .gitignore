@@ -53,3 +53,4 @@ AGENTS.md
 .agent/
 .artifacts/
 .opencode/
+playwright-report/
