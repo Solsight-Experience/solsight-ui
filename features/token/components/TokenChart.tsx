@@ -101,14 +101,14 @@ const Sep = () => <div style={{ width: 1, height: 20, background: "rgba(255,255,
 export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
     const { chartInterval, orderType, limitPrice } = useTokenUIStore();
     const effectiveInterval = isMulti ? "4h" : chartInterval;
-    const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval, isMulti ? 40 : 100);
+    const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
     const isInitRef = useRef(false);
-    const dataRef = useRef<CandlestickData[]>([]);
+    const dataRef = useRef<any[]>([]);
 
     const [type, setType] = useState<ChartType>("candles");
     const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
@@ -291,23 +291,39 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
 
         const addSeriesCompat = (
             legacyMethod: "addCandlestickSeries" | "addLineSeries" | "addAreaSeries" | "addBarSeries" | "addBaselineSeries" | "addHistogramSeries",
-            seriesDef: Parameters<IChartApi["addSeries"]>[0],
             options: Record<string, unknown>
         ): ISeriesApi<SeriesType> => {
-            if (typeof chart.addSeries === "function") {
-                return chart.addSeries(seriesDef, options);
+            // cast chart to any to avoid fragile typings across lightweight-charts versions
+            const anyChart = chart as any;
+            // Try modern unified API first
+            if (typeof anyChart.addSeries === "function") {
+                // many versions accept (typeOrOptions, options) or (options)
+                try {
+                    return anyChart.addSeries(options) as ISeriesApi<SeriesType>;
+                } catch (e) {
+                    // fallback: some typings expect (seriesType, options)
+                    // determine seriesType from legacyMethod
+                    const seriesTypeMap: Record<string, any> = {
+                        addCandlestickSeries: CandlestickSeries,
+                        addLineSeries: LineSeries,
+                        addAreaSeries: AreaSeries,
+                        addBarSeries: BarSeries,
+                        addBaselineSeries: BaselineSeries,
+                        addHistogramSeries: HistogramSeries
+                    };
+                    return anyChart.addSeries(seriesTypeMap[legacyMethod], options) as ISeriesApi<SeriesType>;
+                }
             }
-            const legacyChart = chart as unknown as Record<string, ((opts: Record<string, unknown>) => ISeriesApi<SeriesType>) | undefined>;
-            const legacyMethodFn = legacyChart[legacyMethod];
+            const legacyMethodFn = anyChart[legacyMethod];
             if (typeof legacyMethodFn === "function") {
-                return legacyMethodFn(options);
+                return legacyMethodFn.call(anyChart, options) as ISeriesApi<SeriesType>;
             }
             throw new Error(`Unsupported lightweight-charts API: ${legacyMethod}`);
         };
 
         switch (type) {
             case "candles":
-                seriesRef.current = addSeriesCompat("addCandlestickSeries", CandlestickSeries, {
+                seriesRef.current = addSeriesCompat("addCandlestickSeries", {
                     upColor: "#22c55e",
                     downColor: "#ef4444",
                     borderVisible: false,
@@ -316,39 +332,39 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                 });
                 break;
             case "line":
-                seriesRef.current = addSeriesCompat("addLineSeries", LineSeries, {
+                seriesRef.current = addSeriesCompat("addLineSeries", {
                     color: "#3b82f6"
                 });
                 break;
             case "area":
-                seriesRef.current = addSeriesCompat("addAreaSeries", AreaSeries, {
+                seriesRef.current = addSeriesCompat("addAreaSeries", {
                     lineColor: "#3b82f6",
                     topColor: "rgba(59,130,246,0.4)",
                     bottomColor: "rgba(59,130,246,0.05)"
                 });
                 break;
             case "bars":
-                seriesRef.current = addSeriesCompat("addBarSeries", BarSeries, {
+                seriesRef.current = addSeriesCompat("addBarSeries", {
                     upColor: "#22c55e",
                     downColor: "#ef4444"
                 });
                 break;
             case "baseline":
-                seriesRef.current = addSeriesCompat("addBaselineSeries", BaselineSeries, {
+                seriesRef.current = addSeriesCompat("addBaselineSeries", {
                     baseValue: { type: "price", price: 50 },
                     topLineColor: "#22c55e",
                     bottomLineColor: "#ef4444"
                 });
                 break;
             case "histogram":
-                seriesRef.current = addSeriesCompat("addHistogramSeries", HistogramSeries, {
+                seriesRef.current = addSeriesCompat("addHistogramSeries", {
                     priceFormat: { type: "volume" }
                 });
                 break;
         }
         if (dataRef.current.length) {
             const d = dataRef.current;
-            seriesRef.current.setData(
+            (seriesRef.current as any).setData(
                 type === "candles"
                     ? d
                     : type === "line"
@@ -375,7 +391,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                 time: typeof p.time === "string" ? Math.floor(new Date(p.time).getTime() / 1000) : p.time
             }));
         const d = dataRef.current;
-        seriesRef.current.setData(
+        (seriesRef.current as any).setData(
             type === "candles"
                 ? d
                 : type === "line"
@@ -402,7 +418,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             dataRef.current.push(newPoint);
         }
         const pt = newPoint;
-        seriesRef.current.update(
+        (seriesRef.current as any).update(
             type === "candles"
                 ? pt
                 : type === "line"
@@ -428,22 +444,19 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             if (param.point && param.seriesData && seriesRef.current) {
                 const seriesData = param.seriesData.get(seriesRef.current);
                 if (seriesData) {
-                    // Extract price from series data
-                    const price =
-                        typeof seriesData === "number"
-                            ? seriesData
-                            : typeof seriesData === "object" && seriesData !== null
-                              ? (() => {
-                                    const maybePriceData = seriesData as { close?: unknown; value?: unknown };
-                                    if (typeof maybePriceData.close === "number") return maybePriceData.close;
-                                    if (typeof maybePriceData.value === "number") return maybePriceData.value;
-                                    return null;
-                                })()
-                              : null;
+                    // Extract price from series data in a type-safe way
+                    const price = (() => {
+                        if (typeof seriesData === "number") return seriesData;
+                        if (seriesData && typeof seriesData === "object") {
+                            const d: any = seriesData;
+                            if (typeof d.close === "number") return d.close;
+                            if (typeof d.value === "number") return d.value;
+                            if (typeof d.price === "number") return d.price;
+                        }
+                        return null;
+                    })();
 
-                    if (typeof price === "number") {
-                        setRulerPrice(price);
-                    }
+                    if (typeof price === "number") setRulerPrice(price);
                 }
             }
         };

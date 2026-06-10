@@ -16,7 +16,7 @@ export function useTokenDetailStream(address: string) {
             interval: "5s"
         };
 
-        socket.onDomainEvent(dto, (data: TokenDetail) => {
+        socket.onDomainEvent<TokenDetail>(dto, (data) => {
             console.log("data", data);
             setDetail(data);
         });
@@ -42,7 +42,7 @@ export function useTradeStream(
             interval: "5s"
         };
 
-        socket.onDomainEvent(dto, (data: TradeStreamResponse) => {
+        socket.onDomainEvent<TradeStreamResponse>(dto, (data) => {
             setTrades(data.trades);
         });
 
@@ -113,7 +113,7 @@ export function useChartDataStream(address: string, interval: ChartInterval) {
             interval: chartInterval
         };
 
-        socket.onDomainEvent(priceDto, ({ priceOHLC, time }) => {
+        socket.onDomainEvent<{ priceOHLC: CandlestickData; time: UTCTimestamp }>(priceDto, ({ priceOHLC, time }) => {
             setChart((prev) => ({
                 open: priceOHLC.open,
                 high: priceOHLC.high,

@@ -60,7 +60,9 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
                 </button>
             );
         },
-        cell: ({ row }) => <span className="block text-right font-medium text-purple-400">{currencyFormatter.formatCompact(row.original.volume_24h)}</span>,
+        cell: ({ row }) => (
+            <span className="block text-right font-medium text-purple-400">{currencyFormatter.formatCompact(row.original.volume_24h ?? 0)}</span>
+        ),
         size: 120
     },
     {

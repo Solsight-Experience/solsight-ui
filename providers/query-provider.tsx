@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import useClusterStore from "@/stores/cluster.store";
 
 export default function QueryProvider({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -42,6 +43,18 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             key: "solsight-query-cache"
         })
     );
+
+    // Invalidate queries when cluster changes to avoid mixing caches
+    useState(() => {
+        let prev = useClusterStore.getState().cluster;
+        const unsub = useClusterStore.subscribe((state) => {
+            if (state.cluster !== prev) {
+                prev = state.cluster;
+                queryClient.invalidateQueries();
+            }
+        });
+        return () => unsub?.();
+    });
 
     return (
         <PersistQueryClientProvider

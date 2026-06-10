@@ -71,9 +71,8 @@ export function formatCompact(value: number): string {
  * Format a number as currency with symbol and compact notation
  * @deprecated Use CompactCurrencyFormatter instance instead
  */
-export function formatCurrency(value: number, symbol: string = "$"): string {
-    const formatter = new CurrencyFormatter();
-    return formatter.formatCompact(value);
+export function formatCurrency(value: number): string {
+    return currencyFormatter.formatCompact(value);
 }
 
 /**

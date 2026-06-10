@@ -223,7 +223,7 @@ export const PortfolioDashboard: React.FC = () => {
 
                                 return (
                                     <circle
-                                        key={item.symbol}
+                                        key={`${item.symbol}-${index}`}
                                         cx="50"
                                         cy="50"
                                         r="45"
@@ -274,7 +274,7 @@ export const PortfolioDashboard: React.FC = () => {
                         <div className="grid grid-cols-2 gap-2">
                             {allocation.slice(0, 4).map((item, index) => (
                                 <div
-                                    key={item.symbol}
+                                    key={`${item.symbol}-${index}`}
                                     className="flex items-center justify-between px-3 py-2 rounded-lg
                                                bg-[var(--surface-panel)] border border-[var(--border-faint)]
                                                hover:border-[var(--border-subtle)] transition-colors"

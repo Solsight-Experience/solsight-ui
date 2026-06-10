@@ -28,8 +28,19 @@ export interface ExecuteSwapRequest {
     quoteResponse: Record<string, unknown>;
     userPublicKey: string;
     signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    gaslessFeeToken?: string;
 }
 
 export interface ExecuteSwapResult {
     signature: string;
+}
+
+export interface SwapInfoResponse {
+    autoPriorityFeeLamports: number;
+    autoTipLamports: number;
+    autoSlippageBps: number | null;
+    maxAutoFeeLamports: number;
+    gaslessEnabled: boolean;
+    gaslessSupportedTokens: string[];
+    payerPubkey: string | null;
 }

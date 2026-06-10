@@ -54,8 +54,7 @@ interface PositionsApiResponse {
         roi_percent?: number;
         pnl_percent?: number;
         percent_of_portfolio?: number;
-        token_decimals?: number;
-        decimals?: number;
+        decimals: number;
     }>;
     summary?: {
         total_value_usd: number;
@@ -93,14 +92,20 @@ export const portfolioApi = {
         });
 
         // Map backend response to frontend types (percentage -> percent)
-        const mappedResponse: PortfolioOverview = {
-            ...response,
-            allocation:
-                response.allocation?.map((item) => ({
-                    symbol: item.symbol,
-                    value_usd: item.value_usd,
-                    percent: item.percentage ?? item.percent ?? 0 // Support both field names
-                })) || [],
+        // Build a properly-typed PortfolioOverview from the backend response
+        const result: PortfolioOverview = {
+            total_balance_usd: response.total_balance_usd,
+            total_balance_sol: (response as any).total_balance_sol ?? 0,
+            balance_change_24h: (response as any).balance_change_24h ?? 0,
+            // backend may not return change_24h/roi_percent in pnl; ensure shape matches PnlData
+            pnl: {
+                total: response.pnl?.total ?? 0,
+                realized: response.pnl?.realized ?? 0,
+                unrealized: response.pnl?.unrealized ?? 0,
+                change_24h: (response.pnl as any)?.change_24h ?? 0,
+                roi_percent: (response.pnl as any)?.roi_percent ?? 0
+            },
+            transactions: (response as any).transactions ?? { total: 0, buys: 0, sells: 0, transfers: 0, last_24h: 0 },
             top_tokens:
                 response.top_tokens?.map((item) => ({
                     address: item.address || item.mint || "",
@@ -112,10 +117,16 @@ export const portfolioApi = {
                     percent_of_portfolio: item.percent_of_portfolio || item.percentage || 0,
                     pnl: item.pnl || 0,
                     price_change_24h: item.price_change_24h || item.change_24h || 0
+                })) || [],
+            allocation:
+                response.allocation?.map((item) => ({
+                    symbol: item.symbol,
+                    value_usd: item.value_usd,
+                    percent: item.percentage ?? item.percent ?? 0 // Support both field names
                 })) || []
         };
 
-        return mappedResponse;
+        return result;
     },
 
     getPnlChart: async (params: {
@@ -158,7 +169,7 @@ export const portfolioApi = {
                         symbol: item.symbol || "",
                         name: item.name || "",
                         logo_uri: item.logo || item.logo_uri || "",
-                        decimals: typeof item.decimals === "number" ? item.decimals : item.token_decimals
+                        decimals: item.decimals
                     },
                     balance: item.amount || item.balance || 0,
                     avg_buy_price: item.avg_buy_price || 0,

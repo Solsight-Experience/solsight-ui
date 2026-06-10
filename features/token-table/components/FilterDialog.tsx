@@ -305,13 +305,14 @@ type FilterFieldProps = {
     placeholder?: string;
     minValue: number;
     maxValue: number;
-    onMinChange: (value: string) => void;
-    onMaxChange: (value: string) => void;
+    // numeric inputs can be numbers or formatted strings depending on formatter
+    onMinChange: (value: number | string) => void;
+    onMaxChange: (value: number | string) => void;
     inputFormatter: INumberFormatter;
 };
 
 function FilterField({ label, placeholder, minValue, maxValue, onMinChange, onMaxChange, inputFormatter }: FilterFieldProps) {
-    const input = (value: number, onChange: (value: string) => void) => (
+    const input = (value: number, onChange: (value: number | string) => void) => (
         <NumbericInput
             value={value}
             onChange={(val) => {

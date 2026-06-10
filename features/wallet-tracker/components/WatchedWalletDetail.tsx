@@ -626,8 +626,7 @@ export const WatchedWalletDetail: React.FC<{ walletAddress: string }> = ({ walle
             </div>
 
             {/* Tabs */}
-            {/* // eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
                 <TabsList>
                     <TabsTrigger value="positions">
                         <Coins className="size-3.5" />
