@@ -14,12 +14,15 @@ const TAB_OPTIONS: Array<{ value: TokenTableTabOption; label: string; icon: Reac
 interface TokenTabsProps {
     onTabClick: (tab: TokenTableTabOption) => void;
     activeTab?: TokenTableTabOption;
+    showFavourites?: boolean;
 }
 
-export const TokenTabs = memo<TokenTabsProps>(function TokenTabs({ onTabClick, activeTab = "TRENDING" }) {
+export const TokenTabs = memo<TokenTabsProps>(function TokenTabs({ onTabClick, activeTab = "TRENDING", showFavourites = true }) {
+    const visibleTabs = showFavourites ? TAB_OPTIONS : TAB_OPTIONS.filter((tab) => tab.value !== "FAVOURITES");
+
     return (
         <div className="flex items-center gap-1" role="tablist" aria-label="Token categories">
-            {TAB_OPTIONS.map((tab) => (
+            {visibleTabs.map((tab) => (
                 <TokenTab
                     key={tab.value}
                     title={tab.label}

@@ -1,10 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender } from "@tanstack/react-table";
 import { Clock, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
+import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
 import { FilterButton } from "./FilterButton";
@@ -16,7 +20,6 @@ import { EmptyState } from "./EmptyState";
 import { CategoryTable } from "./CategoryTable";
 import { CategoryDetailModal } from "./CategoryDetailModal";
 import { useTokenTable } from "../hooks/useTokenTable";
-import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
 import type { TokenTableData } from "../config/types";
 import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
 
@@ -27,6 +30,7 @@ import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
  */
 export default function TokenTable() {
     const router = useRouter();
+    const { isAuthenticated } = useAuth();
     const [quickBuyToken, setQuickBuyToken] = useState<TokenTableData | null>(null);
     const [quickBuyModalOpen, setQuickBuyModalOpen] = useState(false);
     const handleQuickBuy = useCallback((token: TokenTableData) => {
@@ -244,7 +248,7 @@ export default function TokenTable() {
                         className="flex flex-col gap-3 px-4 py-3 border-b border-white/[0.05] bg-white/[0.015]
                                     sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} />
+                        <TokenTabs activeTab={filters.activeTab} onTabClick={setActiveTab} showFavourites={isAuthenticated} />
                         {renderRightPanel()}
                     </div>
 
