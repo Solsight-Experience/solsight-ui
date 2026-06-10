@@ -5,6 +5,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from
 import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ChatBubble } from "./ChatBubble";
 import { ChatMessageDto } from "@/types/dto";
@@ -215,59 +216,60 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div className="flex flex-col gap-4 px-3 py-4 sm:px-4" role="log" aria-live="polite">
                     {messages.length === 0 && <WelcomeScreen onSelect={sendMessage} />}
 
-                {isHistoryLoading && messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
-                        <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                    {isHistoryLoading && messages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
+                            <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
 
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                        </div>
+                    )}
+
+                    {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
+
+                    <div
+                        style={{
+                            height: `${virtualizer.getTotalSize()}px`,
+                            width: "100%",
+                            position: "relative"
+                        }}
+                    >
+                        {virtualItems.map((virtualItem) => {
+                            const msg = messages[virtualItem.index];
+
+                            return (
+                                <div
+                                    key={virtualItem.key}
+                                    data-index={virtualItem.index}
+                                    ref={virtualizer.measureElement}
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        transform: `translateY(${virtualItem.start}px)`
+                                    }}
+                                    className="py-2"
+                                >
+                                    <ChatBubble message={msg} />
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
 
-                {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
+                    {isTyping && (
+                        <div className="mt-4">
+                            <TypingIndicator label={toolProgressLabel ?? undefined} />
+                        </div>
+                    )}
 
-                <div
-                    style={{
-                        height: `${virtualizer.getTotalSize()}px`,
-                        width: "100%",
-                        position: "relative"
-                    }}
-                >
-                    {virtualItems.map((virtualItem) => {
-                        const msg = messages[virtualItem.index];
-
-                        return (
-                            <div
-                                key={virtualItem.key}
-                                data-index={virtualItem.index}
-                                ref={virtualizer.measureElement}
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    transform: `translateY(${virtualItem.start}px)`
-                                }}
-                                className="py-2"
-                            >
-                                <ChatBubble message={msg} />
-                            </div>
-                        );
-                    })}
+                    {error && (
+                        <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span className="flex-1">{error}</span>
+                        </div>
+                    )}
                 </div>
-
-                {isTyping && (
-                    <div className="mt-4">
-                        <TypingIndicator label={toolProgressLabel ?? undefined} />
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span className="flex-1">{error}</span>
-                    </div>
-                )}
-            </div>
+            </ScrollArea>
 
             {showScrollButton && (
                 <Button
