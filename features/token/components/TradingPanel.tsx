@@ -8,7 +8,7 @@ import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
-import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, AlertTriangle } from "lucide-react";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
@@ -18,12 +18,12 @@ import {
     formatDisplay,
     formatFromBaseUnits,
     formatInputValue,
-    getSwapApiConfig,
     isValidAmount,
     parseInputNumber,
     sanitizeInput,
     toBaseUnits
 } from "@/features/swap";
+import { useSolPrice } from "@/features/swap/hooks/useSolPrice";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -58,7 +58,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSlippageBps,
         limitPrice,
         setLimitPrice,
-        resetTradingPanel
+        resetTradingPanel,
+        pendingTradeAction,
+        setPendingTradeAction,
+        pendingSlippageAction,
+        setPendingSlippageAction
     } = useTokenUIStore();
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
@@ -67,7 +71,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const [copiedMint, setCopiedMint] = useState<string | null>(null);
     const [selectedBuyPayMint, setSelectedBuyPayMint] = useState<string>(COMMON_TOKENS.SOL.mint);
     const [selectedSellReceiveMint, setSelectedSellReceiveMint] = useState<string>(COMMON_TOKENS.SOL.mint);
-    const [buyTokenDecimalsByMint, setBuyTokenDecimalsByMint] = useState<Record<string, number>>({});
     const [swapState, setSwapState] = useState<{
         loading: boolean;
         error: string | null;
@@ -97,21 +100,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         rawQuote: null
     });
 
-    const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
-
-    // Fetch SOL price in USD
-    useEffect(() => {
-        fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd")
-            .then((r) => r.json())
-            .then((data) => {
-                if (data?.solana?.usd) {
-                    setSolPriceUsd(data.solana.usd);
-                }
-            })
-            .catch((err) => console.error("Failed to fetch SOL price:", err));
-    }, []);
-
-    const swapConfig = useMemo(() => getSwapApiConfig(), []);
+    const { data: solPriceData } = useSolPrice();
+    const solPriceUsd = solPriceData?.price_usd ?? null;
     const internalUpdateRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const previousBuyPayMintRef = useRef(selectedBuyPayMint);
@@ -138,20 +128,38 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: false, error: null, signature: null });
     }, [token.address, resetTradingPanel, isViewingSolToken]);
 
+    const resolvedTokenDecimals = token.decimals ?? 9;
+    useEffect(() => {
+        if (!pendingTradeAction) return;
+
+        if (pendingTradeAction.mint === token.address) {
+            setTradeMode(pendingTradeAction.mode);
+            setPayAmount(pendingTradeAction.amount);
+            if (pendingTradeAction.slippageBps !== undefined) {
+                setSlippageBps(pendingTradeAction.slippageBps);
+            }
+            setLastEdited("pay");
+            setPendingTradeAction(null);
+        }
+    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+
+    useEffect(() => {
+        if (!pendingSlippageAction) return;
+
+        if (!pendingSlippageAction.warnOnly) {
+            setSlippageBps(pendingSlippageAction.slippageBps);
+        }
+
+        if (pendingSlippageAction.isHigh) {
+            const pct = (pendingSlippageAction.slippageBps / 100).toFixed(2);
+            toast.warning(`High slippage: ${pendingSlippageAction.slippageBps} bps (${pct}%). Trades may execute at a worse price.`);
+        }
+
+        setPendingSlippageAction(null);
+    }, [pendingSlippageAction, setSlippageBps, setPendingSlippageAction]);
+
     const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
-    useEffect(() => {
-        if (token.decimals != null) return;
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === token.address) : null;
-                if (found && typeof found.decimals === "number") setFetchedDecimals(found.decimals);
-            })
-            .catch(() => {});
-    }, [token.address, token.decimals]);
-
-    const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
     const selectedWalletAddress = useMemo(() => {
         const wallets = walletsData?.wallets ?? [];
         if (!wallets.length) return publicKey ?? "";
@@ -306,52 +314,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         }));
     }, [tradeMode, selectedSellReceiveMint, setPayAmount, setReceiveAmount]);
 
-    useEffect(() => {
-        if (tradeMode !== "buy") return;
-        if (!selectedBuyPayToken) return;
-
-        const selectedMint = selectedBuyPayToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedBuyPayToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedBuyPayToken, buyTokenDecimalsByMint]);
-
-    useEffect(() => {
-        if (tradeMode !== "sell") return;
-        if (!selectedSellReceiveToken) return;
-
-        const selectedMint = selectedSellReceiveToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedSellReceiveToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedSellReceiveToken, buyTokenDecimalsByMint]);
-
     const payToken = tradeMode === "buy" ? (selectedBuyPayToken?.symbol ?? "") : token.symbol;
     const receiveToken = tradeMode === "buy" ? token.symbol : (selectedSellReceiveToken?.symbol ?? "");
     const payTokenLogo = tradeMode === "buy" ? (selectedBuyPayToken?.logoUri ?? "") : token.logo_uri;
@@ -361,23 +323,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
     const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
     const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
-    const payDecimals =
-        tradeMode === "buy"
-            ? (selectedBuyPayToken?.decimals ??
-              (selectedBuyPayToken ? buyTokenDecimalsByMint[selectedBuyPayToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals)
-            : resolvedTokenDecimals;
-    const receiveDecimals =
-        tradeMode === "buy"
-            ? resolvedTokenDecimals
-            : (selectedSellReceiveToken?.decimals ??
-              (selectedSellReceiveToken ? buyTokenDecimalsByMint[selectedSellReceiveToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals);
+    const payDecimals = tradeMode === "buy" ? (selectedBuyPayToken?.decimals ?? COMMON_TOKENS.SOL.decimals) : resolvedTokenDecimals;
+    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : (selectedSellReceiveToken?.decimals ?? COMMON_TOKENS.SOL.decimals);
 
     const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
     const getOptionDecimals = (option: BuyPayTokenOption): number =>
-        option.decimals ?? buyTokenDecimalsByMint[option.mint] ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+        option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -539,7 +491,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     },
                     {
                         signal: controller.signal,
-                        config: swapConfig,
                         payTokenSymbol: payToken,
                         receiveTokenSymbol: receiveToken
                     }
@@ -596,7 +547,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         payMint,
         receiveMint,
         slippageBps,
-        swapConfig,
         setPayAmount,
         setReceiveAmount,
         payToken,
@@ -641,14 +591,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: true, error: null, signature: null });
 
         try {
-            const { signature } = await executeJupiterSwap(
-                {
-                    quoteResponse: quoteState.rawQuote,
-                    userPublicKey: publicKey,
-                    signTransaction: (tx) => provider.signTransaction(tx)
-                },
-                { config: swapConfig }
-            );
+            const { signature } = await executeJupiterSwap({
+                quoteResponse: quoteState.rawQuote,
+                userPublicKey: publicKey,
+                signTransaction: (tx) => provider.signTransaction(tx)
+            });
 
             setSwapState({ loading: false, error: null, signature });
             await refreshBalancesAfterSwap();
@@ -822,7 +769,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
     return (
         <div
-            className={`rounded-xl p-4 bg-gray-900/80 backdrop-blur border-2 transition-all duration-300 ${
+            className={`rounded-xl p-4 bg-[var(--surface-card)] border-2 transition-all duration-300 ${
                 tradeMode === "buy" ? "border-green-500/40 shadow-lg shadow-green-500/10" : "border-red-500/40 shadow-lg shadow-red-500/10"
             }`}
         >
@@ -830,9 +777,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 <Button
                     className={`flex-1 font-semibold transition-all duration-200 ${
                         tradeMode === "buy"
-                            ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30"
-                            : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                            ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/30"
+                            : "bg-[var(--surface-panel)] hover:bg-[var(--surface-panel)] text-[var(--text-secondary)]"
                     }`}
+                    style={tradeMode === "buy" ? { color: "white" } : undefined}
                     variant="ghost"
                     onClick={() => setTradeMode("buy")}
                 >
@@ -841,9 +789,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 <Button
                     className={`flex-1 font-semibold transition-all duration-200 ${
                         tradeMode === "sell"
-                            ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30"
-                            : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                            ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/30"
+                            : "bg-[var(--surface-panel)] hover:bg-[var(--surface-panel)] text-[var(--text-secondary)]"
                     }`}
+                    style={tradeMode === "sell" ? { color: "white" } : undefined}
                     variant="ghost"
                     onClick={() => setTradeMode("sell")}
                 >
@@ -854,13 +803,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             <div className="flex gap-2 mb-4 text-sm">
                 <button
                     onClick={() => setOrderType("market")}
-                    className={`flex-1 py-2 px-3 rounded ${orderType === "market" ? "bg-gray-800 border-b-2 border-purple-500" : "bg-gray-800 text-gray-400"}`}
+                    className={`flex-1 py-2 px-3 rounded ${orderType === "market" ? "bg-[var(--surface-btn)] border-b-2 border-purple-500" : "bg-[var(--surface-btn)] text-[var(--text-muted)]"}`}
                 >
                     Market
                 </button>
                 <button
                     onClick={() => setOrderType("limit")}
-                    className={`flex-1 py-2 px-3 rounded ${orderType === "limit" ? "bg-gray-800 border-b-2 border-purple-500" : "bg-gray-800 text-gray-400"}`}
+                    className={`flex-1 py-2 px-3 rounded ${orderType === "limit" ? "bg-[var(--surface-btn)] border-b-2 border-purple-500" : "bg-[var(--surface-btn)] text-[var(--text-muted)]"}`}
                 >
                     Limit
                 </button>
@@ -868,17 +817,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
 
             <div className="mb-4 rounded-lg space-y-4">
                 <div>
-                    <Label className="text-sm text-gray-400 mb-2 font-semibold">{tradeMode === "buy" ? "From" : "Sell"}</Label>
-                    <div className="rounded-xl p-3 bg-gray-800/70 backdrop-blur border  border-gray-600 shadow-sm">
+                    <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">{tradeMode === "buy" ? "From" : "Sell"}</Label>
+                    <div className="rounded-xl p-3 bg-[var(--surface-btn)] backdrop-blur border  border-[var(--border-subtle)] shadow-sm">
                         <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2 bg-gray-700/70 px-3 py-2 rounded-lg border border-gray-600/60">
+                            <div className="flex items-center gap-2 bg-[var(--surface-panel)] px-3 py-2 rounded-lg border border-[var(--border-subtle)]">
                                 {tradeMode === "buy" ? (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button
                                                 type="button"
                                                 disabled={selectableBuyPayTokenOptions.length === 0}
-                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
+                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-[var(--text-primary)] outline-none"
                                             >
                                                 {selectedBuyPayToken ? (
                                                     <>
@@ -889,12 +838,15 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                         <span className="leading-4">{payToken}</span>
                                                     </>
                                                 ) : (
-                                                    <span className="leading-4 text-gray-400">Select token</span>
+                                                    <span className="leading-4 text-[var(--text-muted)]">Select token</span>
                                                 )}
-                                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                                                <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
                                             </button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="start" className="w-64 border-gray-700 bg-gray-900/95 text-gray-100">
+                                        <DropdownMenuContent
+                                            align="start"
+                                            className="w-64 border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-primary)]"
+                                        >
                                             {selectableBuyPayTokenOptions.map((option) => (
                                                 <DropdownMenuItem
                                                     key={option.mint}
@@ -906,16 +858,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
-                                                        <div className="text-xs text-gray-400">
+                                                        <div className="text-sm font-medium text-[var(--text-primary)]">{option.symbol}</div>
+                                                        <div className="text-xs text-[var(--text-muted)]">
                                                             Balance: {formatDisplay(String(option.balance), getOptionDecimals(option))}
                                                         </div>
                                                     </div>
-                                                    {selectedBuyPayMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
+                                                    {selectedBuyPayMint === option.mint && <Check className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
                                                 </DropdownMenuItem>
                                             ))}
                                             {selectableBuyPayTokenOptions.length === 0 && (
-                                                <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                                                <DropdownMenuItem disabled className="px-2 py-2 text-[var(--text-muted)]">
                                                     No available tokens
                                                 </DropdownMenuItem>
                                             )}
@@ -927,13 +879,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                             <AvatarImage src={payTokenLogo} alt={payToken} />
                                             <AvatarFallback>{payToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
-                                        <span className="font-semibold text-gray-100 tracking-wide">{payToken}</span>
+                                        <span className="font-semibold text-[var(--text-primary)] tracking-wide">{payToken}</span>
                                     </>
                                 )}
                             </div>
                             <div className="text-right">
-                                <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
-                                <div className="text-sm font-semibold text-gray-100">
+                                <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Balance</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)]">
                                     {formatDisplay(payBalance, payDecimals)} {payToken || "--"}
                                 </div>
                             </div>
@@ -946,20 +898,20 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 setPayAmount(sanitizeInput(e.target.value, payDecimals));
                             }}
                             placeholder="0.00"
-                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-base font-bold text-white outline-none placeholder-gray-600 focus:border-gray-500"
+                            className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-btn)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-disabled)] focus:border-[var(--border-default)]"
                             onBlur={() => setPayAmount(formatInputValue(payAmount, payDecimals))}
                         />
-                        <div className="mt-2 text-xs text-gray-400">Enter one field and the other updates from quote.</div>
+                        <div className="mt-2 text-xs text-[var(--text-muted)]">Enter one field and the other updates from quote.</div>
                     </div>
                 </div>
 
                 {orderType === "limit" && (
                     <div className="mb-4">
-                        <Label className="text-sm text-gray-400 mb-2 font-semibold">
+                        <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">
                             Limit Price (USD per {tradeMode === "buy" ? receiveToken : payToken})
                         </Label>
-                        <div className="rounded-lg p-3 bg-gray-800/70 backdrop-blur transition-all border border-yellow-600/50 flex items-center">
-                            <span className="text-gray-400 mr-2">$</span>
+                        <div className="rounded-lg p-3 bg-[var(--surface-btn)] backdrop-blur transition-all border border-yellow-600/50 flex items-center">
+                            <span className="text-[var(--text-muted)] mr-2">$</span>
                             <input
                                 type="text"
                                 value={limitPrice}
@@ -967,14 +919,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                     setLimitPrice(sanitizeInput(e.target.value, 15));
                                 }}
                                 placeholder="0.00"
-                                className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
+                                className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]"
                                 onBlur={() => setLimitPrice(formatInputValue(limitPrice, 15))}
                             />
                             {token.price && (
                                 <button
                                     type="button"
                                     onClick={() => setLimitPrice(token.price.toString())}
-                                    className="ml-2 text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-cyan-400 font-semibold whitespace-nowrap transition-colors"
+                                    className="ml-2 text-xs bg-[var(--surface-panel)] hover:bg-[var(--surface-panel)] px-2 py-1 rounded text-cyan-600 dark:text-cyan-400 font-semibold whitespace-nowrap transition-colors"
                                     title="Use current market price"
                                 >
                                     Current Price
@@ -989,17 +941,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 )}
 
                 <div>
-                    <Label className="text-sm text-gray-400 mb-2 font-semibold">Receive</Label>
-                    <div className="rounded-xl p-3 backdrop-blur shadow-sm bg-gray-800/70 border  border-gray-600">
+                    <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">Receive</Label>
+                    <div className="rounded-xl p-3 backdrop-blur shadow-sm bg-[var(--surface-btn)] border  border-[var(--border-subtle)]">
                         <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2 bg-gray-700/70 px-3 py-2 rounded-lg border border-gray-600/60">
+                            <div className="flex items-center gap-2 bg-[var(--surface-panel)] px-3 py-2 rounded-lg border border-[var(--border-subtle)]">
                                 {tradeMode === "sell" ? (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button
                                                 type="button"
                                                 disabled={selectableSellReceiveTokenOptions.length === 0}
-                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-gray-100 outline-none"
+                                                className="inline-flex items-center gap-2 rounded text-sm font-semibold text-[var(--text-primary)] outline-none"
                                             >
                                                 {selectedSellReceiveToken ? (
                                                     <>
@@ -1010,12 +962,15 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                         <span className="leading-4">{receiveToken}</span>
                                                     </>
                                                 ) : (
-                                                    <span className="leading-4 text-gray-400">Select token</span>
+                                                    <span className="leading-4 text-[var(--text-muted)]">Select token</span>
                                                 )}
-                                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                                                <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
                                             </button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="start" className="w-64 border-gray-700 bg-gray-900/95 text-gray-100">
+                                        <DropdownMenuContent
+                                            align="start"
+                                            className="w-64 border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-primary)]"
+                                        >
                                             {selectableSellReceiveTokenOptions.map((option) => (
                                                 <DropdownMenuItem
                                                     key={option.mint}
@@ -1027,16 +982,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                         <AvatarFallback>{option.symbol.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-sm font-medium text-gray-100">{option.symbol}</div>
-                                                        <div className="text-xs text-gray-400">
+                                                        <div className="text-sm font-medium text-[var(--text-primary)]">{option.symbol}</div>
+                                                        <div className="text-xs text-[var(--text-muted)]">
                                                             Balance: {formatDisplay(String(option.balance), getOptionDecimals(option))}
                                                         </div>
                                                     </div>
-                                                    {selectedSellReceiveMint === option.mint && <Check className="h-4 w-4 text-cyan-400" />}
+                                                    {selectedSellReceiveMint === option.mint && <Check className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
                                                 </DropdownMenuItem>
                                             ))}
                                             {selectableSellReceiveTokenOptions.length === 0 && (
-                                                <DropdownMenuItem disabled className="px-2 py-2 text-gray-500">
+                                                <DropdownMenuItem disabled className="px-2 py-2 text-[var(--text-muted)]">
                                                     No available tokens
                                                 </DropdownMenuItem>
                                             )}
@@ -1048,13 +1003,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                             <AvatarImage src={receiveTokenLogo} alt={receiveToken} />
                                             <AvatarFallback>{receiveToken.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
-                                        <span className="font-semibold text-gray-100 tracking-wide">{receiveToken}</span>
+                                        <span className="font-semibold text-[var(--text-primary)] tracking-wide">{receiveToken}</span>
                                     </>
                                 )}
                             </div>
                             <div className="text-right">
-                                <div className="text-[11px] uppercase tracking-wide text-gray-400">Balance</div>
-                                <div className="text-sm font-semibold text-gray-100">
+                                <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Balance</div>
+                                <div className="text-sm font-semibold text-[var(--text-primary)]">
                                     {formatDisplay(receiveBalance, receiveDecimals)} {receiveToken || "--"}
                                 </div>
                             </div>
@@ -1067,50 +1022,71 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 setReceiveAmount(sanitizeInput(e.target.value, receiveDecimals));
                             }}
                             placeholder="0.00"
-                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-base font-bold text-white outline-none placeholder-gray-600 focus:border-gray-500"
+                            className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-btn)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-disabled)] focus:border-[var(--border-default)]"
                             onBlur={() => setReceiveAmount(formatInputValue(receiveAmount, receiveDecimals))}
                         />
-                        <div className="mt-1 text-xs text-gray-500">Estimated from current route and slippage.</div>
+                        <div className="mt-1 text-xs text-[var(--text-muted)]">Estimated from current route and slippage.</div>
                     </div>
                 </div>
             </div>
 
             <div className="mb-4">
-                <Label className="text-sm text-gray-400 mb-2 font-semibold">Slippage</Label>
-                <div className="border border-gray-700 rounded-lg p-3 bg-gray-800/70 backdrop-blur flex items-center gap-2 hover:bg-gray-800/80 transition-colors">
+                <Label className="text-sm text-[var(--text-muted)] mb-2 font-semibold">Slippage</Label>
+                <div className="border border-[var(--border-subtle)] rounded-lg p-3 bg-[var(--surface-btn)] backdrop-blur flex items-center gap-2 hover:bg-[var(--surface-btn)] transition-colors">
                     <input
                         type="number"
                         min="1"
                         step="1"
                         value={slippageBps}
                         onChange={(e) => setSlippageBps(Number(e.target.value))}
-                        className="w-full bg-transparent text-base font-bold outline-none text-white placeholder-gray-600"
+                        className="w-full bg-transparent text-base font-bold outline-none text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]"
                     />
-                    <span className="text-sm text-gray-400 font-semibold">bps</span>
+                    <span className="text-sm text-[var(--text-muted)] font-semibold">bps</span>
                 </div>
-                <div className="mt-2 text-xs text-gray-500">Example: 50 bps = 0.5%</div>
+                <div className="mt-2 text-xs text-[var(--text-muted)]">Example: 50 bps = 0.5%</div>
             </div>
 
             {/* Quote Summary */}
             {orderType === "market" && (
-                <div className="mb-4 text-sm bg-gray-800/50 rounded-lg p-3 border border-gray-700 space-y-2">
-                    <div className="flex items-center justify-between text-gray-300">
-                        <span className="text-gray-400">Price Impact</span>
-                        <span className="font-semibold">{quoteState.priceImpactPct === null ? "--" : `${(quoteState.priceImpactPct * 100).toFixed(2)}%`}</span>
+                <div className="mb-4 text-sm bg-[var(--surface-btn)] rounded-lg p-3 border border-[var(--border-subtle)] space-y-2">
+                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
+                        <span className="text-[var(--text-muted)]">Price Impact</span>
+                        {quoteState.priceImpactPct === null ? (
+                            <span className="font-semibold">--</span>
+                        ) : (
+                            (() => {
+                                const pct = quoteState.priceImpactPct * 100;
+                                const severity = pct > 15 ? "critical" : pct > 10 ? "danger" : pct > 3 ? "warning" : "safe";
+                                const colorClass =
+                                    severity === "critical"
+                                        ? "text-red-400 font-bold animate-pulse"
+                                        : severity === "danger"
+                                          ? "text-red-400 font-bold"
+                                          : severity === "warning"
+                                            ? "text-amber-400 font-semibold"
+                                            : "font-semibold";
+                                return (
+                                    <span className={colorClass}>
+                                        {severity !== "safe" && <AlertTriangle className="inline-block w-3.5 h-3.5 mr-1 relative top-[-1px]" />}
+                                        {pct.toFixed(2)}%
+                                    </span>
+                                );
+                            })()
+                        )}
                     </div>
-                    <div className="flex items-center justify-between text-gray-300">
-                        <span className="text-gray-400">{lastEdited === "receive" ? "Maximum Paid" : "Minimum Received"}</span>
+                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
+                        <span className="text-[var(--text-muted)]">{lastEdited === "receive" ? "Maximum Paid" : "Minimum Received"}</span>
                         <span className="font-semibold">{formattedQuote}</span>
                     </div>
-                    <div className="flex items-center justify-between text-gray-300">
-                        <span className="text-gray-400">Route</span>
+                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
+                        <span className="text-[var(--text-muted)]">Route</span>
                         <span className="flex items-center gap-2">
                             <span>{quoteState.routeLabel ?? "--"}</span>
                             {quoteState.routePathTokens.length > 0 && (
                                 <button
                                     type="button"
                                     onClick={() => setRouteModalOpen(true)}
-                                    className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
+                                    className="text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-semibold transition-colors"
                                 >
                                     View route details
                                 </button>
@@ -1118,15 +1094,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         </span>
                     </div>
                     {quoteState.routeDetails.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-400 border-t border-gray-700 pt-2">{quoteState.routeDetails.join(" → ")}</div>
+                        <div className="mt-2 text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2">
+                            {quoteState.routeDetails.join(" → ")}
+                        </div>
                     )}
                     {quoteState.loading && <div className="mt-2 text-xs text-yellow-400 font-medium">Fetching quote...</div>}
-                    {quoteState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {quoteState.error}</div>}
+                    {quoteState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {quoteState.error}</div>}
 
-                    {validation.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
-                    {swapState.error && <div className="mt-2 text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
+                    {validation.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {validation.error}</div>}
+                    {swapState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {swapState.error}</div>}
                     {swapState.signature && (
-                        <div className="mt-2 text-xs text-green-400">
+                        <div className="mt-2 text-xs text-green-600 dark:text-green-400">
                             Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}
                         </div>
                     )}
@@ -1136,10 +1114,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             {/* Error/Success messages for Limit Order (since they were moved out of the Quote Summary) */}
             {orderType === "limit" && (
                 <div className="mb-4 text-sm space-y-2">
-                    {validation.error && <div className="text-xs text-red-400 font-semibold">✕ {validation.error}</div>}
-                    {swapState.error && <div className="text-xs text-red-400 font-semibold">✕ {swapState.error}</div>}
+                    {validation.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold">✕ {validation.error}</div>}
+                    {swapState.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold">✕ {swapState.error}</div>}
                     {swapState.signature && (
-                        <div className="text-xs text-green-400">
+                        <div className="text-xs text-green-600 dark:text-green-400">
                             Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}
                         </div>
                     )}
@@ -1154,7 +1132,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                             setLastEdited("pay");
                             setPayAmount(amount === "MAX" ? payBalance : amount);
                         }}
-                        className="flex-1 py-2 px-3 rounded-lg bg-gray-800/70 hover:bg-gray-700/80 text-sm font-medium text-gray-300 border border-gray-700/50 transition-all hover:border-gray-600"
+                        className="flex-1 py-2 px-3 rounded-lg bg-[var(--surface-btn)] hover:bg-[var(--surface-btn)] text-sm font-medium text-[var(--text-secondary)] border border-[var(--border-subtle)]/50 transition-all hover:border-[var(--border-subtle)]"
                     >
                         {amount}
                     </button>
@@ -1164,9 +1142,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             <Button
                 className={`w-full font-bold py-6 text-lg transition-all duration-200 ${
                     tradeMode === "buy"
-                        ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/40"
-                        : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/40"
+                        ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/40"
+                        : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/40"
                 }`}
+                style={{ color: "white" }}
                 onClick={orderType === "market" ? handleSwap : handleLimitOrder}
                 disabled={
                     swapState.loading ||
@@ -1186,7 +1165,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 )}
             </Button>
 
-            <div className="flex items-center justify-between mt-4 text-xs text-gray-500 border-t border-gray-700 pt-3">
+            <div className="flex items-center justify-between mt-4 text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-3">
                 <span>Powered by Jupiter API</span>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -1195,17 +1174,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             </div>
 
             <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
-                <DialogContent className="sm:max-w-lg border-2 border-gray-700 bg-gray-900 shadow-xl shadow-black/50">
+                <DialogContent className="sm:max-w-lg border-2 border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xl shadow-black/50">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-bold text-white">Route details</DialogTitle>
-                        <DialogDescription className="text-gray-400">Token hops and DEX path for this quote.</DialogDescription>
+                        <DialogTitle className="text-lg font-bold text-[var(--text-primary)]">Route details</DialogTitle>
+                        <DialogDescription className="text-[var(--text-muted)]">Token hops and DEX path for this quote.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3 text-sm text-gray-200">
-                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
-                            <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">Token hops</div>
+                    <div className="space-y-3 text-sm text-[var(--text-secondary)]">
+                        <div className="bg-[var(--surface-btn)] rounded-lg p-3 border border-[var(--border-subtle)]">
+                            <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] font-semibold mb-2">Token hops</div>
                             <div className="flex flex-wrap items-center gap-1">
                                 {quoteState.routePathTokens.length === 0 ? (
-                                    <span className="text-gray-400">--</span>
+                                    <span className="text-[var(--text-muted)]">--</span>
                                 ) : (
                                     quoteState.routePathTokens.map((routeToken, index) => (
                                         <React.Fragment key={`${routeToken.display}-${index}`}>
@@ -1219,32 +1198,32 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                                         window.setTimeout(() => setCopiedMint((prev) => (prev === routeToken.full ? null : prev)), 1500);
                                                     }
                                                 }}
-                                                className="flex items-center gap-1 rounded bg-gray-700/80 px-2 py-1 text-left hover:bg-gray-700 border border-gray-600/50 transition-colors"
+                                                className="flex items-center gap-1 rounded bg-[var(--surface-btn)] px-2 py-1 text-left hover:bg-[var(--surface-btn)] border border-[var(--border-subtle)] transition-colors"
                                                 title={routeToken.full ?? routeToken.display}
                                             >
                                                 <span className="text-sm font-medium">{routeToken.display}</span>
                                                 {routeToken.full && copiedMint === routeToken.full ? (
-                                                    <Check className="h-3 w-3 text-green-400" />
+                                                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                                                 ) : (
-                                                    <Copy className="h-3 w-3 text-gray-500" />
+                                                    <Copy className="h-3 w-3 text-[var(--text-muted)]" />
                                                 )}
                                             </button>
-                                            {index < quoteState.routePathTokens.length - 1 && <span className="text-gray-500 text-xs">→</span>}
+                                            {index < quoteState.routePathTokens.length - 1 && <span className="text-[var(--text-muted)] text-xs">→</span>}
                                         </React.Fragment>
                                     ))
                                 )}
                             </div>
                         </div>
-                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
-                            <div className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">DEX path</div>
-                            <div className="text-sm font-medium text-gray-300">
+                        <div className="bg-[var(--surface-btn)] rounded-lg p-3 border border-[var(--border-subtle)]">
+                            <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] font-semibold mb-2">DEX path</div>
+                            <div className="text-sm font-medium text-[var(--text-secondary)]">
                                 {quoteState.routeDetails.length > 0 ? quoteState.routeDetails.join(" → ") : "--"}
                             </div>
                         </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-800">
+                            <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--surface-btn)]">
                                 Close
                             </Button>
                         </DialogClose>

@@ -123,7 +123,10 @@ export const TOKEN_ENDPOINTS = {
     REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
 
     // AI Summary
-    AI_SUMMARY: "/api/tokens/summarize"
+    AI_SUMMARY: "/api/tokens/summarize",
+
+    // SOL price (Redis-backed, falls back to CoinGecko)
+    SOL_PRICE: "/api/tokens/sol-price"
 } as const;
 
 // Chart intervals
@@ -136,31 +139,39 @@ export type TradeTab = (typeof TRADE_TABS)[number];
 
 // Wallet Alert API Endpoints
 export const WALLET_ALERT_ENDPOINTS = {
-  LIST:   (address: string)              => `/api/watchlist/${address}/alerts`,
-  CREATE: (address: string)              => `/api/watchlist/${address}/alerts`,
-  UPDATE: (address: string, id: string)  => `/api/watchlist/${address}/alerts/${id}`,
-  DELETE: (address: string, id: string)  => `/api/watchlist/${address}/alerts/${id}`,
+    LIST: (address: string) => `/api/watchlist/${address}/alerts`,
+    CREATE: (address: string) => `/api/watchlist/${address}/alerts`,
+    UPDATE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`,
+    DELETE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`
 } as const;
 
 // Watchlist API Endpoints
 export const WATCHLIST_ENDPOINTS = {
-  LIST: '/api/watchlist',
-  ADD: '/api/watchlist',
-  UPDATE: (address: string) => `/api/watchlist/${address}`,
-  REMOVE: (address: string) => `/api/watchlist/${address}`,
+    LIST: "/api/watchlist",
+    ADD: "/api/watchlist",
+    UPDATE: (address: string) => `/api/watchlist/${address}`,
+    REMOVE: (address: string) => `/api/watchlist/${address}`
 } as const;
 
 // Portfolio Watch (arbitrary wallet) API Endpoints
 export const PORTFOLIO_WATCH_ENDPOINTS = {
-  OVERVIEW: '/api/portfolio/watch/overview',
-  POSITIONS: '/api/portfolio/watch/positions',
-  ACTIVITIES: '/api/portfolio/watch/activities',
-  PNL_CHART: '/api/portfolio/watch/pnl-chart',
+    OVERVIEW: "/api/portfolio/watch/overview",
+    POSITIONS: "/api/portfolio/watch/positions",
+    ACTIVITIES: "/api/portfolio/watch/activities",
+    PNL_CHART: "/api/portfolio/watch/pnl-chart"
+} as const;
+
+// Swap API Endpoints
+export const SWAP_ENDPOINTS = {
+    QUOTE: "/api/swap/quote",
+    TRANSACTION: "/api/swap/transaction",
+    EXECUTE: "/api/swap/execute"
 } as const;
 
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
-    MESSAGE: "/api/chat/message"
+    MESSAGE: "/api/chat/message",
+    MESSAGES: (sessionId: string) => `/api/chat/sessions/${sessionId}/messages`
 } as const;
 
 // Chat Socket Events
@@ -169,5 +180,6 @@ export const CHAT_SOCKET_EVENTS = {
     RESPONSE: "chat:response",
     STREAM: "chat:stream",
     COMPLETE: "chat:complete",
-    ERROR: "chat:error"
+    ERROR: "chat:error",
+    TOOL_PROGRESS: "chat:tool_progress"
 } as const;

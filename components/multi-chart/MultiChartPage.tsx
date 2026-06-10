@@ -90,8 +90,8 @@ export const MultiChartPage: React.FC = () => {
                 {charts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-96">
                         <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 opacity-50">
-                                <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-16 h-16 rounded-full bg-[var(--surface-btn)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-[var(--text-disabled)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -100,11 +100,12 @@ export const MultiChartPage: React.FC = () => {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-xl font-semibold text-slate-100 mb-2">No charts yet</h2>
-                            <p className="text-slate-400 mb-4">Add a token chart to get started monitoring its price and volume</p>
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">No charts yet</h2>
+                            <p className="text-[var(--text-muted)] mb-4">Add a token chart to get started monitoring its price and volume</p>
                             <button
                                 onClick={() => setIsAddModalOpen(true)}
-                                className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors"
+                                className="inline-flex items-center px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 font-medium transition-colors"
+                                style={{ color: "white" }}
                             >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -10,16 +10,7 @@ import { COMMON_TOKENS } from "@/lib/constants";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
-import {
-    executeJupiterSwap,
-    fetchJupiterQuote,
-    formatDisplay,
-    formatFromBaseUnits,
-    getSwapApiConfig,
-    isValidAmount,
-    parseInputNumber,
-    toBaseUnits
-} from "@/features/swap";
+import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -43,8 +34,6 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
     const [swapError, setSwapError] = useState<string | null>(null);
     const [signature, setSignature] = useState<string | null>(null);
     const [quote, setQuote] = useState<Awaited<ReturnType<typeof fetchJupiterQuote>> | null>(null);
-
-    const swapConfig = useMemo(() => getSwapApiConfig(), []);
 
     useEffect(() => {
         if (!open || !token) return;
@@ -99,7 +88,6 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
             },
             {
                 signal: controller.signal,
-                config: swapConfig,
                 payTokenSymbol: "SOL",
                 receiveTokenSymbol: token.token.ticker
             }
@@ -119,7 +107,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return () => {
             controller.abort();
         };
-    }, [open, token, amountSol, slippageBps, swapConfig]);
+    }, [open, token, amountSol, slippageBps]);
 
     const receiveAmount = useMemo(() => {
         if (!quote?.outAmount) return "--";
@@ -153,14 +141,11 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         setSwapError(null);
 
         try {
-            const result = await executeJupiterSwap(
-                {
-                    quoteResponse: quote.rawQuote,
-                    userPublicKey: publicKey,
-                    signTransaction: (tx) => provider.signTransaction(tx)
-                },
-                { config: swapConfig }
-            );
+            const result = await executeJupiterSwap({
+                quoteResponse: quote.rawQuote,
+                userPublicKey: publicKey,
+                signTransaction: (tx) => provider.signTransaction(tx)
+            });
             setSignature(result.signature);
             toast.success("Swap submitted!");
         } catch (error) {

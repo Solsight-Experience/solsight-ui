@@ -26,15 +26,15 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
                 </div>
 
                 <div className="flex-1 overflow-hidden p-0 flex flex-col">
-                    <TabsContent value="trades" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent forceMount value="trades" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <TradesTable tokenAddress={tokenAddress} />
                     </TabsContent>
 
-                    <TabsContent value="top_traders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent forceMount value="top_traders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <TopTradersTable tokenAddress={tokenAddress} />
                     </TabsContent>
 
-                    <TabsContent value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent forceMount value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <HoldersTable tokenAddress={tokenAddress} />
                     </TabsContent>
                 </div>

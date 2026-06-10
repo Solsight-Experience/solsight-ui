@@ -33,9 +33,3 @@ export interface ExecuteSwapRequest {
 export interface ExecuteSwapResult {
     signature: string;
 }
-
-export interface SwapApiConfig {
-    quoteBaseUrl: string;
-    swapBaseUrl: string;
-    quoteApiKey?: string;
-}

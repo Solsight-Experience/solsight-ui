@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownRight, ArrowUpRight, ShieldAlert, Star } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Users, Shield, Star, Zap } from "lucide-react";
 import Sparkline from "../components/Sparkline";
 import TokenCell from "../components/TokenCell";
 import { TokenCategory, TokenTableData } from "./types";
@@ -144,32 +144,32 @@ export const createColumns = (
             const auditData = row.original.audit;
 
             if (!auditData || auditData.length === 0) {
-                return <div className="text-right text-muted-foreground text-sm">No audit data</div>;
+                return <div className="text-right text-white/25 text-xs">—</div>;
             }
 
-            // Assuming first item is the red/down trend (22.66%) and second is green/up trend (0.03%)
-            const firstItem = auditData[0] || { value: "-", trend: "neutral", label: "" };
-            const secondItem = auditData[1] || { value: "-", trend: "neutral", label: "" };
+            const risk = auditData[0] || { value: "—", label: "Risk" };
+            const fees = auditData[1] || { value: "—", label: "Fees" };
 
             return (
-                <div className="flex flex-col items-end gap-2 text-right">
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center justify-end gap-2.5">
+                    {/* Risk */}
+                    <div className="flex flex-col items-end gap-0.5">
                         <div className="flex items-center gap-1">
-                            <span className="text-rose-400 text-lg">👤</span>
-                            <span className="text-sm font-semibold text-rose-400">{firstItem.value}</span>
+                            <Users size={10} className="text-rose-400/70 shrink-0" />
+                            <span className="text-[12px] font-bold tabular-nums text-rose-400">{risk.value}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <span className="text-emerald-400 text-lg">🛡️</span>
-                            <span className="text-sm font-semibold text-emerald-400">{secondItem.value}</span>
-                        </div>
+                        <span className="text-[9px] font-semibold tracking-[0.07em] uppercase text-white/25">{risk.label || "Risk"}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+
+                    <div className="w-px h-6 bg-white/[0.07] shrink-0" />
+
+                    {/* Fees */}
+                    <div className="flex flex-col items-end gap-0.5">
                         <div className="flex items-center gap-1">
-                            <span>👤 {firstItem.label || "271"}</span>
+                            <Shield size={10} className="text-emerald-400/70 shrink-0" />
+                            <span className="text-[12px] font-bold tabular-nums text-emerald-400">{fees.value}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <span>🛡️ {secondItem.label || "139"}</span>
-                        </div>
+                        <span className="text-[9px] font-semibold tracking-[0.07em] uppercase text-white/25">{fees.label || "Fees"}</span>
                     </div>
                 </div>
             );
@@ -181,16 +181,20 @@ export const createColumns = (
         enableHiding: false,
         cell: ({ row }) => (
             <div className="flex justify-end">
-                <Button
-                    size="sm"
-                    className="bg-primary text-white rounded-full hover:bg-fuchsia-500/90"
+                <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onQuickBuy?.(row.original);
                     }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg
+                               bg-violet-500/10 border border-violet-500/20 text-violet-300
+                               text-[11px] font-semibold tracking-wide
+                               hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200
+                               transition-all duration-150 cursor-pointer whitespace-nowrap"
                 >
+                    <Zap size={10} className="shrink-0" />
                     Buy {quickBuyAmount} SOL
-                </Button>
+                </button>
             </div>
         )
     }

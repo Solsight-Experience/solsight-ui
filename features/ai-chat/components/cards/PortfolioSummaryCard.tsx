@@ -1,6 +1,6 @@
 import * as React from "react";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Wallet, TrendingUp } from "lucide-react";
+import { currencyFormatter } from "@/lib/formatters";
 
 interface PortfolioSummaryCardProps {
     data: {
@@ -16,35 +16,51 @@ interface PortfolioSummaryCardProps {
 
 export const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({ data }) => {
     const { total_balance_usd, total_balance_sol, top_tokens } = data;
+    const topThree = top_tokens.slice(0, 3);
+    const topTotal = topThree.reduce((s, t) => s + t.value_usd, 0);
 
     return (
-        <Card data-testid="portfolio-summary-card">
-            <CardHeader>
-                <CardTitle>Portfolio Overview</CardTitle>
-            </CardHeader>
-
-            <CardContent>
-                <div className="flex flex-col gap-1">
-                    <div className="text-3xl font-bold">${total_balance_usd.toFixed(2)}</div>
-                    <div className="text-sm text-muted-foreground">{total_balance_sol.toFixed(4)} SOL</div>
+        <div data-testid="portfolio-summary-card" className="rounded-xl border border-border/60 bg-background/60 backdrop-blur-sm overflow-hidden">
+            <div className="bg-gradient-to-br from-violet-500/10 via-transparent to-indigo-500/5 px-4 py-3 border-b border-border/40">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                    <Wallet className="w-3 h-3" />
+                    Portfolio Overview
                 </div>
+                <div className="text-2xl font-bold tracking-tight">{currencyFormatter.format(total_balance_usd)}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{total_balance_sol.toFixed(4)} SOL</div>
+            </div>
 
-                <div className="mt-4">
-                    <div className="text-sm font-medium text-muted-foreground">Top tokens</div>
-                    <div className="mt-2 space-y-2">
-                        {top_tokens.slice(0, 3).map((token, idx) => (
-                            <div key={idx} className="flex items-center justify-between">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-sm font-semibold">{token.name}</span>
-                                    <span className="text-xs text-muted-foreground">{token.symbol}</span>
+            {topThree.length > 0 && (
+                <div className="p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
+                        <TrendingUp className="w-3 h-3" />
+                        Top Holdings
+                    </div>
+
+                    <div className="space-y-2">
+                        {topThree.map((token, idx) => {
+                            const pct = topTotal > 0 ? (token.value_usd / topTotal) * 100 : 0;
+                            const colors = ["bg-violet-500", "bg-indigo-400", "bg-purple-400"];
+                            return (
+                                <div key={idx}>
+                                    <div className="flex items-center justify-between gap-2 mb-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                                            <div className={`w-2 h-2 rounded-full shrink-0 ${colors[idx]}`} />
+                                            <span className="text-xs font-medium shrink-0">{token.symbol}</span>
+                                            <span className="text-[10px] text-muted-foreground truncate">{token.name}</span>
+                                        </div>
+                                        <span className="text-xs font-mono font-medium shrink-0">{currencyFormatter.format(token.value_usd)}</span>
+                                    </div>
+                                    <div className="h-1 rounded-full bg-muted/40 overflow-hidden">
+                                        <div className={`h-full rounded-full ${colors[idx]} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                                    </div>
                                 </div>
-                                <div className="text-sm font-medium">${token.value_usd.toFixed(2)}</div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            )}
+        </div>
     );
 };
 

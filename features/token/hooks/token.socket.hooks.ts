@@ -54,8 +54,8 @@ export function useTradeStream(
     return trades;
 }
 
-export function useTopTradersStream(address: string, timeFrame: "24h" | "7d" | "30d" | "all" = "24h") {
-    const [topTraders, setTopTraders] = useState<TopTrader>();
+export function useTopTradersStream(address: string) {
+    const [topTraders, setTopTraders] = useState<TopTrader[]>();
     useEffect(() => {
         const dto = {
             domain: "top_traders",
@@ -63,7 +63,7 @@ export function useTopTradersStream(address: string, timeFrame: "24h" | "7d" | "
             interval: "5s"
         };
 
-        socket.onDomainEvent(dto, (data: { data: TopTrader }) => {
+        socket.onDomainEvent(dto, (data: { token: string; data: TopTrader[] }) => {
             setTopTraders(data.data);
         });
 

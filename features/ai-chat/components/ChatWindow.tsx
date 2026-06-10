@@ -1,27 +1,142 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ArrowDown, Send } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { useChat } from "../hooks/useChat";
-import { ChatBubble } from "./ChatBubble";
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 
-export const ChatWindow: React.FC = () => {
-    const { messages, isLoading, error, sendMessage } = useChat();
+import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChatBubble } from "./ChatBubble";
+import { ChatMessageDto } from "@/types/dto";
+
+import { useVirtualizer } from "@tanstack/react-virtual";
+
+const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelect }) => (
+    <div className="flex flex-col items-center justify-center text-center space-y-5 py-10 px-6">
+        <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 opacity-20 blur-xl animate-pulse" />
+
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <Bot className="w-9 h-9 text-white" />
+            </div>
+        </div>
+
+        <div className="space-y-2">
+            <h3 className="font-semibold text-base text-foreground">Solsight AI Assistant</h3>
+
+            <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+                Your intelligent DeFi co-pilot on Solana. Ask me anything about tokens, portfolios, or trades.
+            </p>
+        </div>
+
+        <div className="flex flex-col gap-2 w-full max-w-[280px]">
+            {[
+                {
+                    icon: <CircleDollarSign className="w-4 h-4 text-emerald-400" />,
+                    text: "Current price of SOL?"
+                },
+                {
+                    icon: <LineChart className="w-4 h-4 text-violet-400" />,
+                    text: "Summarize my portfolio data"
+                },
+                {
+                    icon: <ArrowLeftRight className="w-4 h-4 text-blue-400" />,
+                    text: "Swap 1 SOL to USDC"
+                }
+            ].map(({ icon, text }) => (
+                <Button
+                    key={text}
+                    variant="ghost"
+                    onClick={() => onSelect(text)}
+                    className="flex items-center justify-start gap-2.5 px-3.5 py-6 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 hover:border-violet-500/30 active:scale-[0.98] transition-all cursor-pointer group text-left w-full"
+                >
+                    <div className="shrink-0">{icon}</div>
+
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors whitespace-normal leading-tight">{text}</span>
+                </Button>
+            ))}
+        </div>
+    </div>
+);
+
+const TypingIndicator: React.FC<{ label?: string }> = ({ label }) => (
+    <div className="flex items-start gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+            <Bot className="w-3.5 h-3.5 text-white" />
+        </div>
+
+        <div className="bg-card border border-border/60 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+            {label ? (
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                </div>
+            ) : (
+                <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+            )}
+        </div>
+    </div>
+);
+
+interface ChatWindowProps {
+    messages: ChatMessageDto[];
+    isTyping: boolean;
+    isHistoryLoading?: boolean;
+    toolProgressLabel: string | null;
+    error: string | null;
+    sendMessage: (text: string) => void;
+    fetchNextPage?: () => void;
+    hasNextPage?: boolean;
+    isFetchingNextPage?: boolean;
+}
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({
+    messages,
+    isTyping,
+    isHistoryLoading,
+    toolProgressLabel,
+    error,
+    sendMessage,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+}) => {
     const [inputValue, setInputValue] = useState("");
     const [showScrollButton, setShowScrollButton] = useState(false);
 
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const parentRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const shouldAutoScrollRef = useRef(false);
+
+    const virtualizer = useVirtualizer({
+        count: messages.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 100,
+        overscan: 10
+    });
+
+    const virtualItems = virtualizer.getVirtualItems();
+
     const adjustTextareaHeight = () => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = "auto";
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-        }
+        if (!textareaRef.current) return;
+
+        textareaRef.current.style.height = "auto";
+
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     };
 
     useEffect(() => {
@@ -29,33 +144,63 @@ export const ChatWindow: React.FC = () => {
     }, [inputValue]);
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        const parent = parentRef.current;
+
+        if (!parent) return;
+
+        parent.scrollTo({
+            top: parent.scrollHeight,
+            behavior
+        });
     }, []);
 
     useEffect(() => {
-        if (!showScrollButton) {
-            scrollToBottom("auto");
+        const firstItem = virtualItems[0];
+
+        if (!firstItem) return;
+
+        if (firstItem.index === 0 && hasNextPage && !isFetchingNextPage && fetchNextPage) {
+            fetchNextPage();
         }
-    }, [messages, isLoading, showScrollButton, scrollToBottom]);
+    }, [virtualItems, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    useLayoutEffect(() => {
+        if (isFetchingNextPage) return;
+
+        const shouldScroll = shouldAutoScrollRef.current || !showScrollButton;
+
+        if (!shouldScroll) return;
+
+        requestAnimationFrame(() => {
+            scrollToBottom(shouldAutoScrollRef.current ? "smooth" : "auto");
+
+            shouldAutoScrollRef.current = false;
+        });
+    }, [messages.length, isTyping, showScrollButton, isFetchingNextPage, scrollToBottom]);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const target = e.target as HTMLDivElement;
-        if (target.dataset.slot !== "scroll-area-viewport" && !target.classList.contains("overflow-y-auto")) return;
 
-        const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 80;
+        const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+
+        const isAtBottom = distanceFromBottom <= 80;
+
         setShowScrollButton(!isAtBottom);
     };
 
     const handleSend = () => {
-        if (!inputValue.trim() || isLoading) return;
+        if (!inputValue.trim() || isTyping) return;
+
+        shouldAutoScrollRef.current = true;
+
         sendMessage(inputValue);
+
         setInputValue("");
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
             textareaRef.current.focus();
         }
-        setTimeout(() => scrollToBottom("smooth"), 100);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -66,49 +211,69 @@ export const ChatWindow: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-background relative">
-            <ScrollArea className="flex-1 px-4 overflow-auto" onScrollCapture={handleScroll}>
-                <div className="flex flex-col gap-5 py-6" role="log" aria-live="polite">
-                    {messages.length === 0 && (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 my-12 text-muted-foreground">
-                            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-2xl">👋</span>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="font-medium text-foreground">Welcome to Solsight</p>
-                                <p className="text-sm max-w-[250px]">Ask me about token analytics, your portfolio, or how to execute trades.</p>
-                            </div>
-                        </div>
-                    )}
+        <div className="flex flex-col h-full relative">
+            <div ref={parentRef} className="flex-1 overflow-y-auto px-4 py-4 w-full scroll-smooth" onScroll={handleScroll}>
+                {messages.length === 0 && !isHistoryLoading && <WelcomeScreen onSelect={sendMessage} />}
 
-                    {messages.map((msg, idx) => (
-                        <ChatBubble key={msg.timestamp ?? idx} message={msg} />
-                    ))}
+                {isHistoryLoading && messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
+                        <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
 
-                    {isLoading && (
-                        <div className="flex justify-start mb-2 animate-in fade-in zoom-in duration-300">
-                            <div className="bg-card text-card-foreground border border-border px-4 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                    </div>
+                )}
+
+                {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
+
+                <div
+                    style={{
+                        height: `${virtualizer.getTotalSize()}px`,
+                        width: "100%",
+                        position: "relative"
+                    }}
+                >
+                    {virtualItems.map((virtualItem) => {
+                        const msg = messages[virtualItem.index];
+
+                        return (
+                            <div
+                                key={virtualItem.key}
+                                data-index={virtualItem.index}
+                                ref={virtualizer.measureElement}
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    transform: `translateY(${virtualItem.start}px)`
+                                }}
+                                className="py-2"
+                            >
+                                <ChatBubble message={msg} />
                             </div>
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg mx-auto my-2 text-center max-w-[80%]">
-                            {error}
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} className="h-1" />
+                        );
+                    })}
                 </div>
-            </ScrollArea>
+
+                {isTyping && (
+                    <div className="mt-4">
+                        <TypingIndicator label={toolProgressLabel ?? undefined} />
+                    </div>
+                )}
+
+                {error && (
+                    <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span className="flex-1">{error}</span>
+                    </div>
+                )}
+            </div>
 
             {showScrollButton && (
                 <Button
-                    variant="secondary"
+                    variant="outline"
                     size="icon"
-                    className="absolute bottom-20 right-1/2 translate-x-1/2 rounded-full shadow-md z-10 w-8 h-8 opacity-90 hover:opacity-100 transition-all animate-in fade-in slide-in-from-bottom-2"
+                    className="absolute bottom-20 right-1/2 translate-x-1/2 rounded-full shadow-lg bg-background border border-border w-8 h-8 flex items-center justify-center hover:bg-muted transition-all animate-in fade-in slide-in-from-bottom-2 z-10 text-muted-foreground hover:text-foreground"
                     onClick={() => scrollToBottom("smooth")}
                     aria-label="Scroll to bottom"
                 >
@@ -116,36 +281,44 @@ export const ChatWindow: React.FC = () => {
                 </Button>
             )}
 
-            <div className="p-3 bg-background border-t">
-                <div className="relative flex items-end gap-2 bg-muted/40 border rounded-2xl px-3 py-2 focus-within:ring-1 focus-within:ring-primary focus-within:bg-background transition-colors">
-                    <Textarea
+            <div className="shrink-0 px-3 pb-3 pt-3 border-t border-border/60 bg-background/80 backdrop-blur-sm">
+                <div
+                    className={cn(
+                        "relative flex items-end gap-2 rounded-2xl px-3 py-2 transition-all duration-200",
+                        "bg-muted/40 border border-border/60",
+                        "focus-within:bg-background focus-within:border-violet-500/40 focus-within:shadow-[0_0_0_3px_hsl(var(--violet-500)/0.08)]",
+                        inputValue.trim() && "border-violet-500/30"
+                    )}
+                >
+                    <textarea
                         ref={textareaRef}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask anything..."
-                        className="min-h-[24px] max-h-[120px] w-full resize-none border-0 bg-transparent p-0 py-1.5 shadow-none focus-visible:ring-0 text-sm custom-scrollbar"
-                        disabled={isLoading}
+                        placeholder="Ask Solsight AI anything..."
+                        className="min-h-[24px] max-h-[120px] w-full resize-none border-0 bg-transparent p-0 py-1.5 shadow-none outline-none text-sm placeholder:text-muted-foreground/60"
+                        disabled={isTyping}
                         rows={1}
                         aria-label="Chat input"
                     />
 
                     <Button
-                        onClick={handleSend}
-                        disabled={isLoading || !inputValue.trim()}
                         size="icon"
+                        onClick={handleSend}
+                        disabled={isTyping || !inputValue.trim()}
                         className={cn(
-                            "h-8 w-8 shrink-0 rounded-full transition-all",
-                            inputValue.trim()
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30"
+                            "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 border-0",
+                            inputValue.trim() && !isTyping
+                                ? "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
+                                : "bg-muted-foreground/15 text-muted-foreground cursor-not-allowed"
                         )}
                         aria-label="Send message"
                     >
-                        <Send className="h-4 w-4 ml-0.5" />
+                        <Send className="h-3.5 w-3.5" />
                     </Button>
                 </div>
-                <div className="text-[10px] text-center text-muted-foreground mt-2">AI can make mistakes. Verify important trades.</div>
+
+                <p className="text-[10px] text-center text-muted-foreground/50 mt-3 px-2">AI responses may not be accurate. Verify before trading.</p>
             </div>
         </div>
     );
