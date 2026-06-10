@@ -33,6 +33,7 @@ import { SwapConfigSection } from "@/features/swap-config/components/SwapConfigS
 import { AdvancedStrategySection } from "@/features/swap-config/advanced-strategy/AdvancedStrategySection";
 import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
+import useClusterStore from "@/stores/cluster.store";
 import { VersionedTransaction } from "@solana/web3.js";
 
 interface TradingPanelProps {
@@ -52,14 +53,21 @@ type BuyPayTokenOption = {
     balance: number;
 };
 
-function NetworkStatusBadge() {
+function NetworkStatusBadge({ connected }: { connected: boolean }) {
     const isOnline = useOnlineStatus();
+    const cluster = useClusterStore((s) => s.cluster);
+    const networkLabel = cluster === "mainnet" ? "Solana Mainnet" : "Solana Devnet";
+    const status = !isOnline ? "offline" : connected ? "connected" : "disconnected";
+    const statusLabel =
+        status === "connected" ? `Connected: ${networkLabel}` : status === "offline" ? `Offline: ${networkLabel}` : `Wallet disconnected: ${networkLabel}`;
+    const dotClass = status === "connected" ? "bg-green-500 animate-pulse" : status === "offline" ? "bg-red-500" : "bg-amber-500";
+    const textClass = status === "connected" ? "text-[var(--text-muted)]" : status === "offline" ? "text-red-400" : "text-amber-400";
+
     return (
         <div className="flex items-center justify-between mt-4 text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-3">
-            <span>Powered by Jupiter API</span>
             <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-                <span className={isOnline ? "text-[var(--text-muted)]" : "text-red-400"}>{isOnline ? "Connected: Solana Mainnet" : "Offline"}</span>
+                <div className={`w-2 h-2 rounded-full ${dotClass}`} />
+                <span className={textClass}>{statusLabel}</span>
             </div>
         </div>
     );
@@ -1198,7 +1206,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 )}
             </Button>
 
-            <NetworkStatusBadge />
+            <NetworkStatusBadge connected={connected} />
 
             <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
                 <DialogContent className="sm:max-w-lg border-2 border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xl shadow-black/50">
