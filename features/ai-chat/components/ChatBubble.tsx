@@ -79,7 +79,7 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
                 ) : (
                     <div
                         className={cn(
-                            "text-sm leading-relaxed w-full",
+                            "text-sm leading-relaxed w-full min-w-0 overflow-hidden",
                             "bg-card/80 backdrop-blur-sm border border-border/60",
                             "px-4 py-3 rounded-2xl rounded-tl-sm",
                             "shadow-sm"
@@ -99,6 +99,7 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
                                         content: message.content,
                                         data: message.data
                                     }}
+                                    timestamp={message.timestamp}
                                 />
                             </div>
                         )}

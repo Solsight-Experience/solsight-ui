@@ -123,7 +123,10 @@ export const TOKEN_ENDPOINTS = {
     REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
 
     // AI Summary
-    AI_SUMMARY: "/api/tokens/summarize"
+    AI_SUMMARY: "/api/tokens/summarize",
+
+    // SOL price (Redis-backed, falls back to CoinGecko)
+    SOL_PRICE: "/api/tokens/sol-price"
 } as const;
 
 // Chart intervals
@@ -158,9 +161,17 @@ export const PORTFOLIO_WATCH_ENDPOINTS = {
     PNL_CHART: "/api/portfolio/watch/pnl-chart"
 } as const;
 
+// Swap API Endpoints
+export const SWAP_ENDPOINTS = {
+    QUOTE: "/api/swap/quote",
+    TRANSACTION: "/api/swap/transaction",
+    EXECUTE: "/api/swap/execute"
+} as const;
+
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
-    MESSAGE: "/api/chat/message"
+    MESSAGE: "/api/chat/message",
+    MESSAGES: (sessionId: string) => `/api/chat/sessions/${sessionId}/messages`
 } as const;
 
 // Chat Socket Events
