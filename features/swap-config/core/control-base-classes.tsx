@@ -40,14 +40,14 @@ export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" 
 
         return (
             <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleAutoClick}
                         disabled={lock.forcedMode === "custom"}
                         className={cn(
-                            "bg-zinc-800 hover:bg-zinc-700 ring-1 ring-transparent",
+                            "bg-zinc-800 hover:bg-zinc-700 ring-1 ring-transparent overflow-hidden whitespace-nowrap",
                             state.mode === "auto" && "ring-white/80",
                             lock.forcedMode === "custom" && "opacity-50 cursor-not-allowed"
                         )}
