@@ -15,7 +15,7 @@ export const SwapConfigPanel: React.FC<SwapConfigSurfaceProps> = ({ ctx, states,
                 const state = states[item.id];
 
                 return (
-                    <div key={item.id} className="flex items-start gap-4 py-2 min-w-0">
+                    <div key={item.id} className="flex items-center gap-4 py-2 min-w-0">
                         <div className="flex items-center gap-1 w-32 text-xs text-zinc-400 shrink-0">
                             {item.label}
                             {item.tooltip && <InfoTooltip content={item.tooltip} />}
