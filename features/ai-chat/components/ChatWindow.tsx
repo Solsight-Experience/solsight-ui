@@ -5,6 +5,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from
 import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ChatBubble } from "./ChatBubble";
 import { ChatMessageDto } from "@/types/dto";
@@ -12,19 +13,17 @@ import { ChatMessageDto } from "@/types/dto";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelect }) => (
-    <div className="flex flex-col items-center justify-center text-center space-y-5 py-10 px-6">
-        <div className="relative w-20 h-20">
+    <div className="flex flex-col items-center justify-center text-center space-y-4 py-6 px-4 sm:py-10 sm:px-6">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 opacity-20 blur-xl animate-pulse" />
-
-            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                <Bot className="w-9 h-9 text-white" />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <Bot className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
             </div>
         </div>
 
-        <div className="space-y-2">
-            <h3 className="font-semibold text-base text-foreground">Solsight AI Assistant</h3>
-
-            <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+        <div className="space-y-1.5">
+            <h3 className="font-semibold text-sm sm:text-base text-foreground">Solsight AI Assistant</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-[260px] leading-relaxed">
                 Your intelligent DeFi co-pilot on Solana. Ask me anything about tokens, portfolios, or trades.
             </p>
         </div>
@@ -48,11 +47,12 @@ const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelec
                     key={text}
                     variant="ghost"
                     onClick={() => onSelect(text)}
-                    className="flex items-center justify-start gap-2.5 px-3.5 py-6 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 hover:border-violet-500/30 active:scale-[0.98] transition-all cursor-pointer group text-left w-full"
+                    className="flex items-center justify-start gap-2.5 px-3 py-4 sm:px-3.5 sm:py-6 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 hover:border-violet-500/30 active:scale-[0.98] transition-all cursor-pointer group text-left w-full"
                 >
                     <div className="shrink-0">{icon}</div>
-
-                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors whitespace-normal leading-tight">{text}</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors whitespace-normal leading-tight">
+                        {text}
+                    </span>
                 </Button>
             ))}
         </div>
@@ -212,62 +212,64 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     return (
         <div className="flex flex-col h-full relative">
-            <div ref={parentRef} className="flex-1 overflow-y-auto px-4 py-4 w-full scroll-smooth" onScroll={handleScroll}>
-                {messages.length === 0 && !isHistoryLoading && <WelcomeScreen onSelect={sendMessage} />}
+            <ScrollArea className="flex-1 overflow-auto" onScrollCapture={handleScroll}>
+                <div className="flex flex-col gap-4 px-3 py-4 sm:px-4" role="log" aria-live="polite">
+                    {messages.length === 0 && <WelcomeScreen onSelect={sendMessage} />}
 
-                {isHistoryLoading && messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
-                        <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                    {isHistoryLoading && messages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
+                            <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
 
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                        </div>
+                    )}
+
+                    {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
+
+                    <div
+                        style={{
+                            height: `${virtualizer.getTotalSize()}px`,
+                            width: "100%",
+                            position: "relative"
+                        }}
+                    >
+                        {virtualItems.map((virtualItem) => {
+                            const msg = messages[virtualItem.index];
+
+                            return (
+                                <div
+                                    key={virtualItem.key}
+                                    data-index={virtualItem.index}
+                                    ref={virtualizer.measureElement}
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        transform: `translateY(${virtualItem.start}px)`
+                                    }}
+                                    className="py-2"
+                                >
+                                    <ChatBubble message={msg} />
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
 
-                {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
+                    {isTyping && (
+                        <div className="mt-4">
+                            <TypingIndicator label={toolProgressLabel ?? undefined} />
+                        </div>
+                    )}
 
-                <div
-                    style={{
-                        height: `${virtualizer.getTotalSize()}px`,
-                        width: "100%",
-                        position: "relative"
-                    }}
-                >
-                    {virtualItems.map((virtualItem) => {
-                        const msg = messages[virtualItem.index];
-
-                        return (
-                            <div
-                                key={virtualItem.key}
-                                data-index={virtualItem.index}
-                                ref={virtualizer.measureElement}
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    transform: `translateY(${virtualItem.start}px)`
-                                }}
-                                className="py-2"
-                            >
-                                <ChatBubble message={msg} />
-                            </div>
-                        );
-                    })}
+                    {error && (
+                        <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span className="flex-1">{error}</span>
+                        </div>
+                    )}
                 </div>
-
-                {isTyping && (
-                    <div className="mt-4">
-                        <TypingIndicator label={toolProgressLabel ?? undefined} />
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span className="flex-1">{error}</span>
-                    </div>
-                )}
-            </div>
+            </ScrollArea>
 
             {showScrollButton && (
                 <Button
@@ -281,7 +283,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </Button>
             )}
 
-            <div className="shrink-0 px-3 pb-3 pt-3 border-t border-border/60 bg-background/80 backdrop-blur-sm">
+            <div className="shrink-0 px-2 pb-2 pt-2 sm:px-3 sm:pb-3 sm:pt-3 border-t border-border/60 bg-background/80 backdrop-blur-sm">
                 <div
                     className={cn(
                         "relative flex items-end gap-2 rounded-2xl px-3 py-2 transition-all duration-200",

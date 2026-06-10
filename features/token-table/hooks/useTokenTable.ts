@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from "@tanstack/react-table";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import { TimeFilterValue } from "../components/TimeFilters";
 import { TokenTableTabOption } from "../components/TokenTabs";
 import { SortOption, SortDirection } from "../components/SortPanel";
@@ -12,6 +14,34 @@ import { queryKeys } from "@/lib/react-query-keys";
 import { apiClient } from "@/lib/api-client";
 import { USER_ENDPOINTS } from "@/lib/constants";
 import type { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+import type { TrendingResponse } from "../services/token-discovery.service";
+
+const PAGE_SIZE = 20;
+
+type TokenPage = Pick<TrendingResponse, "tokens" | "total">;
+
+function resolveNextPageParam(lastPage: TokenPage | undefined, allPages: TokenPage[], activeTab: TokenTableTabOption): number | undefined {
+    // Favourites filter client-side from trending data — never paginate.
+    if (activeTab === "FAVOURITES") return undefined;
+
+    const lastTokens = lastPage?.tokens;
+    if (!lastTokens?.length) return undefined;
+    if (lastTokens.length < PAGE_SIZE) return undefined;
+
+    // Stop when the API repeats tokens from earlier pages (offset past end).
+    if (allPages.length > 1) {
+        const seen = new Set(allPages.slice(0, -1).flatMap((page) => (page?.tokens ?? []).map((token) => token.address)));
+        if (!lastTokens.some((token) => !seen.has(token.address))) return undefined;
+    }
+
+    const total = allPages[0]?.total;
+    if (total != null && total > 0) {
+        const loadedCount = allPages.reduce((acc, page) => acc + (page?.tokens?.length ?? 0), 0);
+        if (loadedCount >= total) return undefined;
+    }
+
+    return allPages.length;
+}
 
 export interface TokenTableFilters {
     timeFilter: TimeFilterValue;
@@ -26,6 +56,8 @@ export interface TokenTableFilters {
 }
 
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
+    const { user } = useAuth();
+    const isLoggedIn = !!user;
     const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
         timeFilter: "1m",
@@ -41,7 +73,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    // Fetch favorites from backend
+    // Fetch favorites from backend — only when logged in
     const { data: favoritesData } = useQuery({
         queryKey: queryKeys.user.favorites(),
         queryFn: async () => {
@@ -53,6 +85,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 return [];
             }
         },
+        enabled: isLoggedIn,
         staleTime: 5 * 60 * 1000 // Cache for 5 minutes
     });
 
@@ -63,6 +96,17 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             setFilters((prev) => ({ ...prev, favouriteIds: favoriteIds }));
         }
     }, [favoritesData]);
+
+    // If the user logs out while viewing FAVOURITES, redirect to TRENDING
+    useEffect(() => {
+        if (!isLoggedIn) {
+            setFilters((prev) => ({
+                ...prev,
+                activeTab: prev.activeTab === "FAVOURITES" ? "TRENDING" : prev.activeTab,
+                favouriteIds: new Set()
+            }));
+        }
+    }, [isLoggedIn]);
 
     // Mutation for toggling favorites
     const toggleFavoriteMutation = useMutation({
@@ -107,18 +151,24 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     });
 
+    // Only expose toggleFavourite when the user is authenticated.
+    // Passing undefined to createColumns omits the star column entirely.
     const toggleFavourite = useCallback(
         (tokenId: string) => {
+            if (!isLoggedIn) {
+                toast.info("Sign in to save favourite tokens.");
+                return;
+            }
             const isFavorite = filters.favouriteIds.has(tokenId);
             toggleFavoriteMutation.mutate({ tokenId, isFavorite });
         },
-        [filters.favouriteIds, toggleFavoriteMutation]
+        [isLoggedIn, filters.favouriteIds, toggleFavoriteMutation]
     );
 
-    // Memoize columns
+    // Memoize columns — pass undefined for toggleFavourite when not logged in
     const columns = useMemo(
-        () => createColumns(toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy),
-        [toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
+        () => createColumns(isLoggedIn ? toggleFavourite : undefined, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy),
+        [isLoggedIn, toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
     );
 
     // Map time filter to API TimeFrame
@@ -146,48 +196,61 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     };
 
-    // Fetch tokens based on active tab
+    // Fetch tokens based on active tab — with infinite scroll pagination
     const {
-        data: apiData,
+        data: infiniteData,
         isPending,
         isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage,
         error,
         dataUpdatedAt,
         refetch
-    } = useQuery({
+    } = useInfiniteQuery({
         queryKey:
             filters.activeTab === "CATEGORIES" && filters.selectedCategorySlug
-                ? queryKeys.tokens.categoryDetail(filters.selectedCategorySlug, {
-                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-                      sortBy: mapSortOptionToSortBy(filters.sortOption)
-                  })
-                : queryKeys.tokens.trending({
-                      tab: filters.activeTab,
-                      timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
-                      sortBy: mapSortOptionToSortBy(filters.sortOption)
-                  }),
-        queryFn: async () => {
+                ? [
+                      "infinite",
+                      ...queryKeys.tokens.categoryDetail(filters.selectedCategorySlug, {
+                          timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                          sortBy: mapSortOptionToSortBy(filters.sortOption)
+                      })
+                  ]
+                : [
+                      "infinite",
+                      ...queryKeys.tokens.trending({
+                          tab: filters.activeTab,
+                          timeFrame: mapTimeFilterToTimeFrame(filters.timeFilter),
+                          sortBy: mapSortOptionToSortBy(filters.sortOption)
+                      })
+                  ],
+        queryFn: async ({ pageParam = 0 }) => {
             const timeFrame = mapTimeFilterToTimeFrame(filters.timeFilter);
+            const offset = (pageParam as number) * PAGE_SIZE;
 
             switch (filters.activeTab) {
                 case "TRENDING":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: "volume_24h",
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
 
                 case "TOP":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
                         sort_by: mapSortOptionToSortBy(filters.sortOption),
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
 
                 case "CATEGORIES":
                     if (filters.selectedCategorySlug) {
                         const res = await TokenDiscoveryService.getCategoryDetail(filters.selectedCategorySlug, {
-                            limit: 20,
+                            limit: PAGE_SIZE,
+                            offset,
                             sort_by: mapSortOptionToSortBy(filters.sortOption)
                         });
                         return { tokens: res.tokens, total: res.total, updated_at: res.category.updated_at };
@@ -196,17 +259,36 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
                 case "FAVOURITES":
                 default:
-                    // For favourites, still fetch trending data
-                    // and filter client-side
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        limit: 20
+                        limit: PAGE_SIZE,
+                        offset
                     });
             }
         },
-        staleTime: 30000, // 30 seconds
-        refetchInterval: 60000 // Refetch every minute
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => resolveNextPageParam(lastPage, allPages, filters.activeTab),
+        staleTime: 30000,
+        refetchInterval: (query) => {
+            const pages = query.state.data?.pages;
+            if (!pages?.length) return 60_000;
+
+            const lastPage = pages[pages.length - 1];
+            return resolveNextPageParam(lastPage, pages, filters.activeTab) !== undefined ? 60_000 : false;
+        }
     });
+
+    // Flatten all pages into a single token array
+    const apiData = useMemo(() => {
+        if (!infiniteData?.pages?.length) return undefined;
+        const allTokens = infiniteData.pages.flatMap((p) => p?.tokens ?? []);
+        const firstPage = infiniteData.pages[0];
+        return {
+            tokens: allTokens,
+            total: firstPage?.total ?? 0,
+            updated_at: firstPage?.updated_at ?? ""
+        };
+    }, [infiniteData]);
 
     // Process and filter data
     const data = useMemo(() => {
@@ -221,16 +303,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
         // Filter by favourites
         if (filters.activeTab === "FAVOURITES") {
-            console.log("Filtering favorites - Total tokens:", transformedData.length);
-            console.log("Favorite IDs:", Array.from(filters.favouriteIds));
-            transformedData = transformedData.filter((token) => {
-                const isFavorite = filters.favouriteIds.has(token.id);
-                if (isFavorite) {
-                    console.log("Found favorite token:", token.id, token.token.ticker);
-                }
-                return isFavorite;
-            });
-            console.log("Filtered favorites count:", transformedData.length);
+            transformedData = transformedData.filter((token) => filters.favouriteIds.has(token.id));
         }
 
         // Filter by category search
@@ -286,9 +359,16 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({ ...prev, timeFilter }));
     }, []);
 
-    const setActiveTab = useCallback((activeTab: TokenTableTabOption) => {
-        setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
-    }, []);
+    const setActiveTab = useCallback(
+        (activeTab: TokenTableTabOption) => {
+            if (activeTab === "FAVOURITES" && !isLoggedIn) {
+                toast.info("Sign in to view your favourite tokens.");
+                return;
+            }
+            setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
+        },
+        [isLoggedIn]
+    );
 
     const setSelectedCategorySlug = useCallback((selectedCategorySlug: string | null) => {
         setFilters((prev) => ({ ...prev, selectedCategorySlug }));
@@ -327,7 +407,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     }, []);
 
     const resetFilters = useCallback(() => {
-        setFilters({
+        setFilters((prev) => ({
             timeFilter: "1m",
             activeTab: "TRENDING",
             quickBuyAmount: "0.1",
@@ -335,10 +415,16 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             selectedCategorySlug: null,
             sortOption: "volumes",
             sortDirection: "none",
-            favouriteIds: new Set(),
+            // Preserve favouriteIds — they are synced from the server,
+            // not a UI filter, and should not be wiped on reset.
+            favouriteIds: prev.favouriteIds,
             filteredData: undefined
-        });
+        }));
     }, []);
+
+    const isFavouritesTab = filters.activeTab === "FAVOURITES";
+    const isFilteredResults = filters.filteredData != null && filters.filteredData.length > 0;
+    const canLoadMore = !isFavouritesTab && !isFilteredResults && hasNextPage;
 
     return {
         table,
@@ -354,6 +440,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         applyFilterResults,
         isLoading: isPending,
         isFetching,
+        isFetchingNextPage: canLoadMore ? isFetchingNextPage : false,
+        fetchNextPage,
+        hasNextPage: canLoadMore,
         error,
         dataUpdatedAt,
         refetch

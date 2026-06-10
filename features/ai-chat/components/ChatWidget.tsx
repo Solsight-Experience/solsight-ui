@@ -33,8 +33,13 @@ export const ChatWidget: React.FC = () => {
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
             <div
                 className={cn(
-                    "fixed flex flex-col overflow-hidden origin-bottom-right",
-                    "transition-all duration-300 ease-out",
+                    "transition-all duration-300 ease-out flex flex-col overflow-hidden origin-bottom-right",
+                    // Base (mobile): anchor left+right with margin — no w-full that bleeds on desktop
+                    "fixed bottom-[72px] left-3 right-3 rounded-2xl",
+                    // Constrain height so it never taller than viewport minus FAB+gap
+                    "max-h-[calc(100svh-80px)]",
+                    // ≥sm: revert to fixed-size floating panel, right-anchored
+                    "sm:left-auto sm:right-4 sm:w-[400px] sm:h-[min(620px,calc(100svh-80px))] sm:max-h-none sm:bottom-[80px]",
                     "bg-background/95 backdrop-blur-xl",
                     "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]",
 

@@ -72,6 +72,7 @@ const TokenLogo: React.FC<{ address?: string; uri?: string; symbol: string; size
 
     if (idx < sources.length) {
         return (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
                 src={sources[idx]}
                 alt={symbol}
@@ -166,7 +167,7 @@ const PositionsTab: React.FC<{ walletAddress: string }> = ({ walletAddress }) =>
                     </tr>
                 </thead>
                 <tbody>
-                    {data.positions.map((position, idx) => (
+                    {data.positions.map((position) => (
                         <tr key={position.token.address} className={`border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors last:border-0`}>
                             <td className="px-4 py-3">
                                 <Link
@@ -319,8 +320,27 @@ const FILTER_LABELS: Record<ActivityFilterType, string> = {
     UNSTAKE: "Unstake"
 };
 
+export interface ActivityToken {
+    address: string;
+    symbol: string;
+    amount: number;
+    logo_uri?: string;
+    name?: string;
+}
+
+export interface ActivityData {
+    type: string;
+    timestamp: number;
+    tx_url?: string;
+    tx_hash: string;
+    token_in?: ActivityToken;
+    token_out?: ActivityToken;
+    token?: ActivityToken;
+    app?: { name: string };
+}
+
 // ── Single activity row ───────────────────────────────────────────────────────
-const ActivityRow: React.FC<{ activity: any; isLast: boolean }> = ({ activity, isLast }) => {
+const ActivityRow: React.FC<{ activity: ActivityData; isLast: boolean }> = ({ activity, isLast }) => {
     const cfg = getTypeConfig(activity.type);
     const isSwap = activity.type === "SWAP";
     const tokenIn = activity.token_in;
@@ -626,7 +646,7 @@ export const WatchedWalletDetail: React.FC<{ walletAddress: string }> = ({ walle
             </div>
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "positions" | "activity" | "alerts")}>
                 <TabsList>
                     <TabsTrigger value="positions">
                         <Coins className="size-3.5" />

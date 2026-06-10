@@ -73,7 +73,7 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
 
             <div className={cn("flex flex-col gap-1 min-w-0 max-w-[82%]", isUser ? "items-end" : "items-start")}>
                 {isUser ? (
-                    <div className="bg-gradient-to-br from-violet-600 to-indigo-700 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-md shadow-violet-500/15">
+                    <div className="bg-gradient-to-br from-violet-600 to-indigo-700 px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-md shadow-violet-500/15">
                         {message.content}
                     </div>
                 ) : (

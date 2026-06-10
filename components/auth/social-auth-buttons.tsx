@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi } from "@/features/auth/authservice";
 
@@ -24,33 +25,51 @@ interface GoogleCredentialResponse {
 
 export default function SocialAuthButtons() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { login } = useAuth();
     const googleButtonRef = useRef<HTMLDivElement>(null);
     const isInitialized = useRef(false);
+
+    // Pin các giá trị vào ref để tránh stale closure trong Google GSI callback
+    const routerRef = useRef(router);
+    const loginRef = useRef(login);
+    const redirectToRef = useRef(searchParams.get("redirect") || "/");
+
+    useEffect(() => {
+        routerRef.current = router;
+    }, [router]);
+
+    useEffect(() => {
+        loginRef.current = login;
+    }, [login]);
+
+    useEffect(() => {
+        redirectToRef.current = searchParams.get("redirect") || "/";
+    }, [searchParams]);
 
     const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
         try {
             if (!response || !response.credential) {
                 console.error("Google Sign-In did not return a credential", response);
-                alert("Google login failed. No credential returned.");
+                toast.error("Google login failed. No credential returned.");
                 return;
             }
-
-            console.log("Google credential received:", response.credential);
 
             const token = response.credential;
             const data = await callOAuthLoginApi(token);
 
-            // Lưu user vào AuthContext và localStorage
-            if (data.user) {
-                login(data.user);
+            if (!data.user) {
+                throw new Error("Invalid login response: missing user data");
             }
 
-            // Redirect về trang chủ
-            router.push("/");
+            // Dùng ref để đảm bảo luôn lấy giá trị mới nhất
+            loginRef.current(data.user);
+
+            const finalRedirectTo = redirectToRef.current;
+            routerRef.current.push(finalRedirectTo);
         } catch (error) {
             console.error("Google login failed:", error);
-            alert("Google login failed. Please try again.");
+            toast.error("Google login failed. Please try again.");
         }
     };
 
