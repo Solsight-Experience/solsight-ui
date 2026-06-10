@@ -8,7 +8,7 @@ import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
-import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, AlertTriangle } from "lucide-react";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
@@ -18,12 +18,12 @@ import {
     formatDisplay,
     formatFromBaseUnits,
     formatInputValue,
-    getSwapApiConfig,
     isValidAmount,
     parseInputNumber,
     sanitizeInput,
     toBaseUnits
 } from "@/features/swap";
+import { useSolPrice } from "@/features/swap/hooks/useSolPrice";
 import { LimitOrderService } from "@/features/limit-orders";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -58,7 +58,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSlippageBps,
         limitPrice,
         setLimitPrice,
-        resetTradingPanel
+        resetTradingPanel,
+        pendingTradeAction,
+        setPendingTradeAction,
+        pendingSlippageAction,
+        setPendingSlippageAction
     } = useTokenUIStore();
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
 
@@ -67,7 +71,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const [copiedMint, setCopiedMint] = useState<string | null>(null);
     const [selectedBuyPayMint, setSelectedBuyPayMint] = useState<string>(COMMON_TOKENS.SOL.mint);
     const [selectedSellReceiveMint, setSelectedSellReceiveMint] = useState<string>(COMMON_TOKENS.SOL.mint);
-    const [buyTokenDecimalsByMint, setBuyTokenDecimalsByMint] = useState<Record<string, number>>({});
     const [swapState, setSwapState] = useState<{
         loading: boolean;
         error: string | null;
@@ -97,21 +100,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         rawQuote: null
     });
 
-    const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
-
-    // Fetch SOL price in USD
-    useEffect(() => {
-        fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd")
-            .then((r) => r.json())
-            .then((data) => {
-                if (data?.solana?.usd) {
-                    setSolPriceUsd(data.solana.usd);
-                }
-            })
-            .catch((err) => console.error("Failed to fetch SOL price:", err));
-    }, []);
-
-    const swapConfig = useMemo(() => getSwapApiConfig(), []);
+    const { data: solPriceData } = useSolPrice();
+    const solPriceUsd = solPriceData?.price_usd ?? null;
     const internalUpdateRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const previousBuyPayMintRef = useRef(selectedBuyPayMint);
@@ -138,20 +128,38 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: false, error: null, signature: null });
     }, [token.address, resetTradingPanel, isViewingSolToken]);
 
+    const resolvedTokenDecimals = token.decimals ?? 9;
+    useEffect(() => {
+        if (!pendingTradeAction) return;
+
+        if (pendingTradeAction.mint === token.address) {
+            setTradeMode(pendingTradeAction.mode);
+            setPayAmount(pendingTradeAction.amount);
+            if (pendingTradeAction.slippageBps !== undefined) {
+                setSlippageBps(pendingTradeAction.slippageBps);
+            }
+            setLastEdited("pay");
+            setPendingTradeAction(null);
+        }
+    }, [pendingTradeAction, token.address, setTradeMode, setPayAmount, setPendingTradeAction]);
+
+    useEffect(() => {
+        if (!pendingSlippageAction) return;
+
+        if (!pendingSlippageAction.warnOnly) {
+            setSlippageBps(pendingSlippageAction.slippageBps);
+        }
+
+        if (pendingSlippageAction.isHigh) {
+            const pct = (pendingSlippageAction.slippageBps / 100).toFixed(2);
+            toast.warning(`High slippage: ${pendingSlippageAction.slippageBps} bps (${pct}%). Trades may execute at a worse price.`);
+        }
+
+        setPendingSlippageAction(null);
+    }, [pendingSlippageAction, setSlippageBps, setPendingSlippageAction]);
+
     const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
-    useEffect(() => {
-        if (token.decimals != null) return;
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${token.address}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === token.address) : null;
-                if (found && typeof found.decimals === "number") setFetchedDecimals(found.decimals);
-            })
-            .catch(() => {});
-    }, [token.address, token.decimals]);
-
-    const resolvedTokenDecimals = token.decimals ?? fetchedDecimals ?? 9;
     const selectedWalletAddress = useMemo(() => {
         const wallets = walletsData?.wallets ?? [];
         if (!wallets.length) return publicKey ?? "";
@@ -306,52 +314,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         }));
     }, [tradeMode, selectedSellReceiveMint, setPayAmount, setReceiveAmount]);
 
-    useEffect(() => {
-        if (tradeMode !== "buy") return;
-        if (!selectedBuyPayToken) return;
-
-        const selectedMint = selectedBuyPayToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedBuyPayToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedBuyPayToken, buyTokenDecimalsByMint]);
-
-    useEffect(() => {
-        if (tradeMode !== "sell") return;
-        if (!selectedSellReceiveToken) return;
-
-        const selectedMint = selectedSellReceiveToken.mint;
-        if (selectedMint === COMMON_TOKENS.SOL.mint) return;
-        if (selectedSellReceiveToken.decimals != null) return;
-        if (buyTokenDecimalsByMint[selectedMint] != null) return;
-
-        fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${selectedMint}`)
-            .then((r) => r.json())
-            .then((data: Array<{ id: string; decimals: number }>) => {
-                const found = Array.isArray(data) ? data.find((item) => item.id === selectedMint) : null;
-                if (found && typeof found.decimals === "number") {
-                    setBuyTokenDecimalsByMint((prev) => ({
-                        ...prev,
-                        [selectedMint]: found.decimals
-                    }));
-                }
-            })
-            .catch(() => {});
-    }, [tradeMode, selectedSellReceiveToken, buyTokenDecimalsByMint]);
-
     const payToken = tradeMode === "buy" ? (selectedBuyPayToken?.symbol ?? "") : token.symbol;
     const receiveToken = tradeMode === "buy" ? token.symbol : (selectedSellReceiveToken?.symbol ?? "");
     const payTokenLogo = tradeMode === "buy" ? (selectedBuyPayToken?.logoUri ?? "") : token.logo_uri;
@@ -361,23 +323,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const payBalance = tradeMode === "buy" ? String(selectedBuyPayToken?.balance ?? 0) : String(portfolioTokenBalance);
     const receiveBalance = tradeMode === "buy" ? String(portfolioTokenBalance) : String(selectedSellReceiveToken?.balance ?? 0);
     const balancesLoading = isWalletsLoading || (!!selectedWalletAddress && isPositionsLoading);
-    const payDecimals =
-        tradeMode === "buy"
-            ? (selectedBuyPayToken?.decimals ??
-              (selectedBuyPayToken ? buyTokenDecimalsByMint[selectedBuyPayToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals)
-            : resolvedTokenDecimals;
-    const receiveDecimals =
-        tradeMode === "buy"
-            ? resolvedTokenDecimals
-            : (selectedSellReceiveToken?.decimals ??
-              (selectedSellReceiveToken ? buyTokenDecimalsByMint[selectedSellReceiveToken.mint] : undefined) ??
-              COMMON_TOKENS.SOL.decimals);
+    const payDecimals = tradeMode === "buy" ? (selectedBuyPayToken?.decimals ?? COMMON_TOKENS.SOL.decimals) : resolvedTokenDecimals;
+    const receiveDecimals = tradeMode === "buy" ? resolvedTokenDecimals : (selectedSellReceiveToken?.decimals ?? COMMON_TOKENS.SOL.decimals);
 
     const payMint = tradeMode === "buy" ? (selectedBuyPayToken?.mint ?? "") : token.address;
     const receiveMint = tradeMode === "buy" ? token.address : (selectedSellReceiveToken?.mint ?? "");
     const getOptionDecimals = (option: BuyPayTokenOption): number =>
-        option.decimals ?? buyTokenDecimalsByMint[option.mint] ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
+        option.decimals ?? (option.mint === COMMON_TOKENS.SOL.mint ? COMMON_TOKENS.SOL.decimals : 6);
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -539,7 +491,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     },
                     {
                         signal: controller.signal,
-                        config: swapConfig,
                         payTokenSymbol: payToken,
                         receiveTokenSymbol: receiveToken
                     }
@@ -596,7 +547,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         payMint,
         receiveMint,
         slippageBps,
-        swapConfig,
         setPayAmount,
         setReceiveAmount,
         payToken,
@@ -641,14 +591,11 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: true, error: null, signature: null });
 
         try {
-            const { signature } = await executeJupiterSwap(
-                {
-                    quoteResponse: quoteState.rawQuote,
-                    userPublicKey: publicKey,
-                    signTransaction: (tx) => provider.signTransaction(tx)
-                },
-                { config: swapConfig }
-            );
+            const { signature } = await executeJupiterSwap({
+                quoteResponse: quoteState.rawQuote,
+                userPublicKey: publicKey,
+                signTransaction: (tx) => provider.signTransaction(tx)
+            });
 
             setSwapState({ loading: false, error: null, signature });
             await refreshBalancesAfterSwap();
@@ -1104,7 +1051,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 <div className="mb-4 text-sm bg-[var(--surface-btn)] rounded-lg p-3 border border-[var(--border-subtle)] space-y-2">
                     <div className="flex items-center justify-between text-[var(--text-secondary)]">
                         <span className="text-[var(--text-muted)]">Price Impact</span>
-                        <span className="font-semibold">{quoteState.priceImpactPct === null ? "--" : `${(quoteState.priceImpactPct * 100).toFixed(2)}%`}</span>
+                        {quoteState.priceImpactPct === null ? (
+                            <span className="font-semibold">--</span>
+                        ) : (
+                            (() => {
+                                const pct = quoteState.priceImpactPct * 100;
+                                const severity = pct > 15 ? "critical" : pct > 10 ? "danger" : pct > 3 ? "warning" : "safe";
+                                const colorClass =
+                                    severity === "critical"
+                                        ? "text-red-400 font-bold animate-pulse"
+                                        : severity === "danger"
+                                          ? "text-red-400 font-bold"
+                                          : severity === "warning"
+                                            ? "text-amber-400 font-semibold"
+                                            : "font-semibold";
+                                return (
+                                    <span className={colorClass}>
+                                        {severity !== "safe" && <AlertTriangle className="inline-block w-3.5 h-3.5 mr-1 relative top-[-1px]" />}
+                                        {pct.toFixed(2)}%
+                                    </span>
+                                );
+                            })()
+                        )}
                     </div>
                     <div className="flex items-center justify-between text-[var(--text-secondary)]">
                         <span className="text-[var(--text-muted)]">{lastEdited === "receive" ? "Maximum Paid" : "Minimum Received"}</span>

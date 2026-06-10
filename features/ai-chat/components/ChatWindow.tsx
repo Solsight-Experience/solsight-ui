@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
+
+import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useChat } from "../hooks/useChat";
 import { ChatBubble } from "./ChatBubble";
+import { ChatMessageDto } from "@/types/dto";
+
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelect }) => (
     <div className="flex flex-col items-center justify-center text-center space-y-4 py-6 px-4 sm:py-10 sm:px-6">
@@ -26,9 +29,18 @@ const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelec
 
         <div className="flex flex-col gap-2 w-full max-w-[280px]">
             {[
-                { icon: <CircleDollarSign className="w-4 h-4 text-emerald-400" />, text: "Current price of Solana (SOL)?" },
-                { icon: <LineChart className="w-4 h-4 text-violet-400" />, text: "Summarize my portfolio data" },
-                { icon: <ArrowLeftRight className="w-4 h-4 text-blue-400" />, text: "Swap 1 SOL to USDC" }
+                {
+                    icon: <CircleDollarSign className="w-4 h-4 text-emerald-400" />,
+                    text: "Current price of SOL?"
+                },
+                {
+                    icon: <LineChart className="w-4 h-4 text-violet-400" />,
+                    text: "Summarize my portfolio data"
+                },
+                {
+                    icon: <ArrowLeftRight className="w-4 h-4 text-blue-400" />,
+                    text: "Swap 1 SOL to USDC"
+                }
             ].map(({ icon, text }) => (
                 <Button
                     key={text}
@@ -51,20 +63,26 @@ const TypingIndicator: React.FC<{ label?: string }> = ({ label }) => (
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
             <Bot className="w-3.5 h-3.5 text-white" />
         </div>
+
         <div className="bg-card border border-border/60 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
             {label ? (
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "300ms" }} />
                     </div>
+
                     <span className="text-xs text-muted-foreground">{label}</span>
                 </div>
             ) : (
                 <div className="flex gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+
                     <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+
                     <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
             )}
@@ -72,19 +90,52 @@ const TypingIndicator: React.FC<{ label?: string }> = ({ label }) => (
     </div>
 );
 
-export const ChatWindow: React.FC = () => {
-    const { messages, isLoading, toolProgressLabel, error, sendMessage } = useChat();
+interface ChatWindowProps {
+    messages: ChatMessageDto[];
+    isTyping: boolean;
+    isHistoryLoading?: boolean;
+    toolProgressLabel: string | null;
+    error: string | null;
+    sendMessage: (text: string) => void;
+    fetchNextPage?: () => void;
+    hasNextPage?: boolean;
+    isFetchingNextPage?: boolean;
+}
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({
+    messages,
+    isTyping,
+    isHistoryLoading,
+    toolProgressLabel,
+    error,
+    sendMessage,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+}) => {
     const [inputValue, setInputValue] = useState("");
     const [showScrollButton, setShowScrollButton] = useState(false);
 
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const parentRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const shouldAutoScrollRef = useRef(false);
+
+    const virtualizer = useVirtualizer({
+        count: messages.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 100,
+        overscan: 10
+    });
+
+    const virtualItems = virtualizer.getVirtualItems();
+
     const adjustTextareaHeight = () => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = "auto";
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-        }
+        if (!textareaRef.current) return;
+
+        textareaRef.current.style.height = "auto";
+
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     };
 
     useEffect(() => {
@@ -92,33 +143,63 @@ export const ChatWindow: React.FC = () => {
     }, [inputValue]);
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        const parent = parentRef.current;
+
+        if (!parent) return;
+
+        parent.scrollTo({
+            top: parent.scrollHeight,
+            behavior
+        });
     }, []);
 
     useEffect(() => {
-        if (!showScrollButton) {
-            scrollToBottom("auto");
+        const firstItem = virtualItems[0];
+
+        if (!firstItem) return;
+
+        if (firstItem.index === 0 && hasNextPage && !isFetchingNextPage && fetchNextPage) {
+            fetchNextPage();
         }
-    }, [messages, isLoading, showScrollButton, scrollToBottom]);
+    }, [virtualItems, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    useLayoutEffect(() => {
+        if (isFetchingNextPage) return;
+
+        const shouldScroll = shouldAutoScrollRef.current || !showScrollButton;
+
+        if (!shouldScroll) return;
+
+        requestAnimationFrame(() => {
+            scrollToBottom(shouldAutoScrollRef.current ? "smooth" : "auto");
+
+            shouldAutoScrollRef.current = false;
+        });
+    }, [messages.length, isTyping, showScrollButton, isFetchingNextPage, scrollToBottom]);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const target = e.target as HTMLDivElement;
-        if (target.dataset.slot !== "scroll-area-viewport" && !target.classList.contains("overflow-y-auto")) return;
 
-        const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 80;
+        const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+
+        const isAtBottom = distanceFromBottom <= 80;
+
         setShowScrollButton(!isAtBottom);
     };
 
     const handleSend = () => {
-        if (!inputValue.trim() || isLoading) return;
+        if (!inputValue.trim() || isTyping) return;
+
+        shouldAutoScrollRef.current = true;
+
         sendMessage(inputValue);
+
         setInputValue("");
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
             textareaRef.current.focus();
         }
-        setTimeout(() => scrollToBottom("smooth"), 100);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -134,21 +215,59 @@ export const ChatWindow: React.FC = () => {
                 <div className="flex flex-col gap-4 px-3 py-4 sm:px-4" role="log" aria-live="polite">
                     {messages.length === 0 && <WelcomeScreen onSelect={sendMessage} />}
 
-                    {messages.map((msg, idx) => (
-                        <ChatBubble key={msg.timestamp ?? idx} message={msg} />
-                    ))}
+                {isHistoryLoading && messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50 animate-in fade-in duration-500">
+                        <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
 
-                    {isLoading && <TypingIndicator label={toolProgressLabel ?? undefined} />}
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-violet-500/80">Loading History</span>
+                    </div>
+                )}
 
-                    {error && (
-                        <div className="bg-destructive/8 border border-destructive/20 text-destructive text-xs px-4 py-3 rounded-xl text-center mx-2 animate-in fade-in">
-                            ⚠ {error}
-                        </div>
-                    )}
+                {isFetchingNextPage && <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading older messages...</div>}
 
-                    <div ref={messagesEndRef} className="h-1" />
+                <div
+                    style={{
+                        height: `${virtualizer.getTotalSize()}px`,
+                        width: "100%",
+                        position: "relative"
+                    }}
+                >
+                    {virtualItems.map((virtualItem) => {
+                        const msg = messages[virtualItem.index];
+
+                        return (
+                            <div
+                                key={virtualItem.key}
+                                data-index={virtualItem.index}
+                                ref={virtualizer.measureElement}
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    transform: `translateY(${virtualItem.start}px)`
+                                }}
+                                className="py-2"
+                            >
+                                <ChatBubble message={msg} />
+                            </div>
+                        );
+                    })}
                 </div>
-            </ScrollArea>
+
+                {isTyping && (
+                    <div className="mt-4">
+                        <TypingIndicator label={toolProgressLabel ?? undefined} />
+                    </div>
+                )}
+
+                {error && (
+                    <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span className="flex-1">{error}</span>
+                    </div>
+                )}
+            </div>
 
             {showScrollButton && (
                 <Button
@@ -178,7 +297,7 @@ export const ChatWindow: React.FC = () => {
                         onKeyDown={handleKeyDown}
                         placeholder="Ask Solsight AI anything..."
                         className="min-h-[24px] max-h-[120px] w-full resize-none border-0 bg-transparent p-0 py-1.5 shadow-none outline-none text-sm placeholder:text-muted-foreground/60"
-                        disabled={isLoading}
+                        disabled={isTyping}
                         rows={1}
                         aria-label="Chat input"
                     />
@@ -186,10 +305,10 @@ export const ChatWindow: React.FC = () => {
                     <Button
                         size="icon"
                         onClick={handleSend}
-                        disabled={isLoading || !inputValue.trim()}
+                        disabled={isTyping || !inputValue.trim()}
                         className={cn(
                             "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 border-0",
-                            inputValue.trim() && !isLoading
+                            inputValue.trim() && !isTyping
                                 ? "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
                                 : "bg-muted-foreground/15 text-muted-foreground cursor-not-allowed"
                         )}
