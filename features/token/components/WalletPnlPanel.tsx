@@ -111,7 +111,7 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
         }
 
         return data;
-    }, [holder, totalPnl, totalTxns, timePeriod]);
+    }, [totalPnl, totalTxns, timePeriod]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

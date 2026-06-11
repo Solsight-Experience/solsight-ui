@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { LimitOrderService } from "@/features/limit-orders";
 import type { LimitOrder } from "@/features/limit-orders";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
@@ -25,7 +25,7 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
     const [loading, setLoading] = useState(false);
     const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         if (!connected || !publicKey) return;
 
         setLoading(true);
@@ -41,14 +41,14 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
         } finally {
             setLoading(false);
         }
-    };
+    }, [connected, publicKey, inputMint, outputMint]);
 
     useEffect(() => {
         fetchOrders();
         // Refresh every 30 seconds
         const interval = setInterval(fetchOrders, 30000);
         return () => clearInterval(interval);
-    }, [connected, publicKey, inputMint, outputMint]);
+    }, [fetchOrders]);
 
     const handleCancelOrder = async (orderAccount: string) => {
         if (!publicKey) return;

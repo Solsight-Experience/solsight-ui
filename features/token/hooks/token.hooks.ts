@@ -75,7 +75,7 @@ export function useTokenDetail(address: string) {
         if (!newDetail) return;
         if (!initial.data) return;
         setData((prev) => ({ ...prev, ...newDetail }));
-    }, [newDetail]);
+    }, [initial.data, newDetail]);
 
     return { ...initial, data };
 }

@@ -108,8 +108,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
 
     useEffect(() => {
         if (!isOpen) return;
-        const hasContent = searchQuery.trim().length >= 2 || filterFormData !== null;
-        if (hasContent) performSearch();
+        performSearch();
     }, [sortBy, sortOrder, isOpen, performSearch]);
 
     return (

@@ -146,7 +146,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const previousBuyPayMintRef = useRef(selectedBuyPayMint);
     const previousSellReceiveMintRef = useRef(selectedSellReceiveMint);
     const noSwapOptionsNotifiedRef = useRef(false);
+    const payAmountRef = useRef(payAmount);
+    const receiveAmountRef = useRef(receiveAmount);
     const isViewingSolToken = token.address.toLowerCase() === COMMON_TOKENS.SOL.mint.toLowerCase();
+
+    payAmountRef.current = payAmount;
+    receiveAmountRef.current = receiveAmount;
 
     useEffect(() => {
         resetTradingPanel();
@@ -449,14 +454,13 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         if (orderType === "market") {
             // Clear limit price when switching back to market (optional, but ensures clean state)
             // and ensure lastEdited is set so quote re-runs
-            if (payAmount) setLastEdited("pay");
-            else if (receiveAmount) setLastEdited("receive");
+            if (payAmountRef.current) setLastEdited("pay");
+            else if (receiveAmountRef.current) setLastEdited("receive");
         } else if (orderType === "limit") {
             // It will auto recalculate in the limit effect since dependency `orderType` is passed
-            if (payAmount) setLastEdited("pay");
-            else if (receiveAmount) setLastEdited("receive");
+            if (payAmountRef.current) setLastEdited("pay");
+            else if (receiveAmountRef.current) setLastEdited("receive");
         }
-        // Note: Do not add payAmount/receiveAmount to dependencies to avoid infinite loops when they change
     }, [orderType]);
 
     useEffect(() => {

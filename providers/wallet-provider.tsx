@@ -16,7 +16,7 @@ export function SolanaWalletProvider({ children }: { children: React.ReactNode }
 
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-    const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], [network]);
+    const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
 
     // Key the provider on cluster so it remounts when cluster changes
     return (
