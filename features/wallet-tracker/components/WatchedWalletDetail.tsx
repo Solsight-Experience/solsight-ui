@@ -72,7 +72,6 @@ const TokenLogo: React.FC<{ address?: string; uri?: string; symbol: string; size
 
     if (idx < sources.length) {
         return (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
                 src={sources[idx]}
                 alt={symbol}
