@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, memo, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -442,7 +443,7 @@ const HeaderIcon = memo(function HeaderIcon() {
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="relative w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br" />
-                <img src="/app_icon.png" alt="SolSight" />
+                <Image src="/app_icon.png" alt="SolSight" width={32} height={32} />
             </div>
             <span className="text-[15px] font-bold tracking-tight text-white font-sans">
                 Sol<span className="text-violet-400">Sight</span>

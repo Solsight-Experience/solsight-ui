@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowRight, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
 import { Notification, NotificationEventType } from "../types/notification.types";
 
@@ -23,11 +24,14 @@ function TokenLogo({ mint, logo, symbol, size = "size-7" }: { mint?: string; log
 
     if (idx < sources.length) {
         return (
-            <img
+            <Image
                 src={sources[idx]}
                 alt={symbol ?? ""}
+                width={28}
+                height={28}
                 className={`${size} rounded-full object-cover shrink-0 bg-white/[0.06]`}
                 onError={() => setIdx((i) => i + 1)}
+                unoptimized
             />
         );
     }
