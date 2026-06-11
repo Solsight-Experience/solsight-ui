@@ -40,14 +40,14 @@ export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" 
 
         return (
             <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleAutoClick}
                         disabled={lock.forcedMode === "custom"}
                         className={cn(
-                            "bg-zinc-800 hover:bg-zinc-700 ring-1 ring-transparent",
+                            "bg-zinc-800 hover:bg-zinc-700 ring-1 ring-transparent overflow-hidden whitespace-nowrap",
                             state.mode === "auto" && "ring-white/80",
                             lock.forcedMode === "custom" && "opacity-50 cursor-not-allowed"
                         )}
@@ -118,7 +118,7 @@ export abstract class SegmentedItem<TOption extends string> extends SwapConfigIt
 
     renderExpandedForm({ state, onChange }: ExpandedFormProps<{ value: TOption }>): React.ReactNode {
         return (
-            <div className="flex items-center gap-1 bg-zinc-800 p-1 rounded-lg">
+            <div className="ml-auto flex w-fit max-w-full min-w-0 items-center gap-1 rounded-md bg-zinc-800 p-0.5">
                 {this.options.map((option) => (
                     <Button
                         key={option.id}
@@ -126,12 +126,12 @@ export abstract class SegmentedItem<TOption extends string> extends SwapConfigIt
                         size="sm"
                         onClick={() => onChange({ value: option.id })}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-2 text-zinc-300 hover:text-white",
+                            "h-6 min-w-0 shrink px-2 text-xs font-normal gap-1 rounded text-zinc-300 hover:text-white",
                             state.value === option.id && "bg-zinc-700 text-white ring-1 ring-white/80"
                         )}
                     >
-                        <option.icon className="h-4 w-4" />
-                        <span>{option.label}</span>
+                        <option.icon className="h-3 w-3" />
+                        <span className="whitespace-nowrap">{option.label}</span>
                     </Button>
                 ))}
             </div>

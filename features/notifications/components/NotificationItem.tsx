@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowRight, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
-import { NotificationEventType } from "../types/notification.types";
+import { Notification, NotificationEventType } from "../types/notification.types";
 
 function relativeTime(dateStr: string): string {
     const normalized = /[Zz]|[+-]\d{2}:\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
@@ -23,11 +24,14 @@ function TokenLogo({ mint, logo, symbol, size = "size-7" }: { mint?: string; log
 
     if (idx < sources.length) {
         return (
-            <img
+            <Image
                 src={sources[idx]}
                 alt={symbol ?? ""}
+                width={28}
+                height={28}
                 className={`${size} rounded-full object-cover shrink-0 bg-white/[0.06]`}
                 onError={() => setIdx((i) => i + 1)}
+                unoptimized
             />
         );
     }
@@ -55,25 +59,25 @@ function TypeBadge({ type }: { type: NotificationEventType }) {
     return <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-semibold shrink-0 ${cfg.color}`}>{cfg.label}</span>;
 }
 
-function LogoArea({ notification }: { notification: any }) {
-    const meta = (notification.metadata ?? {}) as Record<string, any>;
+function LogoArea({ notification }: { notification: Notification }) {
+    const meta = notification.metadata ?? {};
 
     if (notification.type === NotificationEventType.SWAP_EXECUTED) {
         return (
             <div className="flex items-center gap-1.5 shrink-0">
-                <TokenLogo mint={meta.mintIn as string} logo={meta.tokenInLogo as string} symbol={meta.tokenIn as string} />
+                <TokenLogo mint={meta.mintIn} logo={meta.tokenInLogo} symbol={meta.tokenIn} />
                 <ArrowRight className="size-3 text-violet-400/70 shrink-0" strokeWidth={2.5} />
-                <TokenLogo mint={meta.mintOut as string} logo={meta.tokenOutLogo as string} symbol={meta.tokenOut as string} />
+                <TokenLogo mint={meta.mintOut} logo={meta.tokenOutLogo} symbol={meta.tokenOut} />
             </div>
         );
     }
 
     if (notification.type === NotificationEventType.PRICE_ALERT_TRIGGERED) {
-        return <TokenLogo mint={meta.tokenMint as string} logo={meta.tokenLogo as string} symbol={meta.tokenSymbol as string} />;
+        return <TokenLogo mint={meta.tokenMint} logo={meta.tokenLogo} symbol={meta.tokenSymbol} />;
     }
 
     if (notification.type === NotificationEventType.TRANSACTION_CONFIRMED || notification.type === NotificationEventType.TRANSACTION_FAILED) {
-        return <TokenLogo logo={meta.tokenLogo as string} symbol="SOL" />;
+        return <TokenLogo logo={meta.tokenLogo} symbol="SOL" />;
     }
 
     return (
@@ -105,8 +109,7 @@ function CopyBtn({ value, display }: { value: string; display: string }) {
 }
 
 interface NotificationItemProps {
-    // notifications may be received from sockets with loose shapes; accept any
-    notification: any;
+    notification: Notification;
     onClick: () => void;
     onDelete?: (id: string) => void;
     isLast?: boolean;

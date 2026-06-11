@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { AlertTriangle, Wallet } from "lucide-react";
 import { useWallets } from "../hooks/portfolio.hooks";
 import AddWalletButton from "./AddWalletButton";
@@ -83,7 +84,14 @@ export const WalletList: React.FC = () => {
                                            hover:border-violet-500/30 hover:bg-violet-500/[0.04]
                                            transition-all duration-150"
                             >
-                                <img src={wallet.icon} className="rounded-lg h-8 w-8 object-contain shrink-0" alt={wallet.name} />
+                                <Image
+                                    src={wallet.icon}
+                                    className="rounded-lg h-8 w-8 object-contain shrink-0"
+                                    alt={wallet.name}
+                                    width={32}
+                                    height={32}
+                                    unoptimized
+                                />
                                 <div className="flex flex-col flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{wallet.name}</span>

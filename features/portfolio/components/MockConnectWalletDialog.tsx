@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useWalletAuth } from "../hooks/useWalletAuth";
@@ -65,10 +66,13 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                         onClick={() => handleConnect("Phantom")}
                         disabled={isConnecting}
                     >
-                        <img
+                        <Image
                             src="https://cdn.prod.website-files.com/66e480f0e9eccea9c231ce92/688cfdedc848baa5dcb46202_685aaee76364cd101625876d_Phantom-logo.png"
                             alt="Phantom"
+                            width={32}
+                            height={32}
                             className="h-8 w-8 object-contain"
+                            unoptimized
                         />
                         <div className="flex flex-col items-start">
                             <span className="text-base font-medium">Phantom</span>
@@ -91,7 +95,14 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                         onClick={() => handleConnect("MetaMask")}
                         disabled={isConnecting}
                     >
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="h-8 w-8 object-contain" />
+                        <Image
+                            src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg"
+                            alt="MetaMask"
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 object-contain"
+                            unoptimized
+                        />
                         <div className="flex flex-col items-start">
                             <span className="text-base font-medium">MetaMask</span>
                             <span className="text-xs text-[var(--text-muted)]">Connect to MetaMask</span>

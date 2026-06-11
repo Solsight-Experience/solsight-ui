@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { filterService, TokenFilterParams, PoolFilterParams } from "../services/filter.service";
-import { TokenFilterRequest, TokenFilterResponse, PoolFilterRequest, PoolFilterResponse } from "@/types/filter";
+import { TokenFilterRequest, PoolFilterRequest } from "@/types/filter";
 import { toast } from "sonner";
 
 /**

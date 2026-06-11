@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bell, BellOff, Plus, Trash2, AlertTriangle, ArrowRightLeft, Coins, Zap, ChevronDown, ChevronUp, Loader2, MessageCircle, Mail } from "lucide-react";
+import { Bell, BellOff, Plus, Trash2, AlertTriangle, ArrowRightLeft, Coins, Zap, Loader2, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useWalletAlerts, useCreateWalletAlert, useUpdateWalletAlert, useDeleteWalletAlert } from "../hooks/useWalletAlerts";
 import { useZaloSubscription } from "../hooks/useZaloSubscription";

@@ -1,4 +1,4 @@
-import { currencyFormatter, percentFormatter, numberFormatter, PercentFormatter } from "@/lib/formatters";
+import { currencyFormatter, numberFormatter, PercentFormatter } from "@/lib/formatters";
 import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
 // Time formatting
 export const formatTime = (timestamp: number): string => {
@@ -20,7 +20,7 @@ export const formatTimeAgo = (timestamp: number): string => {
 };
 
 // Number formatting
-export const formatNumber = (num: number, decimals: number = 2): string => {
+export const formatNumber = (num: number, _decimals: number = 2): string => {
     return currencyFormatter.formatCompact(num);
 };
 

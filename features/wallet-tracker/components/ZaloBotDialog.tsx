@@ -2,18 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Copy, Check, CheckCircle2, Loader2, MessageCircle, Unlink } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import {
-    useZaloSubscription,
-    useGenerateZaloToken,
-    useZaloStatus,
-    useDisconnectZalo,
-} from "../hooks/useZaloSubscription";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useZaloSubscription, useGenerateZaloToken, useZaloStatus, useDisconnectZalo } from "../hooks/useZaloSubscription";
 
 type Step = "idle" | "pending" | "verified";
 
@@ -44,7 +34,10 @@ function TokenExpiry({ expiresAt }: { expiresAt: string }) {
     useEffect(() => {
         function update() {
             const diff = new Date(expiresAt).getTime() - Date.now();
-            if (diff <= 0) { setRemaining("Expired"); return; }
+            if (diff <= 0) {
+                setRemaining("Expired");
+                return;
+            }
             const m = Math.floor(diff / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             setRemaining(`${m}:${s.toString().padStart(2, "0")}`);
@@ -54,11 +47,7 @@ function TokenExpiry({ expiresAt }: { expiresAt: string }) {
         return () => clearInterval(id);
     }, [expiresAt]);
 
-    return (
-        <span className={`text-[11px] tabular-nums ${remaining === "Expired" ? "text-red-400" : "text-white/30"}`}>
-            Expires in {remaining}
-        </span>
-    );
+    return <span className={`text-[11px] tabular-nums ${remaining === "Expired" ? "text-red-400" : "text-white/30"}`}>Expires in {remaining}</span>;
 }
 
 interface ZaloBotDialogProps {
@@ -107,8 +96,10 @@ export function ZaloBotDialog({ open, onOpenChange }: ZaloBotDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-[#0c1018] border border-white/[0.08] rounded-2xl w-[420px] max-w-[95vw]
-                                      shadow-[0_24px_60px_rgba(0,0,0,0.7)]">
+            <DialogContent
+                className="bg-[#0c1018] border border-white/[0.08] rounded-2xl w-[420px] max-w-[95vw]
+                                      shadow-[0_24px_60px_rgba(0,0,0,0.7)]"
+            >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2.5 text-[14px] font-semibold text-white/90">
                         <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500/15 ring-1 ring-blue-500/25">
@@ -124,11 +115,7 @@ export function ZaloBotDialog({ open, onOpenChange }: ZaloBotDialogProps) {
                             <Loader2 className="size-5 text-white/30 animate-spin" />
                         </div>
                     ) : step === "verified" ? (
-                        <VerifiedState
-                            verifiedAt={subscription!.verifiedAt!}
-                            onDisconnect={handleDisconnect}
-                            disconnecting={disconnecting}
-                        />
+                        <VerifiedState verifiedAt={subscription!.verifiedAt!} onDisconnect={handleDisconnect} disconnecting={disconnecting} />
                     ) : step === "pending" ? (
                         <PendingState
                             token={subscription!.verificationToken!}
@@ -167,17 +154,7 @@ function IdleState({ onConnect, connecting }: { onConnect: () => void; connectin
     );
 }
 
-function PendingState({
-    token,
-    expiresAt,
-    onRefresh,
-    refreshing,
-}: {
-    token: string;
-    expiresAt: string;
-    onRefresh: () => void;
-    refreshing: boolean;
-}) {
+function PendingState({ token, expiresAt, onRefresh, refreshing }: { token: string; expiresAt: string; onRefresh: () => void; refreshing: boolean }) {
     return (
         <div className="flex flex-col gap-4">
             <p className="text-[12px] text-white/50 leading-relaxed">
@@ -185,9 +162,7 @@ function PendingState({
             </p>
 
             <div className="flex flex-col items-center gap-3 py-5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <span className="text-[32px] font-mono font-bold tracking-[0.25em] text-white">
-                    {token}
-                </span>
+                <span className="text-[32px] font-mono font-bold tracking-[0.25em] text-white">{token}</span>
                 <div className="flex items-center gap-3">
                     <CopyButton value={token} />
                     <TokenExpiry expiresAt={expiresAt} />
@@ -210,19 +185,11 @@ function PendingState({
     );
 }
 
-function VerifiedState({
-    verifiedAt,
-    onDisconnect,
-    disconnecting,
-}: {
-    verifiedAt: string;
-    onDisconnect: () => void;
-    disconnecting: boolean;
-}) {
+function VerifiedState({ verifiedAt, onDisconnect, disconnecting }: { verifiedAt: string; onDisconnect: () => void; disconnecting: boolean }) {
     const date = new Date(verifiedAt).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: "numeric"
     });
 
     return (
@@ -235,9 +202,7 @@ function VerifiedState({
                 </div>
             </div>
 
-            <p className="text-[12px] text-white/40 text-center">
-                Wallet alert notifications will be sent to your Zalo chat.
-            </p>
+            <p className="text-[12px] text-white/40 text-center">Wallet alert notifications will be sent to your Zalo chat.</p>
 
             <button
                 onClick={onDisconnect}

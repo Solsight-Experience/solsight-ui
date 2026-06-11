@@ -8,13 +8,28 @@ export enum NotificationEventType {
     SYSTEM_ANNOUNCEMENT = "system_announcement"
 }
 
+export interface NotificationMetadata {
+    mintIn?: string;
+    mintOut?: string;
+    tokenIn?: string;
+    tokenOut?: string;
+    tokenInLogo?: string;
+    tokenOutLogo?: string;
+    tokenMint?: string;
+    tokenLogo?: string;
+    tokenSymbol?: string;
+    walletAddress?: string;
+    walletShort?: string;
+    txUrl?: string;
+}
+
 export interface Notification {
     id: string;
     userId: string;
     type: NotificationEventType;
     title: string;
     message: string;
-    metadata?: Record<string, unknown>;
+    metadata?: NotificationMetadata;
     isRead: boolean;
     createdAt: string;
 }

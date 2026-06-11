@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -21,7 +23,7 @@ interface QuickBuyReviewModalProps {
 
 type PhantomProvider = {
     isPhantom?: boolean;
-    signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 };
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
@@ -170,7 +172,14 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                         <div className="rounded-lg border border-border p-3">
                             <div className="text-muted-foreground mb-2">Token</div>
                             <div className="flex items-center gap-2">
-                                <img src={token.token.iconUrl || "/icons/sol.png"} alt={token.token.ticker} className="h-5 w-5 rounded-full" />
+                                <Image
+                                    src={token.token.iconUrl || "/icons/sol.png"}
+                                    alt={token.token.ticker}
+                                    width={20}
+                                    height={20}
+                                    className="h-5 w-5 rounded-full"
+                                    unoptimized
+                                />
                                 <span className="font-semibold">{token.token.ticker}</span>
                                 <span className="text-muted-foreground">{token.token.name}</span>
                             </div>

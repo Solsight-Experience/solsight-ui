@@ -16,7 +16,7 @@ interface ChartCardProps {
     onDragEnd?: (e: React.DragEvent<HTMLDivElement>) => void;
 }
 
-export const ChartCard: React.FC<ChartCardProps> = ({ id, tokenAddress, symbol, onRemove, isDragging, onDragStart, onDragOver, onDrop, onDragEnd }) => {
+export const ChartCard: React.FC<ChartCardProps> = ({ tokenAddress, symbol, onRemove, isDragging, onDragStart, onDragOver, onDrop, onDragEnd }) => {
     const router = useRouter();
     const [isFullscreen, setIsFullscreen] = useState(false);
 

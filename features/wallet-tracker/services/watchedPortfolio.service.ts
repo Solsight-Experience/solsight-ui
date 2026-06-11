@@ -2,19 +2,80 @@ import { apiClient } from "@/lib/api-client";
 import { PORTFOLIO_WATCH_ENDPOINTS } from "@/lib/constants";
 import type { PortfolioOverview, PositionsResponse, ActivitiesResponse } from "@/features/portfolio/types/portfolio.types";
 
+interface WatchedOverviewApiResponse {
+    total_balance_usd: number;
+    total_balance_sol: number;
+    balance_change_24h: number;
+    pnl: PortfolioOverview["pnl"];
+    transactions: PortfolioOverview["transactions"];
+    allocation?: Array<{
+        symbol: string;
+        value_usd: number;
+        percentage?: number;
+        percent?: number;
+    }>;
+    top_tokens?: Array<{
+        address?: string;
+        mint?: string;
+        symbol: string;
+        name: string;
+        logo_uri?: string;
+        logo?: string;
+        balance?: number;
+        amount?: number;
+        value_usd: number;
+        percent_of_portfolio?: number;
+        percentage?: number;
+        pnl?: number;
+        price_change_24h?: number;
+        change_24h?: number;
+    }>;
+}
+
+interface WatchedPositionApiItem {
+    mint?: string;
+    address?: string;
+    symbol?: string;
+    name?: string;
+    logo?: string;
+    logo_uri?: string;
+    decimals: number;
+    amount?: number;
+    balance?: number;
+    avg_buy_price?: number;
+    price?: number;
+    current_price?: number;
+    value_usd?: number;
+    price_change_24h?: number;
+    total_bought?: number;
+    total_sold?: number;
+    realized_pnl?: number;
+    unrealized_pnl?: number;
+    pnl?: number;
+    total_pnl?: number;
+    roi_percent?: number;
+    pnl_percent?: number;
+    percent_of_portfolio?: number;
+}
+
+interface WatchedPositionsApiResponse {
+    positions?: WatchedPositionApiItem[];
+    summary?: PositionsResponse["summary"];
+}
+
 export const watchedPortfolioApi = {
     getOverview: async (params: { wallet_address: string; time_frame?: "24h" | "7d" | "30d" | "90d" | "1y" }): Promise<PortfolioOverview> => {
-        const response = await apiClient.get<any>(PORTFOLIO_WATCH_ENDPOINTS.OVERVIEW, { params });
+        const response = await apiClient.get<WatchedOverviewApiResponse>(PORTFOLIO_WATCH_ENDPOINTS.OVERVIEW, { params });
         return {
             ...response,
             allocation:
-                response.allocation?.map((item: any) => ({
+                response.allocation?.map((item) => ({
                     symbol: item.symbol,
                     value_usd: item.value_usd,
-                    percent: item.percentage ?? item.percent
+                    percent: item.percentage ?? item.percent ?? 0
                 })) || [],
             top_tokens:
-                response.top_tokens?.map((item: any) => ({
+                response.top_tokens?.map((item) => ({
                     address: item.address || item.mint || "",
                     symbol: item.symbol,
                     name: item.name,
@@ -33,10 +94,10 @@ export const watchedPortfolioApi = {
         sort_by?: "value" | "pnl" | "change_24h";
         show_zero_balance?: boolean;
     }): Promise<PositionsResponse> => {
-        const response = await apiClient.get<any>(PORTFOLIO_WATCH_ENDPOINTS.POSITIONS, { params });
+        const response = await apiClient.get<WatchedPositionsApiResponse>(PORTFOLIO_WATCH_ENDPOINTS.POSITIONS, { params });
         return {
             positions:
-                response.positions?.map((item: any) => ({
+                response.positions?.map((item) => ({
                     token: {
                         address: item.mint || item.address || "",
                         symbol: item.symbol || "",

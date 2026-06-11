@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const response = await apiClient.get<UserResponseDto>(API_ENDPOINTS.AUTH.PROFILE);
             setUser(response);
-        } catch (error) {
+        } catch {
             // Token is invalid, remove it
             Cookies.remove("auth_token");
         } finally {

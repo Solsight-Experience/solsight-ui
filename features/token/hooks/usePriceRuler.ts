@@ -16,12 +16,14 @@ export const usePriceRuler = (
     const priceLineRef = useRef<IPriceLine | null>(null);
 
     useEffect(() => {
-        if (!enabled || !seriesRef.current || rulerPrice === null) {
+        const series = seriesRef.current;
+
+        if (!enabled || !series || rulerPrice === null) {
             // Remove existing line
-            if (priceLineRef.current && seriesRef.current) {
+            if (priceLineRef.current && series) {
                 try {
-                    seriesRef.current.removePriceLine(priceLineRef.current);
-                } catch (e) {
+                    series.removePriceLine(priceLineRef.current);
+                } catch {
                     // Price line may already be removed
                 }
                 priceLineRef.current = null;
@@ -30,16 +32,16 @@ export const usePriceRuler = (
         }
 
         // Remove old price line if exists
-        if (priceLineRef.current && seriesRef.current) {
+        if (priceLineRef.current && series) {
             try {
-                seriesRef.current.removePriceLine(priceLineRef.current);
-            } catch (e) {
+                series.removePriceLine(priceLineRef.current);
+            } catch {
                 // Price line may already be removed
             }
         }
 
         // Create draggable price line
-        const priceLine = seriesRef.current.createPriceLine({
+        const priceLine = series.createPriceLine({
             price: rulerPrice,
             color: "#f59e0b", // Amber color
             lineWidth: 2,
@@ -51,10 +53,10 @@ export const usePriceRuler = (
         priceLineRef.current = priceLine;
 
         return () => {
-            if (priceLineRef.current && seriesRef.current) {
+            if (priceLineRef.current) {
                 try {
-                    seriesRef.current.removePriceLine(priceLineRef.current);
-                } catch (e) {
+                    series.removePriceLine(priceLineRef.current);
+                } catch {
                     // Price line may already be removed
                 }
             }

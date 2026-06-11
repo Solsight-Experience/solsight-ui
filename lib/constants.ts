@@ -119,7 +119,7 @@ export const TOKEN_ENDPOINTS = {
 
     // Token Actions
     SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
-    ADD_FAVORITE: (address: string) => `/api/account/me/favorites`,
+    ADD_FAVORITE: (_address: string) => `/api/account/me/favorites`,
     REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
 
     // AI Summary

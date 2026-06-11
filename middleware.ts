@@ -4,9 +4,6 @@ import type { NextRequest } from "next/server";
 // Danh sách các route cần bảo vệ
 const protectedRoutes = ["/portfolio", "/profile", "/token", "/notifications", "/wallet-tracker", "/multi-chart"];
 
-// Danh sách các route public
-const publicRoutes = ["/", "/authentication"];
-
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 

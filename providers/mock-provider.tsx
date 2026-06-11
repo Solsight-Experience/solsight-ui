@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export function MockProvider({ children }: { children: React.ReactNode }) {
-    const [mockReady, setMockReady] = useState(false);
+    const [, setMockReady] = useState(false);
 
     useEffect(() => {
         // Only setup mock in browser

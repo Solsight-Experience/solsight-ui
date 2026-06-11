@@ -18,7 +18,7 @@ interface TokenBriefCardProps {
 }
 
 export const TokenBriefCard: React.FC<TokenBriefCardProps> = ({ data }) => {
-    const { symbol, name, logoUri, price, priceChange24h, marketCap, address } = data;
+    const { symbol, name, logoUri, price, priceChange24h, address } = data;
     const change = typeof priceChange24h === "number" ? priceChange24h : undefined;
     const isPositive = typeof change === "number" && change >= 0;
 

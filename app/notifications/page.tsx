@@ -20,8 +20,14 @@ function SkeletonItem() {
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState<"all" | "unread">("all");
-    const { notifications, unreadCount, hasMore, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, loadMore } = useNotifications();
-    const { confirming: confirmingClear, request: handleClearAllClick, confirm: handleClearAllConfirm, cancel: handleClearAllCancel } = useTimedConfirm(deleteAllNotifications);
+    const { notifications, unreadCount, hasMore, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, loadMore } =
+        useNotifications();
+    const {
+        confirming: confirmingClear,
+        request: handleClearAllClick,
+        confirm: handleClearAllConfirm,
+        cancel: handleClearAllCancel
+    } = useTimedConfirm(deleteAllNotifications);
 
     const filteredNotifications = filter === "unread" ? notifications.filter((n) => !n.isRead) : notifications;
 
@@ -36,8 +42,8 @@ export default function NotificationsPage() {
                             Mark all as read
                         </button>
                     )}
-                    {notifications.length > 0 && (
-                        confirmingClear ? (
+                    {notifications.length > 0 &&
+                        (confirmingClear ? (
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-white/40">Clear all?</span>
                                 <button
@@ -65,8 +71,7 @@ export default function NotificationsPage() {
                                 <Trash2 size={14} />
                                 Clear all
                             </button>
-                        )
-                    )}
+                        ))}
                 </div>
             </div>
 

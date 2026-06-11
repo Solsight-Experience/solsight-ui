@@ -1,6 +1,7 @@
 "use client";
 
 import nextDynamic from "next/dynamic";
+import Image from "next/image";
 const SignInForm = nextDynamic(() => import("@/components/auth/sign-in-form"), { ssr: false });
 const SignUpForm = nextDynamic(() => import("@/components/auth/sign-up-form"), { ssr: false });
 import AuthBackground from "@/components/auth/auth-background";
@@ -485,8 +486,6 @@ function MemberCard({ m, idx }: { m: (typeof TEAM)[0]; idx: number }) {
 export default function Authentication() {
     const [isSignIn, setIsSignIn] = useState(true);
     const [mobileAuthOpen, setMobileAuthOpen] = useState(false);
-    const [email, setEmail] = useState("");
-    const [ctaSubmitted, setCtaSubmitted] = useState(false);
     const heroRef = useRef<HTMLDivElement>(null);
 
     return (
@@ -528,7 +527,7 @@ export default function Authentication() {
                     {/* logo */}
                     <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity self-start">
                         <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                            <img src="/app_icon.png" alt="SolSight" className="w-full h-full object-cover" />
+                            <Image src="/app_icon.png" alt="SolSight" width={32} height={32} className="w-full h-full object-cover" />
                         </div>
                         <span className="text-[15px] font-bold tracking-tight text-white">
                             Sol<span className="text-violet-400">Sight</span>
@@ -592,7 +591,7 @@ export default function Authentication() {
             >
                 <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <div className="w-7 h-7 rounded-md overflow-hidden">
-                        <img src="/app_icon.png" alt="SolSight" className="w-full h-full object-cover" />
+                        <Image src="/app_icon.png" alt="SolSight" width={28} height={28} className="w-full h-full object-cover" />
                     </div>
                     <span className="text-sm font-bold text-white">
                         Sol<span className="text-violet-400">Sight</span>
@@ -664,7 +663,7 @@ export default function Authentication() {
                 >
                     <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                         <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                            <img src="/app_icon.png" alt="SolSight" className="w-full h-full object-cover" />
+                            <Image src="/app_icon.png" alt="SolSight" width={32} height={32} className="w-full h-full object-cover" />
                         </div>
                         <span className="text-[15px] font-bold tracking-tight text-white">
                             Sol<span className="text-violet-400">Sight</span>
@@ -908,7 +907,7 @@ export default function Authentication() {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <div className="w-6 h-6 rounded-md overflow-hidden">
-                                <img src="/app_icon.png" alt="SolSight" className="w-full h-full object-cover" />
+                                <Image src="/app_icon.png" alt="SolSight" width={24} height={24} className="w-full h-full object-cover" />
                             </div>
                             <span className="text-sm font-bold text-white">
                                 Sol<span className="text-violet-400">Sight</span>
