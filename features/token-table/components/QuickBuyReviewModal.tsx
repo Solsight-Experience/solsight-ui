@@ -11,6 +11,7 @@ import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -21,7 +22,7 @@ interface QuickBuyReviewModalProps {
 
 type PhantomProvider = {
     isPhantom?: boolean;
-    signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 };
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {

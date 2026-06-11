@@ -42,7 +42,16 @@ interface TradingPanelProps {
 
 type PhantomProvider = {
     isPhantom?: boolean;
-    signTransaction: (tx: unknown) => Promise<{ serialize(): Uint8Array }>;
+    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
+};
+
+type Base58PublicKey = {
+    toBase58: () => string;
+};
+
+const resolveWalletAddress = (publicKey: string | Base58PublicKey | null | undefined): string => {
+    if (!publicKey) return "";
+    return typeof publicKey === "string" ? publicKey : publicKey.toBase58();
 };
 
 type BuyPayTokenOption = {
@@ -696,7 +705,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = typeof (publicKey as any)?.toBase58 === "function" ? (publicKey as any).toBase58() : String(publicKey ?? "");
+            const walletAddress = resolveWalletAddress(publicKey);
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }

@@ -32,6 +32,8 @@ import { useNotifications } from "@/features/notifications/hooks/useNotification
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import ClusterToggle from "@/components/layout/cluster-toggle";
 
+type AuthUser = NonNullable<ReturnType<typeof useAuth>["user"]>;
+
 const TICKERS = [
     { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
     { symbol: "JUP/SOL", price: "0.00562", change: 5.43 },
@@ -273,8 +275,8 @@ interface SidebarProps {
     open: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
-     
-    user: any;
+
+    user: AuthUser | null;
     unreadCount: number;
     isPanelOpen: boolean;
     setPanelOpen: (v: boolean) => void;
@@ -556,8 +558,7 @@ const SignInButton = memo(function SignInButton() {
  * UserDropdown
  * ─────────────────────────────────────────────────────────────────────────── */
 interface UserDropdownProps {
-     
-    user: any;
+    user: AuthUser | null;
     open: boolean;
     onToggle: () => void;
     onClose: () => void;
