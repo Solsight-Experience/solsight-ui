@@ -39,7 +39,20 @@ const eslintConfig = [
           "ts-check": false,
           minimumDescriptionLength: 10,
         },
-      ]
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          vars: "all",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true
+        }
+      ],
       // Relax rules that produce many repo-wide warnings during CI lint
       // "@typescript-eslint/no-explicit-any": "off",
       // "@typescript-eslint/no-unused-vars": "off",
