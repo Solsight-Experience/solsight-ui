@@ -1,7 +1,7 @@
-import apiClient from '@/lib/api-client';
-import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '@/lib/constants';
-import { WalletResponseDto, CreateWalletDto, GetWalletsResponseDto } from '@/types/dto';
-import { ApiResponse } from '@/types/api';
+import apiClient from "@/lib/api-client";
+import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from "@/lib/constants";
+import { WalletResponseDto, CreateWalletDto, GetWalletsResponseDto } from "@/types/dto";
+import { ApiResponse } from "@/types/api";
 
 export class WalletService {
     // Connect wallet - sends public key to backend for registration
@@ -20,23 +20,21 @@ export class WalletService {
         return response.data.balance;
     }
 
-  // Get user's wallets
-  static async getUserWallets(): Promise<WalletResponseDto[]> {
-    const response = await apiClient.get<GetWalletsResponseDto>(
-      API_ENDPOINTS.WALLETS.LIST
-    );
-    // Handle new API response structure with { wallets: [...] }
-    const wallets = response?.wallets || [];
-    return Array.isArray(wallets) ? wallets : [];
-  }
+    // Get user's wallets
+    static async getUserWallets(): Promise<WalletResponseDto[]> {
+        const response = await apiClient.get<GetWalletsResponseDto>(API_ENDPOINTS.WALLETS.LIST);
+        // Handle new API response structure with { wallets: [...] }
+        const wallets = response?.wallets || [];
+        return Array.isArray(wallets) ? wallets : [];
+    }
 
-  // Disconnect wallet
-  static async disconnectWallet(publicKey: string): Promise<void> {
-    await apiClient.delete(PORTFOLIO_ENDPOINTS.DELETE_WALLET(publicKey));
-  }
+    // Disconnect wallet
+    static async disconnectWallet(publicKey: string): Promise<void> {
+        await apiClient.delete(PORTFOLIO_ENDPOINTS.DELETE_WALLET(publicKey));
+    }
 
-  // Disconnect all wallets
-  static async disconnectAllWallets(): Promise<void> {
-    await apiClient.delete(PORTFOLIO_ENDPOINTS.WALLETS);
-  }
+    // Disconnect all wallets
+    static async disconnectAllWallets(): Promise<void> {
+        await apiClient.delete(PORTFOLIO_ENDPOINTS.WALLETS);
+    }
 }

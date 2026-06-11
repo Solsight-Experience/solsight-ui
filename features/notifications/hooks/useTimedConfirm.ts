@@ -20,7 +20,12 @@ export function useTimedConfirm(onConfirm: () => void, timeoutMs = 3000) {
         setConfirming(false);
     }
 
-    useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+    useEffect(
+        () => () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        },
+        []
+    );
 
     return { confirming, request, confirm, cancel };
 }
