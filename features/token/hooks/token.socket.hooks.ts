@@ -1,9 +1,8 @@
 import { TokenSocketManager } from "../services/token.socket.services";
 import { useEffect, useState } from "react";
-import type { Trade, TradeStreamResponse, TopTrader, Holder, ChartDataPoint, TokenDetail } from "../types/token.types";
+import type { Trade, TradeStreamResponse, TopTrader, Holder, TokenDetail } from "../types/token.types";
 import type { ChartInterval } from "@/lib/constants";
 import { CandlestickData, UTCTimestamp } from "lightweight-charts";
-import { useTokenUIStore } from "../stores/token.stores";
 
 const socket = TokenSocketManager.getInstance();
 
@@ -30,7 +29,7 @@ export function useTokenDetailStream(address: string) {
 
 export function useTradeStream(
     address: string,
-    params?: {
+    _params?: {
         type?: "all" | "buy" | "sell";
     }
 ) {
@@ -105,16 +104,15 @@ export function useHoldersStream(address: string) {
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
     const [chart, setChart] = useState<CandlestickData>();
-    const { chartInterval, orderType, limitPrice } = useTokenUIStore();
     useEffect(() => {
         const priceDto = {
             domain: "priceOHLC",
             resource: address,
-            interval: chartInterval
+            interval
         };
 
         socket.onDomainEvent<{ priceOHLC: CandlestickData; time: UTCTimestamp }>(priceDto, ({ priceOHLC, time }) => {
-            setChart((prev) => ({
+            setChart(() => ({
                 open: priceOHLC.open,
                 high: priceOHLC.high,
                 low: priceOHLC.low,

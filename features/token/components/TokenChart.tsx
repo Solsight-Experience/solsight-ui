@@ -13,6 +13,10 @@ import {
     type ISeriesApi,
     type MouseEventParams,
     type SeriesType,
+    type LineData,
+    type BarData,
+    type HistogramData,
+    type SingleValueData,
     type Time
 } from "lightweight-charts";
 import { toLineData, toAreaData, toBarData, toHistogramData, toBaselineData } from "../../../lib/chart-config";
@@ -49,6 +53,61 @@ interface Drawing {
     start: { x: number; y: number };
     end: { x: number; y: number };
 }
+
+type SeriesPoint = CandlestickData | LineData | SingleValueData | BarData | HistogramData;
+
+const setSeriesData = (series: ISeriesApi<SeriesType>, type: ChartType, data: CandlestickData[]) => {
+    switch (type) {
+        case "candles":
+            (series as ISeriesApi<"Candlestick">).setData(data);
+            break;
+        case "line":
+            (series as ISeriesApi<"Line">).setData(toLineData(data));
+            break;
+        case "area":
+            (series as ISeriesApi<"Area">).setData(toAreaData(data));
+            break;
+        case "bars":
+            (series as ISeriesApi<"Bar">).setData(toBarData(data));
+            break;
+        case "baseline":
+            (series as ISeriesApi<"Baseline">).setData(toBaselineData(data));
+            break;
+        case "histogram":
+            (series as ISeriesApi<"Histogram">).setData(toHistogramData(data));
+            break;
+    }
+};
+
+const updateSeries = (series: ISeriesApi<SeriesType>, type: ChartType, point: CandlestickData) => {
+    switch (type) {
+        case "candles":
+            (series as ISeriesApi<"Candlestick">).update(point);
+            break;
+        case "line":
+            (series as ISeriesApi<"Line">).update(toLineData([point])[0]);
+            break;
+        case "area":
+            (series as ISeriesApi<"Area">).update(toAreaData([point])[0]);
+            break;
+        case "bars":
+            (series as ISeriesApi<"Bar">).update(toBarData([point])[0]);
+            break;
+        case "baseline":
+            (series as ISeriesApi<"Baseline">).update(toBaselineData([point])[0]);
+            break;
+        case "histogram":
+            (series as ISeriesApi<"Histogram">).update(toHistogramData([point])[0]);
+            break;
+    }
+};
+
+const readSeriesPrice = (seriesData: SeriesPoint | number): number | null => {
+    if (typeof seriesData === "number") return seriesData;
+    if ("close" in seriesData && typeof seriesData.close === "number") return seriesData.close;
+    if ("value" in seriesData && typeof seriesData.value === "number") return seriesData.value;
+    return null;
+};
 
 // ── Sidebar icon button ───────────────────────────────────────────────────────
 const SideBtn: React.FC<{
@@ -108,7 +167,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
     const isInitRef = useRef(false);
-    const dataRef = useRef<any[]>([]);
+    const dataRef = useRef<CandlestickData[]>([]);
 
     const [type, setType] = useState<ChartType>("candles");
     const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
@@ -289,41 +348,9 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         }
         const chart = chartRef.current;
 
-        const addSeriesCompat = (
-            legacyMethod: "addCandlestickSeries" | "addLineSeries" | "addAreaSeries" | "addBarSeries" | "addBaselineSeries" | "addHistogramSeries",
-            options: Record<string, unknown>
-        ): ISeriesApi<SeriesType> => {
-            // cast chart to any to avoid fragile typings across lightweight-charts versions
-            const anyChart = chart as any;
-            // Try modern unified API first
-            if (typeof anyChart.addSeries === "function") {
-                // many versions accept (typeOrOptions, options) or (options)
-                try {
-                    return anyChart.addSeries(options) as ISeriesApi<SeriesType>;
-                } catch (e) {
-                    // fallback: some typings expect (seriesType, options)
-                    // determine seriesType from legacyMethod
-                    const seriesTypeMap: Record<string, any> = {
-                        addCandlestickSeries: CandlestickSeries,
-                        addLineSeries: LineSeries,
-                        addAreaSeries: AreaSeries,
-                        addBarSeries: BarSeries,
-                        addBaselineSeries: BaselineSeries,
-                        addHistogramSeries: HistogramSeries
-                    };
-                    return anyChart.addSeries(seriesTypeMap[legacyMethod], options) as ISeriesApi<SeriesType>;
-                }
-            }
-            const legacyMethodFn = anyChart[legacyMethod];
-            if (typeof legacyMethodFn === "function") {
-                return legacyMethodFn.call(anyChart, options) as ISeriesApi<SeriesType>;
-            }
-            throw new Error(`Unsupported lightweight-charts API: ${legacyMethod}`);
-        };
-
         switch (type) {
             case "candles":
-                seriesRef.current = addSeriesCompat("addCandlestickSeries", {
+                seriesRef.current = chart.addSeries(CandlestickSeries, {
                     upColor: "#22c55e",
                     downColor: "#ef4444",
                     borderVisible: false,
@@ -332,51 +359,38 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                 });
                 break;
             case "line":
-                seriesRef.current = addSeriesCompat("addLineSeries", {
+                seriesRef.current = chart.addSeries(LineSeries, {
                     color: "#3b82f6"
                 });
                 break;
             case "area":
-                seriesRef.current = addSeriesCompat("addAreaSeries", {
+                seriesRef.current = chart.addSeries(AreaSeries, {
                     lineColor: "#3b82f6",
                     topColor: "rgba(59,130,246,0.4)",
                     bottomColor: "rgba(59,130,246,0.05)"
                 });
                 break;
             case "bars":
-                seriesRef.current = addSeriesCompat("addBarSeries", {
+                seriesRef.current = chart.addSeries(BarSeries, {
                     upColor: "#22c55e",
                     downColor: "#ef4444"
                 });
                 break;
             case "baseline":
-                seriesRef.current = addSeriesCompat("addBaselineSeries", {
+                seriesRef.current = chart.addSeries(BaselineSeries, {
                     baseValue: { type: "price", price: 50 },
                     topLineColor: "#22c55e",
                     bottomLineColor: "#ef4444"
                 });
                 break;
             case "histogram":
-                seriesRef.current = addSeriesCompat("addHistogramSeries", {
+                seriesRef.current = chart.addSeries(HistogramSeries, {
                     priceFormat: { type: "volume" }
                 });
                 break;
         }
         if (dataRef.current.length) {
-            const d = dataRef.current;
-            (seriesRef.current as any).setData(
-                type === "candles"
-                    ? d
-                    : type === "line"
-                      ? toLineData(d)
-                      : type === "area"
-                        ? toAreaData(d)
-                        : type === "bars"
-                          ? toBarData(d)
-                          : type === "baseline"
-                            ? toBaselineData(d)
-                            : toHistogramData(d)
-            );
+            setSeriesData(seriesRef.current, type, dataRef.current);
             isInitRef.current = true;
         }
     }, [type]);
@@ -384,26 +398,9 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
     // ── Load initial data ───────────────────────────────────────────────────────
     useEffect(() => {
         if (!seriesRef.current || !initPoints?.length || dataRef.current.length) return;
-        dataRef.current = initPoints
-            .filter((p) => p?.time)
-            .map((p) => ({
-                ...p,
-                time: typeof p.time === "string" ? Math.floor(new Date(p.time).getTime() / 1000) : p.time
-            }));
+        dataRef.current = initPoints.filter((point) => point?.time);
         const d = dataRef.current;
-        (seriesRef.current as any).setData(
-            type === "candles"
-                ? d
-                : type === "line"
-                  ? toLineData(d)
-                  : type === "area"
-                    ? toAreaData(d)
-                    : type === "bars"
-                      ? toBarData(d)
-                      : type === "baseline"
-                        ? toBaselineData(d)
-                        : toHistogramData(d)
-        );
+        setSeriesData(seriesRef.current, type, d);
         isInitRef.current = true;
         chartRef.current?.timeScale().fitContent();
     }, [initPoints, type]);
@@ -417,20 +414,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         } else {
             dataRef.current.push(newPoint);
         }
-        const pt = newPoint;
-        (seriesRef.current as any).update(
-            type === "candles"
-                ? pt
-                : type === "line"
-                  ? toLineData([pt])[0]
-                  : type === "area"
-                    ? toAreaData([pt])[0]
-                    : type === "bars"
-                      ? toBarData([pt])[0]
-                      : type === "baseline"
-                        ? toBaselineData([pt])[0]
-                        : toHistogramData([pt])[0]
-        );
+        updateSeries(seriesRef.current, type, newPoint);
     }, [newPoint, type]);
 
     // ── Chart click handler for price ruler ────────────────────────────────────
@@ -444,17 +428,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             if (param.point && param.seriesData && seriesRef.current) {
                 const seriesData = param.seriesData.get(seriesRef.current);
                 if (seriesData) {
-                    // Extract price from series data in a type-safe way
-                    const price = (() => {
-                        if (typeof seriesData === "number") return seriesData;
-                        if (seriesData && typeof seriesData === "object") {
-                            const d: any = seriesData;
-                            if (typeof d.close === "number") return d.close;
-                            if (typeof d.value === "number") return d.value;
-                            if (typeof d.price === "number") return d.price;
-                        }
-                        return null;
-                    })();
+                    const price = readSeriesPrice(seriesData as SeriesPoint | number);
 
                     if (typeof price === "number") setRulerPrice(price);
                 }
@@ -467,9 +441,6 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
             chartRef.current?.unsubscribeClick(handleClick);
         };
     }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
-
-    // ── Cursor ─────────────────────────────────────────────────────────────────
-    const canvasCursor = drawingMode && drawingMode !== "pointer" ? "crosshair" : drawingMode === "pointer" ? "default" : "default";
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
@@ -525,7 +496,7 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
                             const data = dataRef.current;
                             if (data.length > 0) {
                                 const lastCandle = data[data.length - 1];
-                                const lastPrice = lastCandle.close || lastCandle.value;
+                                const lastPrice = lastCandle.close;
                                 if (lastPrice) {
                                     setRulerPrice(lastPrice);
                                 }

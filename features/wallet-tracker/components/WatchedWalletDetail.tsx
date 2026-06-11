@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import {
     ExternalLink,
     AlertTriangle,
@@ -72,12 +73,14 @@ const TokenLogo: React.FC<{ address?: string; uri?: string; symbol: string; size
 
     if (idx < sources.length) {
         return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
                 src={sources[idx]}
                 alt={symbol}
+                width={20}
+                height={20}
                 className={`${size} rounded-full object-cover shrink-0 bg-white/[0.06]`}
                 onError={() => setIdx((i) => i + 1)}
+                unoptimized
             />
         );
     }

@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Activity, AlertTriangle, Wallet, BarChart3, PieChart, TrendingUp, Sparkles, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AlertTriangle, Wallet, PieChart, TrendingUp, Sparkles, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { createChart, AreaSeries, UTCTimestamp } from "lightweight-charts";
 import { miniChartOptions, areaSeriesPresets } from "@/lib/chart-config";
 import { usePortfolioOverview, usePnlChart } from "../hooks/portfolio.hooks";
-import { usePortfolioUIStore } from "../stores/portfolioUIStore";
 import { MockConnectWalletDialog } from "./MockConnectWalletDialog";
 
 // Mini PnL chart component using lightweight-charts

@@ -1,5 +1,4 @@
 import React from "react";
-import { QuickLinks } from "./Quicklinks";
 import { WalletList } from "./Walletlist";
 import { PortfolioFilters } from "./Portfoliofilters";
 

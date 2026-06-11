@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TransferService } from "../services/transfer.service";
-import { CreateTransactionDto, TransactionResponseDto } from "@/types/dto";
+import { CreateTransactionDto } from "@/types/dto";
 import { toast } from "sonner";
 
 export function useTransfer() {

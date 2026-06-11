@@ -31,7 +31,7 @@ export class SlippageItem extends PresetCustomItem<number> {
         return (value / 100).toString();
     }
 
-    validate(state: { mode: "auto" | "custom"; custom: number | null }, ctx: ConfigCtx): Validation | null {
+    validate(state: { mode: "auto" | "custom"; custom: number | null }, _ctx: ConfigCtx): Validation | null {
         if (state.mode === "custom" && state.custom !== null && state.custom < 3000) {
             return { level: "warn", message: "Recommend slippage ≥30% to avoid failure from large fluctuations." };
         }

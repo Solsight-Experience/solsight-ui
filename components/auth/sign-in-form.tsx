@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Wallet } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import SocialAuthButtons from "./social-auth-buttons";
 import { loginApi } from "../../features/auth/authservice";
 import { getErrorMessage } from "@/lib/error-utils";

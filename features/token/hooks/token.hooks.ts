@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
-import type { ChartData, ChartCandlePointDto, Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
+import type { ChartCandlePointDto, Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
 import { useEffect, useMemo, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
@@ -75,7 +75,7 @@ export function useTokenDetail(address: string) {
         if (!newDetail) return;
         if (!initial.data) return;
         setData((prev) => ({ ...prev, ...newDetail }));
-    }, [newDetail]);
+    }, [initial.data, newDetail]);
 
     return { ...initial, data };
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useSwapInfo } from "@/features/swap/hooks/use-swap-info";
-import type { TokenPair, ConfigCtx, SwapConfigId } from "../core/types";
+import type { TokenPair, ConfigCtx } from "../core/types";
 import { SwapConfigBar } from "./SwapConfigBar";
 import { SwapConfigPanel } from "./SwapConfigPanel";
 import type { SwapConfigSurfaceProps } from "./types";

@@ -1,5 +1,5 @@
-import { memo, ReactElement, ReactNode } from "react";
-import { TimeFilters, TimeFilterValue } from "./TimeFilters";
+import { memo, ReactElement } from "react";
+import { TimeFilters } from "./TimeFilters";
 import { QuickBuyInput } from "./QuickBuyInput";
 
 /**
