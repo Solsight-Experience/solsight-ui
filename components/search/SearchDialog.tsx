@@ -8,7 +8,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { SortButton } from "../sort/sort-button/SortButton";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { FilterButton, useSearchWithFilters, type FilterFormData, getFilterRequestBody } from "@/features/token-table/components";
-import type { TokenOverview, SortBy, SortOrder, TokenFilterResponse } from "@/types/filter";
+import type { PoolFilterResponse, TokenOverview, SortBy, SortOrder, TokenFilterResponse } from "@/types/filter";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,7 +80,8 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         }
     }, [searchQuery, filterFormData, sortBy, sortOrder, searchTokens]);
 
-    const handleFilterApply = (response: TokenFilterResponse) => {
+    const handleFilterApply = (response: TokenFilterResponse | PoolFilterResponse) => {
+        if (!("tokens" in response)) return;
         setResults({ tokens: response.tokens, total: response.total });
     };
 
