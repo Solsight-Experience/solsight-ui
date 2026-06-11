@@ -7,5 +7,5 @@ export const zaloService = {
     getSubscription: () => apiClient.get<ZaloSubscriptionStatus>(BASE),
     generateToken: () => apiClient.post<GenerateZaloTokenResponse>(`${BASE}/token`),
     getStatus: () => apiClient.get<ZaloSubscriptionStatus>(`${BASE}/status`),
-    disconnect: () => apiClient.delete<{ success: boolean }>(BASE),
+    disconnect: () => apiClient.delete<{ success: boolean }>(BASE)
 };

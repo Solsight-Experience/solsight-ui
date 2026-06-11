@@ -1,4 +1,4 @@
-import { SocketManager, type EventHandler } from "@/lib/socket-client";
+import { SocketManager } from "@/lib/socket-client";
 import { Notification } from "../types/notification.types";
 
 export class NotificationSocketManager extends SocketManager {

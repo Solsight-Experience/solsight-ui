@@ -7,14 +7,14 @@ const STATUS_KEY = ["email-status"];
 export const useEmailSubscription = () =>
     useQuery({
         queryKey: SUBSCRIPTION_KEY,
-        queryFn: emailService.getSubscription,
+        queryFn: emailService.getSubscription
     });
 
 export const useSubmitEmail = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (email: string) => emailService.submitEmail(email),
-        onSuccess: () => qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY })
     });
 };
 
@@ -30,7 +30,7 @@ export const useEmailStatus = (enabled: boolean) => {
                 qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
             }
             return data;
-        },
+        }
     });
 };
 
@@ -41,6 +41,6 @@ export const useDisconnectEmail = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
             qc.invalidateQueries({ queryKey: STATUS_KEY });
-        },
+        }
     });
 };

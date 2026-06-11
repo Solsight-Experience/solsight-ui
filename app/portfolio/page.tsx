@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Coins, ArrowRightLeft, LayoutDashboard } from "lucide-react";
+import { Coins, ArrowRightLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioSidebar } from "@/features/portfolio/components/Portfoliosidebar";
 import { PortfolioDashboard } from "@/features/portfolio/components/Portfoliodashboard";

@@ -1,7 +1,7 @@
 import MockAdapter from "axios-mock-adapter";
 
 // Mock Token Data
-const mockTokenData = {
+const _mockTokenData = {
     address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
     symbol: "USDT",
     name: "USDT Token",
@@ -67,7 +67,7 @@ const mockTokenData = {
     }
 };
 
-const mockTrades = [
+const _mockTrades = [
     {
         tx_hash: "5KJp9Xn4vRzQ8hL2mN7Tk3Yz1Bw6Fj8Vh4Np2Xr9Lq",
         timestamp: Date.now() - 120000,
@@ -106,7 +106,7 @@ const mockTrades = [
     }
 ];
 
-const mockTopTraders = [
+const _mockTopTraders = [
     {
         address: "7xΘ...k2L",
         name: "Whale Trader 1",
@@ -139,7 +139,7 @@ const mockTopTraders = [
     }
 ];
 
-const mockHolders = [
+const _mockHolders = [
     {
         address: "7xΘ...k2L",
         name: "Whale Wallet",

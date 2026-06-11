@@ -1,5 +1,3 @@
-import { CandlestickData } from "lightweight-charts";
-
 // Token Detail Types
 export interface TokenDetail {
     address: string;

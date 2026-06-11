@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { formatNumber } from "../utils/token.utils";
 import type { Holder } from "../types/token.types";
 import { WalletPnlPanel } from "./WalletPnlPanel";

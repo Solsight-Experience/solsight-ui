@@ -31,7 +31,6 @@ export class CurrencyFormatter implements INumberFormatter {
         if (value === 0) return "$0";
 
         const absValue = Math.abs(value);
-        const sign = value < 0 ? "-" : "";
 
         // Large numbers: use compact notation (K, M, B)
         if (absValue >= 1000) {

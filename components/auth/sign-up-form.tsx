@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Wallet, Check } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import SocialAuthButtons from "./social-auth-buttons";
 import { signupApi } from "@/features/auth/authservice";
 
@@ -17,7 +16,6 @@ const PASSWORD_RULES = [
 ];
 
 export default function SignUpForm({ onToggle }: SignUpFormProps) {
-    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");

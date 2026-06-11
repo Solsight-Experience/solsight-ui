@@ -7,7 +7,7 @@ import { TokenBriefCard } from "./cards/TokenBriefCard";
 import { PortfolioSummaryCard } from "./cards/PortfolioSummaryCard";
 import { NavigationCard } from "./cards/NavigationCard";
 import { useTokenUIStore } from "@/features/token/stores/token.stores";
-import { ArrowRightLeft, ArrowRight, Coins, Settings, AlertTriangle } from "lucide-react";
+import { ArrowRightLeft, ArrowRight, Coins, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ResponseRenderable = Pick<ChatResponseDto, "type" | "content" | "data">;
@@ -89,7 +89,7 @@ const TradeAutoAction: React.FC<{ data: TradeIntentData }> = ({ data }) => {
         });
 
         router.push(`/token/${targetMint}`);
-    }, [data.outputMint, data.targetMint, data.amount, data.mode, data.timestamp, router]);
+    }, [data.outputMint, data.targetMint, data.amount, data.mode, data.timestamp, data.slippageBps, router]);
 
     return (
         <div className="relative overflow-hidden group p-4 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-transparent to-indigo-500/10 backdrop-blur-sm shadow-xl shadow-violet-500/5">

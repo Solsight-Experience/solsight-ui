@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { LimitOrderService } from "@/features/limit-orders";
 import type { LimitOrder } from "@/features/limit-orders";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExternalLink, X, Loader2 } from "lucide-react";
 import { formatFromBaseUnits } from "@/features/swap";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface ActiveLimitOrdersProps {
     tokenAddress?: string;
@@ -13,13 +14,18 @@ interface ActiveLimitOrdersProps {
     outputMint?: string;
 }
 
-export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddress, inputMint, outputMint }) => {
+type PhantomTransactionProvider = {
+    isPhantom?: boolean;
+    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
+};
+
+export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddress: _tokenAddress, inputMint, outputMint }) => {
     const { connected, publicKey } = useWallet();
     const [orders, setOrders] = useState<LimitOrder[]>([]);
     const [loading, setLoading] = useState(false);
     const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         if (!connected || !publicKey) return;
 
         setLoading(true);
@@ -35,21 +41,21 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
         } finally {
             setLoading(false);
         }
-    };
+    }, [connected, publicKey, inputMint, outputMint]);
 
     useEffect(() => {
         fetchOrders();
         // Refresh every 30 seconds
         const interval = setInterval(fetchOrders, 30000);
         return () => clearInterval(interval);
-    }, [connected, publicKey, inputMint, outputMint]);
+    }, [fetchOrders]);
 
     const handleCancelOrder = async (orderAccount: string) => {
         if (!publicKey) return;
 
         setCancellingOrder(orderAccount);
         try {
-            const provider = (window as Window & { solana?: { isPhantom?: boolean; signTransaction: (tx: unknown) => Promise<unknown> } }).solana;
+            const provider = (window as Window & { solana?: PhantomTransactionProvider }).solana;
             if (!provider?.isPhantom) {
                 throw new Error("Phantom wallet not found");
             }
@@ -63,7 +69,7 @@ export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddre
             const txBuffer = Buffer.from(cancelResponse.transaction, "base64");
             const { VersionedTransaction } = await import("@solana/web3.js");
             const transaction = VersionedTransaction.deserialize(txBuffer);
-            const signedTx = (await provider.signTransaction(transaction)) as any;
+            const signedTx = await provider.signTransaction(transaction);
             const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Execute cancel

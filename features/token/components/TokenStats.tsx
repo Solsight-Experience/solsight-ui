@@ -50,12 +50,13 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, change, isUpdating })
 export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
     const [updatingLabels, setUpdatingLabels] = useState<Set<string>>(new Set());
     const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+    const tokenPrice = token?.price;
 
     // Track updates for animation effect
     useEffect(() => {
-        if (!token) return;
+        if (tokenPrice === undefined) return;
 
-        if (previousPrice !== null && token.price !== previousPrice) {
+        if (previousPrice !== null && tokenPrice !== previousPrice) {
             setUpdatingLabels((prev) => new Set(prev).add("Price"));
             const timer = setTimeout(() => {
                 setUpdatingLabels((prev) => {
@@ -67,8 +68,8 @@ export const TokenStats: React.FC<TokenStatsProps> = ({ token }) => {
             return () => clearTimeout(timer);
         }
 
-        setPreviousPrice(token.price);
-    }, [token?.price, previousPrice]);
+        setPreviousPrice(tokenPrice);
+    }, [tokenPrice, previousPrice]);
 
     // Show empty state
     if (!token) {
