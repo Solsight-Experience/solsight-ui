@@ -106,23 +106,6 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                             </span>
                         )}
                     </Button>
-
-                    <Button
-                        variant="outline"
-                        className="w-full h-16 justify-start gap-4 border-[var(--border-default)] hover:bg-violet-500/10 hover:border-violet-500/50 opacity-60"
-                        onClick={() => handleConnect("WalletConnect")}
-                        disabled={isConnecting}
-                    >
-                        <img
-                            src="https://chainstack.com/wp-content/uploads/2023/08/trustwallet-logo-r.png"
-                            alt="Trust Wallet"
-                            className="h-8 w-8 object-contain"
-                        />
-                        <div className="flex flex-col items-start">
-                            <span className="text-base font-medium">Trust Wallet</span>
-                            <span className="text-xs text-[var(--text-muted)]">Coming soon</span>
-                        </div>
-                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
