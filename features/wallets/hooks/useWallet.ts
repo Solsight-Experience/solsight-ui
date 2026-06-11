@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { WalletService } from "../services/wallet.service";
 import { phantomWallet } from "@/lib/wallet";
-import { WalletResponseDto } from "@/types/dto";
 import { getErrorMessage } from "@/lib/error-utils";
 import { toast } from "sonner";
 
@@ -29,7 +28,7 @@ export function useWallet() {
 
             return walletData;
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast.success("Wallet connected successfully!");
             queryClient.invalidateQueries({ queryKey: ["wallets"] });
             queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });

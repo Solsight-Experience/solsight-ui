@@ -30,18 +30,18 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
     // Normalize data to fit within chart's allowed range
     const normalizedData = useMemo(() => {
         if (data.length === 0) return [];
-        
+
         // Find max absolute value
-        const maxAbsValue = Math.max(...data.map(d => Math.abs(d.value)));
-        
+        const maxAbsValue = Math.max(...data.map((d) => Math.abs(d.value)));
+
         // Chart max safe value is approximately 90071992547409.91
         const CHART_MAX = 90071992547409.91;
-        
+
         // Calculate scale factor with safety margin to avoid floating point precision issues
         const scale = maxAbsValue > CHART_MAX ? (maxAbsValue / CHART_MAX) * 1.01 : 1;
         scaleFactorRef.current = scale;
-        
-        return data.map(d => ({
+
+        return data.map((d) => ({
             ...d,
             value: d.value / scale
         }));

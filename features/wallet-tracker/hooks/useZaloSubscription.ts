@@ -7,14 +7,14 @@ const STATUS_KEY = ["zalo-status"];
 export const useZaloSubscription = () =>
     useQuery({
         queryKey: SUBSCRIPTION_KEY,
-        queryFn: zaloService.getSubscription,
+        queryFn: zaloService.getSubscription
     });
 
 export const useGenerateZaloToken = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: zaloService.generateToken,
-        onSuccess: () => qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY })
     });
 };
 
@@ -30,7 +30,7 @@ export const useZaloStatus = (enabled: boolean) => {
                 qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
             }
             return data;
-        },
+        }
     });
 };
 
@@ -41,6 +41,6 @@ export const useDisconnectZalo = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
             qc.invalidateQueries({ queryKey: STATUS_KEY });
-        },
+        }
     });
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useWalletAuth } from "../hooks/useWalletAuth";
 
 export default function WalletConnectButtons() {
@@ -34,7 +35,7 @@ export default function WalletConnectButtons() {
                     onClick={() => handleWalletConnect(wallet.name)}
                     className="relative w-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-slate-700"
                 >
-                    <img src={wallet.icon} alt={wallet.name} className="absolute left-[20px] w-5 h-5 object-contain" />
+                    <Image src={wallet.icon} alt={wallet.name} width={20} height={20} className="absolute left-[20px] w-5 h-5 object-contain" />
                     {wallet.label}
                 </button>
             ))}

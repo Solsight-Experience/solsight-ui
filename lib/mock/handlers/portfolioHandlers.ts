@@ -161,7 +161,7 @@ export function setupPortfolioMocks(mock: MockAdapter) {
 
     // POST: Add Wallet (Connect Phantom)
     mock.onPost(PORTFOLIO_ENDPOINTS.WALLETS).reply((config) => {
-        const data = JSON.parse(config.data || "{}");
+        JSON.parse(config.data || "{}");
 
         // For mock, we'll just add the Phantom wallet
         if (wallets.find((w) => w.address === mockPhantomWallet.address)) {

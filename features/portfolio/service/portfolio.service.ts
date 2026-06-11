@@ -26,8 +26,22 @@ interface OverviewApiResponse {
         change_24h?: number;
     }>;
     total_balance_usd: number;
-    pnl: { total: number; realized: number; unrealized: number };
-    transactions: { total: number; buys: number; sells: number };
+    total_balance_sol?: number;
+    balance_change_24h?: number;
+    pnl?: {
+        total?: number;
+        realized?: number;
+        unrealized?: number;
+        change_24h?: number;
+        roi_percent?: number;
+    };
+    transactions?: {
+        total: number;
+        buys: number;
+        sells: number;
+        transfers?: number;
+        last_24h?: number;
+    };
 }
 
 interface PositionsApiResponse {
@@ -95,17 +109,23 @@ export const portfolioApi = {
         // Build a properly-typed PortfolioOverview from the backend response
         const result: PortfolioOverview = {
             total_balance_usd: response.total_balance_usd,
-            total_balance_sol: (response as any).total_balance_sol ?? 0,
-            balance_change_24h: (response as any).balance_change_24h ?? 0,
+            total_balance_sol: response.total_balance_sol ?? 0,
+            balance_change_24h: response.balance_change_24h ?? 0,
             // backend may not return change_24h/roi_percent in pnl; ensure shape matches PnlData
             pnl: {
                 total: response.pnl?.total ?? 0,
                 realized: response.pnl?.realized ?? 0,
                 unrealized: response.pnl?.unrealized ?? 0,
-                change_24h: (response.pnl as any)?.change_24h ?? 0,
-                roi_percent: (response.pnl as any)?.roi_percent ?? 0
+                change_24h: response.pnl?.change_24h ?? 0,
+                roi_percent: response.pnl?.roi_percent ?? 0
             },
-            transactions: (response as any).transactions ?? { total: 0, buys: 0, sells: 0, transfers: 0, last_24h: 0 },
+            transactions: {
+                total: response.transactions?.total ?? 0,
+                buys: response.transactions?.buys ?? 0,
+                sells: response.transactions?.sells ?? 0,
+                transfers: response.transactions?.transfers ?? 0,
+                last_24h: response.transactions?.last_24h ?? 0
+            },
             top_tokens:
                 response.top_tokens?.map((item) => ({
                     address: item.address || item.mint || "",

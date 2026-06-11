@@ -3,7 +3,6 @@ import { ArrowDownRight, ArrowUpRight, Users, Shield, Star, Zap } from "lucide-r
 import Sparkline from "../components/Sparkline";
 import TokenCell from "../components/TokenCell";
 import { TokenCategory, TokenTableData } from "./types";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
 
@@ -92,8 +91,6 @@ export const createColumns = (
         accessorKey: "liquidity",
         header: () => <span className="block text-right">Liquidity</span>,
         cell: ({ row }) => {
-            const symbol = row.original.marketCap.currencySymbol;
-
             return <span className="block text-right font-medium">{currencyFormatter.formatCompact(Number(row.original.liquidity))}</span>;
         }
     },
@@ -101,7 +98,6 @@ export const createColumns = (
         accessorKey: "volume24h",
         header: () => <span className="block text-right">Volume</span>,
         cell: ({ row }) => {
-            const symbol = row.original.marketCap.currencySymbol;
             const { buyVolumn, sellVolumn } = row.original.transactions;
 
             return (

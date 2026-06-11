@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Search, X, RotateCw } from "lucide-react";
+import Image from "next/image";
+import { Search, RotateCw } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -163,7 +164,16 @@ export const AddTokenChartModal: React.FC<AddTokenChartModalProps> = ({ isOpen, 
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    {token.logo_uri && <img src={token.logo_uri} alt={token.symbol} className="w-8 h-8 rounded-full" />}
+                                                    {token.logo_uri && (
+                                                        <Image
+                                                            src={token.logo_uri}
+                                                            alt={token.symbol}
+                                                            width={32}
+                                                            height={32}
+                                                            className="w-8 h-8 rounded-full"
+                                                            unoptimized
+                                                        />
+                                                    )}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-semibold text-[var(--text-primary)] text-sm">{token.symbol}</div>
                                                         <div className="text-xs text-[var(--text-muted)] truncate">{token.name}</div>

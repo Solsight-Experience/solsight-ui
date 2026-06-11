@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useWalletAuth } from "../hooks/useWalletAuth";
@@ -53,7 +54,7 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
 
                 {error && (
                     <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                        <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                         <span>{error}</span>
                     </div>
                 )}
@@ -61,18 +62,21 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                 <div className="flex flex-col gap-3 mt-2">
                     <Button
                         variant="outline"
-                        className="w-full h-16 justify-start gap-4 border-[var(--border-default)] hover:bg-violet-500/10 hover:border-violet-500/50"
+                        className="w-full h-16 justify-start gap-4 border-(--border-default) hover:bg-violet-500/10 hover:border-violet-500/50"
                         onClick={() => handleConnect("Phantom")}
                         disabled={isConnecting}
                     >
-                        <img
+                        <Image
                             src="https://cdn.prod.website-files.com/66e480f0e9eccea9c231ce92/688cfdedc848baa5dcb46202_685aaee76364cd101625876d_Phantom-logo.png"
                             alt="Phantom"
+                            width={32}
+                            height={32}
                             className="h-8 w-8 object-contain"
+                            unoptimized
                         />
                         <div className="flex flex-col items-start">
                             <span className="text-base font-medium">Phantom</span>
-                            <span className="text-xs text-[var(--text-muted)]">Connect to Phantom Wallet</span>
+                            <span className="text-xs text-(--text-muted)">Connect to Phantom Wallet</span>
                         </div>
                         {connectingWallet === "Phantom" && (
                             <span className="ml-auto flex items-center gap-1.5 text-sm text-violet-500 dark:text-violet-400">
@@ -87,14 +91,21 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
 
                     <Button
                         variant="outline"
-                        className="w-full h-16 justify-start gap-4 border-[var(--border-default)] hover:bg-violet-500/10 hover:border-violet-500/50"
+                        className="w-full h-16 justify-start gap-4 border-(--border-default) hover:bg-violet-500/10 hover:border-violet-500/50"
                         onClick={() => handleConnect("MetaMask")}
                         disabled={isConnecting}
                     >
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="h-8 w-8 object-contain" />
+                        <Image
+                            src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg"
+                            alt="MetaMask"
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 object-contain"
+                            unoptimized
+                        />
                         <div className="flex flex-col items-start">
                             <span className="text-base font-medium">MetaMask</span>
-                            <span className="text-xs text-[var(--text-muted)]">Connect to MetaMask</span>
+                            <span className="text-xs text-(--text-muted)">Connect to MetaMask</span>
                         </div>
                         {connectingWallet === "MetaMask" && (
                             <span className="ml-auto flex items-center gap-1.5 text-sm text-violet-500 dark:text-violet-400">
@@ -105,23 +116,6 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                                 Connecting...
                             </span>
                         )}
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        className="w-full h-16 justify-start gap-4 border-[var(--border-default)] hover:bg-violet-500/10 hover:border-violet-500/50 opacity-60"
-                        onClick={() => handleConnect("WalletConnect")}
-                        disabled={isConnecting}
-                    >
-                        <img
-                            src="https://chainstack.com/wp-content/uploads/2023/08/trustwallet-logo-r.png"
-                            alt="Trust Wallet"
-                            className="h-8 w-8 object-contain"
-                        />
-                        <div className="flex flex-col items-start">
-                            <span className="text-base font-medium">Trust Wallet</span>
-                            <span className="text-xs text-[var(--text-muted)]">Coming soon</span>
-                        </div>
                     </Button>
                 </div>
             </DialogContent>

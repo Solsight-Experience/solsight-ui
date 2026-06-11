@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, memo, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -31,6 +32,8 @@ import { NotificationBadge, NotificationPanel } from "@/features/notifications/c
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import ClusterToggle from "@/components/layout/cluster-toggle";
+
+type AuthUser = NonNullable<ReturnType<typeof useAuth>["user"]>;
 
 const TICKERS = [
     { symbol: "BONK/SOL", price: "0.00000019", change: 2.11 },
@@ -273,8 +276,8 @@ interface SidebarProps {
     open: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
-     
-    user: any;
+
+    user: AuthUser | null;
     unreadCount: number;
     isPanelOpen: boolean;
     setPanelOpen: (v: boolean) => void;
@@ -440,7 +443,7 @@ const HeaderIcon = memo(function HeaderIcon() {
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="relative w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br" />
-                <img src="/app_icon.png" alt="SolSight" />
+                <Image src="/app_icon.png" alt="SolSight" width={32} height={32} />
             </div>
             <span className="text-[15px] font-bold tracking-tight text-white font-sans">
                 Sol<span className="text-violet-400">Sight</span>
@@ -556,8 +559,7 @@ const SignInButton = memo(function SignInButton() {
  * UserDropdown
  * ─────────────────────────────────────────────────────────────────────────── */
 interface UserDropdownProps {
-     
-    user: any;
+    user: AuthUser | null;
     open: boolean;
     onToggle: () => void;
     onClose: () => void;

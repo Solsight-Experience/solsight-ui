@@ -7,23 +7,35 @@ import { Notification } from "../types/notification.types";
 
 export function useNotifications() {
     const { user } = useAuth();
-    const store = useNotificationStore();
+    const notifications = useNotificationStore((state) => state.notifications);
+    const unreadCount = useNotificationStore((state) => state.unreadCount);
+    const hasMore = useNotificationStore((state) => state.hasMore);
+    const isLoading = useNotificationStore((state) => state.isLoading);
+    const isPanelOpen = useNotificationStore((state) => state.isPanelOpen);
+    const fetchInitial = useNotificationStore((state) => state.fetchInitial);
+    const loadMore = useNotificationStore((state) => state.loadMore);
+    const addNotification = useNotificationStore((state) => state.addNotification);
+    const markAsRead = useNotificationStore((state) => state.markAsRead);
+    const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+    const deleteNotification = useNotificationStore((state) => state.deleteNotification);
+    const deleteAllNotifications = useNotificationStore((state) => state.deleteAllNotifications);
+    const setPanelOpen = useNotificationStore((state) => state.setPanelOpen);
+    const reset = useNotificationStore((state) => state.reset);
     const subscribedUserIdRef = useRef<string | null>(null);
 
     const handleNewNotification = useCallback(
         (notification: Notification) => {
-            store.addNotification(notification);
+            addNotification(notification);
             toast(notification.title, {
                 description: notification.message,
                 duration: 5000,
                 action: {
                     label: "View",
-                    onClick: () => store.setPanelOpen(true)
+                    onClick: () => setPanelOpen(true)
                 }
             });
         },
-        // store actions are stable (zustand), safe to omit from deps
-        []
+        [addNotification, setPanelOpen]
     );
 
     const handleNewNotificationRef = useRef(handleNewNotification);
@@ -37,7 +49,7 @@ export function useNotifications() {
                 socket.unsubscribe(subscribedUserIdRef.current);
                 subscribedUserIdRef.current = null;
             }
-            store.reset();
+            reset();
             return;
         }
 
@@ -52,7 +64,7 @@ export function useNotifications() {
             socket.unsubscribe(subscribedUserIdRef.current);
         }
 
-        store.fetchInitial();
+        fetchInitial();
 
         const socket = NotificationSocketManager.getInstance();
         socket.subscribe(userId);
@@ -68,19 +80,19 @@ export function useNotifications() {
             socket.unsubscribe(userId);
             subscribedUserIdRef.current = null;
         };
-    }, [user?.id]);
+    }, [fetchInitial, reset, user]);
 
     return {
-        notifications: store.notifications,
-        unreadCount: store.unreadCount,
-        hasMore: store.hasMore,
-        isLoading: store.isLoading,
-        isPanelOpen: store.isPanelOpen,
-        setPanelOpen: store.setPanelOpen,
-        markAsRead: store.markAsRead,
-        markAllAsRead: store.markAllAsRead,
-        deleteNotification: store.deleteNotification,
-        deleteAllNotifications: store.deleteAllNotifications,
-        loadMore: store.loadMore
+        notifications,
+        unreadCount,
+        hasMore,
+        isLoading,
+        isPanelOpen,
+        setPanelOpen,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        deleteAllNotifications,
+        loadMore
     };
 }
