@@ -1,7 +1,6 @@
 // Types for API-compatible filter system
 
 export type SortBy = "market_cap" | "volume_24h" | "txns_24h" | "holders" | "age" | "price_change_24h";
-export type PoolSortBy = "liquidity" | "volume_24h" | "apr" | "age" | "fee";
 export type SortOrder = "asc" | "desc";
 
 // Token filter body for POST /api/tokens/filter
@@ -38,34 +37,10 @@ export interface TokenFilterRequest {
     };
 }
 
-// Pool filter body for POST /api/pools/filter
-export interface PoolFilterRequest {
-    search_query?: string;
-    metrics?: {
-        fee_min_percent?: number;
-        fee_max_percent?: number;
-        age_min_minutes?: number;
-        age_max_minutes?: number;
-        liquidity_min?: number;
-        liquidity_max?: number;
-        volume_24h_min?: number;
-        volume_24h_max?: number;
-        apr_min?: number;
-        apr_max?: number;
-    };
-    protocols?: string[];
-    tokens?: string[];
-}
-
 export interface TokenFilterResponse {
     tokens: TokenOverview[];
     total: number;
     filters_applied: object;
-}
-
-export interface PoolFilterResponse {
-    pools: PoolOverview[];
-    total: number;
 }
 
 export interface TokenOverview {
@@ -114,42 +89,16 @@ export interface TokenOverview {
     price_sparkline: number[];
 }
 
-export interface PoolOverview {
-    address: string;
-    protocol: string;
-    base_token: {
-        address: string;
-        symbol: string;
-        logo_uri: string;
-    };
-    quote_token: {
-        address: string;
-        symbol: string;
-        logo_uri: string;
-    };
-    fee_percent: number;
-    apr: number;
-    age_seconds: number;
-    liquidity: number;
-    liquidity_change_24h: number;
-    volume_24h: number;
-    volume_change_24h: number;
-    volume_7d: number;
-    txns_24h: number;
-    price: number;
-    price_change_24h: number;
-}
-
 // UI filter state matching the form inputs
 export interface FilterState {
     // Tab selection
-    activeTab: "token" | "pool";
+    activeTab: "token";
 
     // Search query
     searchQuery: string;
 
     // Sort state
-    sortBy: SortBy | PoolSortBy | "";
+    sortBy: SortBy | "";
     sortOrder: SortOrder;
 
     // Token metrics filters
@@ -180,24 +129,8 @@ export interface FilterState {
         max_risk_score: number | "";
     };
 
-    // Pool metrics filters
-    poolMetrics: {
-        fee_min_percent: number | "";
-        fee_max_percent: number | "";
-        age_min_minutes: number | "";
-        age_max_minutes: number | "";
-        liquidity_min: number | "";
-        liquidity_max: number | "";
-        volume_24h_min: number | "";
-        volume_24h_max: number | "";
-        apr_min: number | "";
-        apr_max: number | "";
-    };
-
-    // Categories and protocols
+    // Categories
     categories: string[];
-    protocols: string[];
-    tokens: string[];
 
     // Holder filters for tokens
     holderFilters: {
@@ -208,13 +141,13 @@ export interface FilterState {
 
 export interface FilterActions {
     // Tab management
-    setActiveTab: (tab: "token" | "pool") => void;
+    setActiveTab: (tab: "token") => void;
 
     // Search query
     setSearchQuery: (query: string) => void;
 
     // Sort management
-    setSortBy: (sortBy: SortBy | PoolSortBy | "") => void;
+    setSortBy: (sortBy: SortBy | "") => void;
     setSortOrder: (order: SortOrder) => void;
 
     // Token filter updates
@@ -222,20 +155,14 @@ export interface FilterActions {
     setTokenAudit: (key: keyof FilterState["tokenAudits"], value: boolean | null | number | "") => void;
     setHolderFilter: (key: keyof FilterState["holderFilters"], value: number | "") => void;
 
-    // Pool filter updates
-    setPoolMetric: (key: keyof FilterState["poolMetrics"], value: number | "") => void;
-
     // Array filters
     setCategories: (categories: string[]) => void;
-    setProtocols: (protocols: string[]) => void;
-    setTokens: (tokens: string[]) => void;
 
     // Utility actions
     resetFilters: () => void;
 
     // Convert UI state to API request format
     getTokenFilterRequest: () => TokenFilterRequest;
-    getPoolFilterRequest: () => PoolFilterRequest;
 }
 
 export type FilterStore = FilterState & FilterActions;

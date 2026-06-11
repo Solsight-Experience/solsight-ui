@@ -26,4 +26,4 @@ export type { FilterFormData, FilterDialogProps } from "./FilterDialog";
 export type { FilterOptions } from "./FilterButton";
 
 // Hooks
-export { useCategories, useApplyTokenFilter, useApplyPoolFilter, useSearchWithFilters, useTokenFilter } from "../hooks/useTokenFilter";
+export { useCategories, useApplyTokenFilter, useSearchWithFilters, useTokenFilter } from "../hooks/useTokenFilter";
