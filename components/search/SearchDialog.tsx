@@ -8,7 +8,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { SortButton } from "../sort/sort-button/SortButton";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { FilterButton, useSearchWithFilters, type FilterFormData, getFilterRequestBody } from "@/features/token-table/components";
-import type { TokenOverview, PoolOverview, SortBy, PoolSortBy, SortOrder, TokenFilterResponse, PoolFilterResponse } from "@/types/filter";
+import type { TokenOverview, SortBy, SortOrder, TokenFilterResponse } from "@/types/filter";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,10 +19,8 @@ type SearchDialogProps = {
     onCloseAction: (arg: boolean) => void;
 };
 
-type TabType = "token" | "pool";
-
 type SortItem = {
-    id: SortBy | PoolSortBy;
+    id: SortBy;
     label: string;
 };
 
@@ -35,33 +33,22 @@ const tokenSorts: SortItem[] = [
     { id: "price_change_24h", label: "Price Change" }
 ];
 
-const poolSorts: SortItem[] = [
-    { id: "liquidity", label: "Liquidity" },
-    { id: "volume_24h", label: "Volume" },
-    { id: "apr", label: "APR" },
-    { id: "fee", label: "Fee" },
-    { id: "age", label: "Age" }
-];
-
 export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
-    const [activeTab] = useState<TabType>("token");
     const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState<SortBy | PoolSortBy | "">("");
+    const [sortBy, setSortBy] = useState<SortBy | "">("");
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
     const [filterFormData, setFilterFormData] = useState<FilterFormData | null>(null);
     const [results, setResults] = useState<{
         tokens: TokenOverview[];
-        pools: PoolOverview[];
         total: number;
-    }>({ tokens: [], pools: [], total: 0 });
+    }>({ tokens: [], total: 0 });
 
-    const { searchTokens, searchPools, isSearchingTokens, isSearchingPools } = useSearchWithFilters();
+    const { searchTokens, isSearchingTokens } = useSearchWithFilters();
 
-    const isLoading = isSearchingTokens || isSearchingPools;
-    const currentSorts = activeTab === "token" ? tokenSorts : poolSorts;
+    const isLoading = isSearchingTokens;
     const debounceTimerRef = useRef<number | null>(null);
 
-    const handleSortClick = (id: SortBy | PoolSortBy) => {
+    const handleSortClick = (id: SortBy) => {
         if (sortBy === id) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
@@ -76,45 +63,31 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         const hasSearchQuery = query.length >= 2;
 
         if (!hasSearchQuery && !hasFilters) {
-            setResults({ tokens: [], pools: [], total: 0 });
+            setResults({ tokens: [], total: 0 });
             return;
         }
 
         try {
-            if (activeTab === "token") {
-                const filters = filterFormData ? getFilterRequestBody(filterFormData, "token") : {};
-                const response = await searchTokens({
-                    searchQuery: query,
-                    filters,
-                    params: { sort_by: (sortBy as SortBy) || "market_cap", sort_order: sortOrder, limit: 50 }
-                });
-                setResults({ tokens: response.tokens, pools: [], total: response.total });
-            } else {
-                const filters = filterFormData ? getFilterRequestBody(filterFormData, "pool") : {};
-                const response = await searchPools({
-                    searchQuery: query,
-                    filters,
-                    params: { sort_by: (sortBy as PoolSortBy) || "liquidity", sort_order: sortOrder, limit: 50 }
-                });
-                setResults({ tokens: [], pools: response.pools, total: response.total });
-            }
+            const filters = filterFormData ? getFilterRequestBody(filterFormData, "token") : {};
+            const response = await searchTokens({
+                searchQuery: query,
+                filters,
+                params: { sort_by: (sortBy as SortBy) || "market_cap", sort_order: sortOrder, limit: 50 }
+            });
+            setResults({ tokens: response.tokens, total: response.total });
         } catch (error) {
             console.error("Search error:", error);
         }
-    }, [searchQuery, filterFormData, activeTab, sortBy, sortOrder, searchTokens, searchPools]);
+    }, [searchQuery, filterFormData, sortBy, sortOrder, searchTokens]);
 
-    const handleFilterApply = (response: TokenFilterResponse | PoolFilterResponse) => {
-        if ("tokens" in response) {
-            setResults({ tokens: response.tokens, pools: [], total: response.total });
-        } else {
-            setResults({ tokens: [], pools: response.pools, total: response.total });
-        }
+    const handleFilterApply = (response: TokenFilterResponse) => {
+        setResults({ tokens: response.tokens, total: response.total });
     };
 
     useEffect(() => {
         if (!isOpen) {
             setSearchQuery("");
-            setResults({ tokens: [], pools: [], total: 0 });
+            setResults({ tokens: [], total: 0 });
             setFilterFormData(null);
             setSortBy("");
             setSortOrder("desc");
@@ -136,7 +109,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         if (!isOpen) return;
         const hasContent = searchQuery.trim().length >= 2 || filterFormData !== null;
         if (hasContent) performSearch();
-    }, [sortBy, sortOrder, activeTab, isOpen, performSearch]);
+    }, [sortBy, sortOrder, isOpen, performSearch]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onCloseAction}>
@@ -177,26 +150,26 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
                         <div className="text-xs text-[var(--text-muted)] font-medium pt-2">Sort by:</div>
                         <div className="flex items-center justify-end flex-wrap gap-1">
                             <div className="flex items-center flex-wrap gap-1 justify-end">
-                                {currentSorts.map((item) => (
+                                {tokenSorts.map((item) => (
                                     <div key={item.id} onClick={() => handleSortClick(item.id)}>
                                         <SortButton label={item.label} type={sortBy === item.id ? sortOrder : "none"} />
                                     </div>
                                 ))}
                             </div>
                             <FilterButton
-                                filterOptions={{ filterType: activeTab, sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
+                                filterOptions={{ filterType: "token", sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
                                 onApply={handleFilterApply}
                                 onReset={() => {
                                     setFilterFormData(null);
                                     if (searchQuery.trim().length >= 2) performSearch();
-                                    else setResults({ tokens: [], pools: [], total: 0 });
+                                    else setResults({ tokens: [], total: 0 });
                                 }}
                             />
                         </div>
                     </div>
 
                     {/* Results Area */}
-                    <div className="flex-1 min-h-0 min-h-56 overflow-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
+                    <div className="flex-1 min-h-56 overflow-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
                         {isLoading && (
                             <div className="flex items-center justify-center gap-3 text-[var(--text-muted)] py-8">
                                 <RotateCw className="animate-spin w-5 h-5" />
@@ -223,12 +196,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
                             </div>
                         )}
 
-                        {!isLoading && results.total > 0 && (
-                            <>
-                                {activeTab === "token" && <TokenResults tokens={results.tokens} onClose={onCloseAction} />}
-                                {activeTab === "pool" && <PoolResults pools={results.pools} />}
-                            </>
-                        )}
+                        {!isLoading && results.total > 0 && <TokenResults tokens={results.tokens} onClose={onCloseAction} />}
                     </div>
                 </div>
             </DialogContent>
@@ -316,58 +284,6 @@ function TokenResults({ tokens, onClose }: { tokens: TokenOverview[]; onClose: (
                                 </span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function PoolResults({
-    pools
-}: {
-    pools: Array<{
-        address: string;
-        protocol: string;
-        base_token: { symbol: string; logo_uri?: string };
-        quote_token: { symbol: string; logo_uri?: string };
-        volume_24h?: number;
-        fee_percent?: number;
-    }>;
-}) {
-    if (!pools?.length) return <div className="text-[var(--text-muted)] text-sm">No pools found</div>;
-    return (
-        <div className="space-y-2">
-            {pools.map((p) => (
-                <div
-                    key={p.address}
-                    className="flex items-center justify-between gap-3 p-3 border border-[var(--border-subtle)] rounded-lg hover:border-[var(--border-default)] bg-[var(--surface-card)] hover:bg-[var(--surface-btn)] transition-all duration-200"
-                >
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex -space-x-3 isolate items-center shrink-0">
-                            <Avatar className="size-8 rounded-full border-2 border-[var(--surface-card)] bg-[var(--surface-btn)] z-10 hover:z-20 transition-all">
-                                <AvatarImage src={p.base_token?.logo_uri || ""} alt={p.base_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-[var(--text-muted)] font-bold text-[10px]">
-                                    {p.base_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
-                                </AvatarFallback>
-                            </Avatar>
-                            <Avatar className="size-8 rounded-full border-2 border-[var(--surface-card)] bg-[var(--surface-btn)] z-0 hover:z-20 transition-all">
-                                <AvatarImage src={p.quote_token?.logo_uri || ""} alt={p.quote_token?.symbol} className="object-cover" />
-                                <AvatarFallback delayMs={0} className="text-[var(--text-muted)] font-bold text-[10px]">
-                                    {p.quote_token?.symbol?.slice(0, 2).toUpperCase() || "?"}
-                                </AvatarFallback>
-                            </Avatar>
-                        </div>
-                        <div className="min-w-0">
-                            <div className="font-medium text-[var(--text-primary)] truncate">
-                                {p.base_token?.symbol} / {p.quote_token?.symbol}
-                            </div>
-                            <div className="text-xs text-[var(--text-muted)] truncate">{p.protocol}</div>
-                        </div>
-                    </div>
-                    <div className="text-right text-sm text-[var(--text-primary)] flex-shrink-0">
-                        {typeof p.fee_percent === "number" && <div className="text-xs text-[var(--text-muted)]">Fee {p.fee_percent}%</div>}
-                        {typeof p.volume_24h === "number" && <div className="font-medium">Vol ${p.volume_24h.toLocaleString()}</div>}
                     </div>
                 </div>
             ))}
