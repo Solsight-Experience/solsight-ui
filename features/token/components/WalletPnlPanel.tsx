@@ -33,17 +33,6 @@ const formatHolderDuration = (firstTxTime: number): string => {
     return "<1m";
 };
 
-const formatPerformanceBucket = (pnl: number): { label: string; color: string } => {
-    const percent = pnl * 100; // Assuming pnl is a ratio
-    if (percent >= 500) return { label: ">500%", color: "text-green-400" };
-    if (percent >= 100) return { label: "100-500%", color: "text-green-400" };
-    if (percent >= 50) return { label: "50-100%", color: "text-green-400" };
-    if (percent >= 0) return { label: "0-50%", color: "text-green-400" };
-    if (percent >= -50) return { label: "0-50%", color: "text-red-400" };
-    if (percent >= -100) return { label: "50-100%", color: "text-red-400" };
-    return { label: ">100%", color: "text-red-400" };
-};
-
 export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSymbol = "TOKEN", open, onOpenChange }) => {
     const [activeTab, setActiveTab] = useState<TabType>("positions");
     const [timePeriod, setTimePeriod] = useState<TimePeriod>("30D");
@@ -97,16 +86,8 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
         const totalPoints = days * pointsPerDay;
         const intervalSeconds = (days * daySeconds) / totalPoints;
 
-        // Calculate average PnL per transaction
-        const avgPnlPerTx = totalPnl / Math.max(totalTxns, 1);
-
-        // Distribute transactions over the period based on first_tx_time
-        const holderDurationMs = holder.first_tx_time > 0 ? Date.now() - holder.first_tx_time : days * daySeconds * 1000;
-        const holderDurationDays = holderDurationMs / (daySeconds * 1000);
-
         // Scale to show realistic progression
         let cumulativePnl = 0;
-        const txPerPoint = totalTxns / totalPoints;
 
         for (let i = totalPoints; i >= 0; i--) {
             const time = (now - i * intervalSeconds) as UTCTimestamp;

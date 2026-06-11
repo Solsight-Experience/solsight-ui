@@ -1,5 +1,5 @@
 import { CHAT_SOCKET_EVENTS } from "@/lib/constants";
-import { SocketManager, EventHandler } from "@/lib/socket-client";
+import { SocketManager } from "@/lib/socket-client";
 import { ChatResponseDto, SendChatMessageDto } from "@/types/dto";
 
 export interface ChatStreamChunk {

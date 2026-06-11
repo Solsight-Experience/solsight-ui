@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { phantomWallet } from "@/lib/wallet";
 import { ChatSocketManager } from "../services/chat.socket.service";
@@ -53,8 +53,6 @@ export function useChat() {
 
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
-    const queryClient = useQueryClient();
-
     // Fetch historical messages
     const {
         data,

@@ -21,7 +21,7 @@ export const usePriceRuler = (
             if (priceLineRef.current && seriesRef.current) {
                 try {
                     seriesRef.current.removePriceLine(priceLineRef.current);
-                } catch (e) {
+                } catch {
                     // Price line may already be removed
                 }
                 priceLineRef.current = null;
@@ -33,7 +33,7 @@ export const usePriceRuler = (
         if (priceLineRef.current && seriesRef.current) {
             try {
                 seriesRef.current.removePriceLine(priceLineRef.current);
-            } catch (e) {
+            } catch {
                 // Price line may already be removed
             }
         }
@@ -54,7 +54,7 @@ export const usePriceRuler = (
             if (priceLineRef.current && seriesRef.current) {
                 try {
                     seriesRef.current.removePriceLine(priceLineRef.current);
-                } catch (e) {
+                } catch {
                     // Price line may already be removed
                 }
             }

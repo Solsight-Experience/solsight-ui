@@ -197,7 +197,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setPendingSlippageAction(null);
     }, [pendingSlippageAction, setSlippageBps, setPendingSlippageAction]);
 
-    const [fetchedDecimals, setFetchedDecimals] = useState<number | null>(null);
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
     const selectedWalletAddress = useMemo(() => {
         const wallets = walletsData?.wallets ?? [];

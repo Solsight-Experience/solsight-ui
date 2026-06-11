@@ -7,7 +7,7 @@ import { TokenBriefCard } from "./cards/TokenBriefCard";
 import { PortfolioSummaryCard } from "./cards/PortfolioSummaryCard";
 import { NavigationCard } from "./cards/NavigationCard";
 import { useTokenUIStore } from "@/features/token/stores/token.stores";
-import { ArrowRightLeft, ArrowRight, Coins, Settings, AlertTriangle } from "lucide-react";
+import { ArrowRightLeft, ArrowRight, Coins, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ResponseRenderable = Pick<ChatResponseDto, "type" | "content" | "data">;

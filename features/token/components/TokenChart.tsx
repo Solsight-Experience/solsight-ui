@@ -442,9 +442,6 @@ export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, e
         };
     }, [enablePriceRuler, orderType, drawingMode, setRulerPrice]);
 
-    // ── Cursor ─────────────────────────────────────────────────────────────────
-    const canvasCursor = drawingMode && drawingMode !== "pointer" ? "crosshair" : drawingMode === "pointer" ? "default" : "default";
-
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="flex gap-2 w-full h-full">

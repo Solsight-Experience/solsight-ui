@@ -12,7 +12,7 @@ Trading activity appears limited with a 24h volume of only $75. This indicates t
 
 Overall outlook is neutral. Traders should monitor liquidity and volume before entering large positions.`;
 
-export const generateAISummary = async (tokenName: string): Promise<string> => {
+export const generateAISummary = async (_tokenName: string): Promise<string> => {
     // Simulate API call delay
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -21,7 +21,7 @@ export const generateAISummary = async (tokenName: string): Promise<string> => {
     });
 };
 
-export const generateAISummaryWithOptions = async (tokenName: string, options: AISummaryOptions): Promise<string> => {
+export const generateAISummaryWithOptions = async (_tokenName: string, _options: AISummaryOptions): Promise<string> => {
     // Simulate API call delay
     return new Promise((resolve) => {
         setTimeout(() => {

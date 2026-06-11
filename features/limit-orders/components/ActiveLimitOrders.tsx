@@ -19,7 +19,7 @@ type PhantomTransactionProvider = {
     signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 };
 
-export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddress, inputMint, outputMint }) => {
+export const ActiveLimitOrders: React.FC<ActiveLimitOrdersProps> = ({ tokenAddress: _tokenAddress, inputMint, outputMint }) => {
     const { connected, publicKey } = useWallet();
     const [orders, setOrders] = useState<LimitOrder[]>([]);
     const [loading, setLoading] = useState(false);

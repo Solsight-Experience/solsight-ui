@@ -485,8 +485,6 @@ function MemberCard({ m, idx }: { m: (typeof TEAM)[0]; idx: number }) {
 export default function Authentication() {
     const [isSignIn, setIsSignIn] = useState(true);
     const [mobileAuthOpen, setMobileAuthOpen] = useState(false);
-    const [email, setEmail] = useState("");
-    const [ctaSubmitted, setCtaSubmitted] = useState(false);
     const heroRef = useRef<HTMLDivElement>(null);
 
     return (

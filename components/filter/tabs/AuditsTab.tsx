@@ -36,7 +36,7 @@ export const AuditsTab = () => {
             <h3 className="text-sm font-medium text-muted-foreground">Token Security Audits</h3>
 
             <div className="space-y-4">
-                {audits.map(({ key, label, description }) => (
+                {audits.map(({ key, label }) => (
                     <div key={key} className="flex items-start space-x-3">
                         <div className="flex items-center space-x-2 mt-1">
                             <Checkbox

@@ -1,6 +1,6 @@
 import apiClient from "@/lib/api-client";
 import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from "@/lib/constants";
-import { WalletResponseDto, CreateWalletDto, GetWalletsResponseDto } from "@/types/dto";
+import { WalletResponseDto, GetWalletsResponseDto } from "@/types/dto";
 import { ApiResponse } from "@/types/api";
 
 export class WalletService {

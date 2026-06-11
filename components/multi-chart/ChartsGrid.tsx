@@ -12,7 +12,7 @@ interface ChartsGridProps {
 
 export const ChartsGrid: React.FC<ChartsGridProps> = ({ charts, onRemoveChart, onReorderCharts }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [, setDragOverIndex] = useState<number | null>(null);
 
     const handleDragStart = (index: number) => {
         setDraggedIndex(index);
