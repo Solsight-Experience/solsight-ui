@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { EllipsisVertical, Star, Trash2 } from "lucide-react";
 import { useSetDefaultWallet, useDeleteWallet } from "../hooks/portfolio.hooks";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface WalletDropdownMenuProps {
     walletAddress: string;
@@ -20,8 +21,13 @@ export default function WalletDropdownMenu({ walletAddress, isDefault }: WalletD
         try {
             await setDefaultMutation.mutateAsync(walletAddress);
             setOpen(false);
+            toast.success("Default wallet updated");
         } catch (error) {
-            console.error("Failed to set default wallet:", error);
+            const message =
+                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                (error as Error)?.message ||
+                "Failed to set default wallet. Please try again.";
+            toast.error(message);
         }
     };
 
@@ -34,8 +40,13 @@ export default function WalletDropdownMenu({ walletAddress, isDefault }: WalletD
         try {
             await deleteMutation.mutateAsync(walletAddress);
             setDeleteDialogOpen(false);
+            toast.success("Wallet removed");
         } catch (error) {
-            console.error("Failed to delete wallet:", error);
+            const message =
+                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                (error as Error)?.message ||
+                "Failed to delete wallet. Please try again.";
+            toast.error(message);
         }
     };
 
