@@ -3,14 +3,13 @@ import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTitle, DialogTrigger, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import FilterDialog, { FilterFormData, getFilterRequestBody } from "./FilterDialog";
-import { TokenFilterParams, PoolFilterParams } from "../services/filter.service";
-import { TokenFilterResponse, PoolFilterResponse, SortBy, PoolSortBy, SortOrder } from "@/types/filter";
+import { TokenFilterParams } from "../services/filter.service";
+import { TokenFilterResponse, SortBy, SortOrder } from "@/types/filter";
 import { LoadingSpinner } from "@/components/loading";
-import { useApplyTokenFilter, useApplyPoolFilter } from "../hooks/useTokenFilter";
+import { useApplyTokenFilter } from "../hooks/useTokenFilter";
 
 export interface FilterOptions {
-    filterType?: "token" | "pool";
-    sort_by?: SortBy | PoolSortBy;
+    sort_by?: SortBy;
     sort_order?: SortOrder;
     limit?: number;
     offset?: number;
@@ -19,7 +18,7 @@ export interface FilterOptions {
 interface FilterButtonProps {
     filterOptions?: FilterOptions;
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse | PoolFilterResponse) => void;
+    onApply?: (response: TokenFilterResponse) => void;
     onError?: (error: Error) => void;
 }
 
@@ -45,13 +44,8 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
-    const filterType = filterOptions?.filterType || "token";
-
-    // React Query hooks
     const tokenFilterMutation = useApplyTokenFilter();
-    const poolFilterMutation = useApplyPoolFilter();
-
-    const isLoading = tokenFilterMutation.isPending || poolFilterMutation.isPending;
+    const isLoading = tokenFilterMutation.isPending;
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -66,30 +60,16 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
         e.preventDefault();
 
         try {
-            const requestBody = getFilterRequestBody(formData, filterType);
+            const requestBody = getFilterRequestBody(formData);
+            const params: TokenFilterParams = {
+                sort_by: filterOptions?.sort_by,
+                sort_order: filterOptions?.sort_order,
+                limit: filterOptions?.limit,
+                offset: filterOptions?.offset
+            };
 
-            if (filterType === "token") {
-                const params: TokenFilterParams = {
-                    sort_by: filterOptions?.sort_by as SortBy,
-                    sort_order: filterOptions?.sort_order,
-                    limit: filterOptions?.limit,
-                    offset: filterOptions?.offset
-                };
-
-                const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
-                onApply?.(response);
-            } else {
-                const params: PoolFilterParams = {
-                    sort_by: filterOptions?.sort_by as PoolSortBy,
-                    sort_order: filterOptions?.sort_order,
-                    limit: filterOptions?.limit,
-                    offset: filterOptions?.offset
-                };
-
-                const response = await poolFilterMutation.mutateAsync({ body: requestBody, params });
-                onApply?.(response);
-            }
-
+            const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
+            onApply?.(response);
             setIsOpen(false);
         } catch (error) {
             console.error("Filter error:", error);
@@ -114,7 +94,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
             <DialogContent aria-describedby="filter-description" showCloseButton={!isLoading}>
                 <DialogTitle className="text-brand-200">Filter</DialogTitle>
                 <p id="filter-description" className="sr-only">
-                    Apply filters to {filterType} data
+                    Apply filters to token data
                 </p>
                 <form onSubmit={handleSubmit}>
                     {isLoading ? (
@@ -122,7 +102,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                             <LoadingSpinner size="lg" />
                         </div>
                     ) : (
-                        <FilterDialog filterType={filterType} formData={formData} onFormChange={handleFormChange} />
+                        <FilterDialog formData={formData} onFormChange={handleFormChange} />
                     )}
                     <DialogFooter>
                         <div className="flex justify-between flex-1">
