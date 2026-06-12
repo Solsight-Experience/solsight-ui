@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
 import Image from "next/image";
 const SignInForm = nextDynamic(() => import("@/components/auth/sign-in-form"), { ssr: false });
@@ -485,7 +486,7 @@ function MemberCard({ m, idx }: { m: (typeof TEAM)[0]; idx: number }) {
 
 /* ─────────────────── main page ─────────────────── */
 
-export default function Authentication() {
+function AuthenticationPage() {
     const [isSignIn, setIsSignIn] = useState(true);
     const [mobileAuthOpen, setMobileAuthOpen] = useState(false);
     const heroRef = useRef<HTMLDivElement>(null);
@@ -944,6 +945,12 @@ export default function Authentication() {
     );
 }
 
-// Avoid SSR prerender issues caused by client-only hooks used inside child components
-// Force dynamic rendering for this page so next does not attempt prerendering
+export default function Authentication() {
+    return (
+        <Suspense>
+            <AuthenticationPage />
+        </Suspense>
+    );
+}
+
 export const dynamic = "force-dynamic";
