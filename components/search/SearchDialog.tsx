@@ -80,11 +80,18 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         }
     }, [searchQuery, filterFormData, sortBy, sortOrder, searchTokens]);
 
-    const handleFilterApply = (response: TokenFilterResponse | PoolFilterResponse) => {
-        if (!("tokens" in response)) return;
-        setResults({ tokens: response.tokens, total: response.total });
+    // Always-current ref so effects don't need performSearch as a dependency
+    const performSearchRef = useRef(performSearch);
+    useEffect(() => {
+        performSearchRef.current = performSearch;
+    });
+
+    const handleFilterApply = (_response: TokenFilterResponse | PoolFilterResponse, formData: FilterFormData) => {
+        setFilterFormData(formData);
+        // The immediate search effect below handles triggering the combined filter+search
     };
 
+    // Reset state when dialog closes
     useEffect(() => {
         if (!isOpen) {
             setSearchQuery("");
@@ -95,21 +102,23 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         }
     }, [isOpen]);
 
+    // Debounced search — fires only when search text changes
     useEffect(() => {
         if (!isOpen) return;
         if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current as number);
         debounceTimerRef.current = window.setTimeout(() => {
-            performSearch();
+            performSearchRef.current();
         }, 300);
         return () => {
             if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current as number);
         };
-    }, [searchQuery, filterFormData, isOpen, performSearch]);
+    }, [searchQuery, isOpen]);
 
+    // Immediate search — fires when filter or sort changes
     useEffect(() => {
         if (!isOpen) return;
-        performSearch();
-    }, [sortBy, sortOrder, isOpen, performSearch]);
+        performSearchRef.current();
+    }, [filterFormData, sortBy, sortOrder, isOpen]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onCloseAction}>
@@ -161,8 +170,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
                                 onApply={handleFilterApply}
                                 onReset={() => {
                                     setFilterFormData(null);
-                                    if (searchQuery.trim().length >= 2) performSearch();
-                                    else setResults({ tokens: [], total: 0 });
+                                    // immediate search effect re-runs; performSearch handles empty state
                                 }}
                             />
                         </div>
