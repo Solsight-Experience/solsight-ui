@@ -19,7 +19,7 @@ export interface FilterOptions {
 interface FilterButtonProps {
     filterOptions?: FilterOptions;
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse | PoolFilterResponse) => void;
+    onApply?: (response: TokenFilterResponse | PoolFilterResponse, formData: FilterFormData) => void;
     onError?: (error: Error) => void;
 }
 
@@ -77,7 +77,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                 };
 
                 const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
-                onApply?.(response);
+                onApply?.(response, formData);
             } else {
                 const params: PoolFilterParams = {
                     sort_by: filterOptions?.sort_by as PoolSortBy,
@@ -87,7 +87,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                 };
 
                 const response = await poolFilterMutation.mutateAsync({ body: requestBody, params });
-                onApply?.(response);
+                onApply?.(response, formData);
             }
 
             setIsOpen(false);
