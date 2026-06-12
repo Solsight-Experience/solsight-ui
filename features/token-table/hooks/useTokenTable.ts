@@ -13,7 +13,7 @@ import { transformTokenOverviews } from "../utils/transform";
 import { queryKeys } from "@/lib/react-query-keys";
 import { apiClient } from "@/lib/api-client";
 import { USER_ENDPOINTS } from "@/lib/constants";
-import type { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";
 
 const PAGE_SIZE = 20;
@@ -346,16 +346,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         return transformedData;
     }, [apiData, filters]);
 
-    // Add function to apply filter results
-    const applyFilterResults = useCallback((filterResponse: TokenFilterResponse | PoolFilterResponse) => {
-        if ("tokens" in filterResponse) {
-            // Transform the filtered tokens to match our table format
-            const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
-            setFilters((prev) => ({ ...prev, filteredData: transformedFilteredData }));
-        } else if ("pools" in filterResponse) {
-            // Handle pool filtering if needed
-            console.log("Pool filtering not yet implemented");
-        }
+    const applyFilterResults = useCallback((filterResponse: TokenFilterResponse) => {
+        const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
+        setFilters((prev) => ({ ...prev, filteredData: transformedFilteredData }));
     }, []);
 
     const table = useReactTable({

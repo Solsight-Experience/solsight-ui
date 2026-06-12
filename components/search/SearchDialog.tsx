@@ -8,7 +8,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { SortButton } from "../sort/sort-button/SortButton";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { FilterButton, useSearchWithFilters, type FilterFormData, getFilterRequestBody } from "@/features/token-table/components";
-import type { PoolFilterResponse, TokenOverview, SortBy, SortOrder, TokenFilterResponse } from "@/types/filter";
+import type { TokenOverview, SortBy, SortOrder, TokenFilterResponse } from "@/types/filter";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,7 +68,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         }
 
         try {
-            const filters = filterFormData ? getFilterRequestBody(filterFormData, "token") : {};
+            const filters = filterFormData ? getFilterRequestBody(filterFormData) : {};
             const response = await searchTokens({
                 searchQuery: query,
                 filters,
@@ -86,7 +86,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         performSearchRef.current = performSearch;
     });
 
-    const handleFilterApply = (_response: TokenFilterResponse | PoolFilterResponse, formData: FilterFormData) => {
+    const handleFilterApply = (_response: TokenFilterResponse, formData: FilterFormData) => {
         setFilterFormData(formData);
         // The immediate search effect below handles triggering the combined filter+search
     };
@@ -166,7 +166,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
                                 ))}
                             </div>
                             <FilterButton
-                                filterOptions={{ filterType: "token", sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
+                                filterOptions={{ sort_by: sortBy || undefined, sort_order: sortOrder, limit: 50 }}
                                 onApply={handleFilterApply}
                                 onReset={() => {
                                     setFilterFormData(null);

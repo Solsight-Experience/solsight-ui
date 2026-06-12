@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { PoolFilterResponse, TokenFilterResponse } from "@/types/filter";
+import { TokenFilterResponse } from "@/types/filter";
 
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
@@ -107,7 +107,7 @@ export default function TokenTable() {
                             onReset={() => {
                                 resetFilters();
                             }}
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                            onApply={(res: TokenFilterResponse) => {
                                 applyFilterResults(res);
                             }}
                         />
@@ -125,7 +125,7 @@ export default function TokenTable() {
                             onReset={() => {
                                 resetFilters();
                             }}
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                            onApply={(res: TokenFilterResponse) => {
                                 applyFilterResults(res);
                             }}
                         />
@@ -143,7 +143,7 @@ export default function TokenTable() {
                             onReset={() => {
                                 resetFilters();
                             }}
-                            onApply={(res: TokenFilterResponse | PoolFilterResponse) => {
+                            onApply={(res: TokenFilterResponse) => {
                                 applyFilterResults(res);
                             }}
                         />

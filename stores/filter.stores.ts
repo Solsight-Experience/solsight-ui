@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { FilterStore, TokenFilterRequest, PoolFilterRequest, FilterState } from "@/types/filter";
+import type { FilterStore, TokenFilterRequest, FilterState } from "@/types/filter";
 
 const initialState: FilterState = {
     activeTab: "token" as const,
@@ -30,21 +30,7 @@ const initialState: FilterState = {
         min_risk_score: "" as const,
         max_risk_score: "" as const
     },
-    poolMetrics: {
-        fee_min_percent: "" as const,
-        fee_max_percent: "" as const,
-        age_min_minutes: "" as const,
-        age_max_minutes: "" as const,
-        liquidity_min: "" as const,
-        liquidity_max: "" as const,
-        volume_24h_min: "" as const,
-        volume_24h_max: "" as const,
-        apr_min: "" as const,
-        apr_max: "" as const
-    },
     categories: [] as string[],
-    protocols: [] as string[],
-    tokens: [] as string[],
     holderFilters: {
         top_10_max_percent: "" as const,
         insider_max_percent: "" as const
@@ -83,16 +69,8 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
             holderFilters: { ...state.holderFilters, [key]: value }
         })),
 
-    // Pool filter updates
-    setPoolMetric: (key, value) =>
-        set((state) => ({
-            poolMetrics: { ...state.poolMetrics, [key]: value }
-        })),
-
     // Array filters
     setCategories: (categories) => set({ categories }),
-    setProtocols: (protocols) => set({ protocols }),
-    setTokens: (tokens) => set({ tokens }),
 
     // Reset all filters
     resetFilters: () => set((state) => ({ ...state, ...initialState })),
@@ -151,43 +129,6 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
 
         if (Object.keys(holderFilters).length > 0) {
             request.holder_filters = holderFilters;
-        }
-
-        return request;
-    },
-
-    // Convert UI state to API request format for pools
-    getPoolFilterRequest: (): PoolFilterRequest => {
-        const state = get();
-        const request: PoolFilterRequest = {};
-
-        if (state.searchQuery.trim()) {
-            request.search_query = state.searchQuery.trim();
-        }
-
-        // Build metrics object if any values are set
-        const metrics = Object.entries(state.poolMetrics).reduce(
-            (acc, [key, value]) => {
-                if (value !== "" && value !== null && value !== undefined) {
-                    acc[key as keyof typeof state.poolMetrics] = Number(value);
-                }
-                return acc;
-            },
-            {} as NonNullable<PoolFilterRequest["metrics"]>
-        );
-
-        if (Object.keys(metrics).length > 0) {
-            request.metrics = metrics;
-        }
-
-        // Add protocols if any selected
-        if (state.protocols.length > 0) {
-            request.protocols = state.protocols;
-        }
-
-        // Add tokens if any selected
-        if (state.tokens.length > 0) {
-            request.tokens = state.tokens;
         }
 
         return request;
