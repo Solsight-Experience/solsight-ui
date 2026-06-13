@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWatchedPositions, useWatchedActivities } from "../hooks/useWatchedPortfolio";
 import { useWatchlistStore } from "../store/watchlistStore";
 import { WalletAlertsTab } from "./WalletAlertsTab";
+import { ensureMs } from "@/lib/formatters";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,13 +40,14 @@ const formatAmount = (value: number): string => {
     });
 };
 
-const toRelativeTime = (unixSeconds: number): string => {
-    const diff = Math.floor(Date.now() / 1000) - unixSeconds;
-    if (diff < 60) return `${diff}s ago`;
+const toRelativeTime = (timestamp: number): string => {
+    const ms = ensureMs(timestamp);
+    const diff = Math.floor((Date.now() - ms) / 1000);
+    if (diff < 60) return `${diff < 0 ? 0 : diff}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(unixSeconds * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
 const formatUSD = (value: number) => value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
@@ -464,7 +466,7 @@ const ActivityRow: React.FC<{ activity: ActivityData; isLast: boolean }> = ({ ac
 
             {/* Time + link */}
             <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[11px] text-white/30 tabular-nums whitespace-nowrap" title={new Date(activity.timestamp * 1000).toLocaleString()}>
+                <span className="text-[11px] text-white/30 tabular-nums whitespace-nowrap" title={new Date(ensureMs(activity.timestamp)).toLocaleString()}>
                     {toRelativeTime(activity.timestamp)}
                 </span>
                 <a

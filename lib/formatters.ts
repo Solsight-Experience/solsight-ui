@@ -104,5 +104,13 @@ export function formatNumber(value: number): string {
     });
 }
 
+/**
+ * Normalizes timestamps that may be in seconds or milliseconds into milliseconds.
+ * If the timestamp is in Unix seconds (less than 99999999999), it multiplies it by 1000.
+ */
+export function ensureMs(timestamp: number): number {
+    return timestamp < 99999999999 ? timestamp * 1000 : timestamp;
+}
+
 // Export formatter instances for direct use
 export { compactFormatter, percentFormatter, addressFormatter, numberFormatter, currencyFormatter };

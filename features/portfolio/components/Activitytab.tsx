@@ -5,10 +5,11 @@ import { usePortfolioUIStore } from "../stores/portfolioUIStore";
 import type { Activity } from "../types/portfolio.types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ensureMs } from "@/lib/formatters";
 
 const formatRelativeTime = (timestamp: number) => {
     const now = Date.now();
-    const diff = now - timestamp * 1000;
+    const diff = now - ensureMs(timestamp);
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -35,7 +36,7 @@ const formatRelativeTime = (timestamp: number) => {
 const truncateWallet = (address: string) => (address.length > 8 ? `${address.slice(0, 4)}...${address.slice(-4)}` : address);
 
 const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+    const date = new Date(ensureMs(timestamp));
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
