@@ -21,6 +21,7 @@ import {
     Search,
     Sun,
     Moon,
+    ShieldCheck,
     Menu,
     X
 } from "lucide-react";
@@ -459,7 +460,8 @@ const NAV_ITEMS = [
     { href: "/", label: "Discover", icon: <TrendingUp size={14} /> },
     { href: "/portfolio", label: "Portfolio", icon: <BarChart2 size={14} /> },
     { href: "/multi-chart", label: "Multi Viewer", icon: <LayoutGrid size={14} /> },
-    { href: "/wallet-tracker", label: "Wallet Tracker", icon: <Search size={14} /> }
+    { href: "/wallet-tracker", label: "Wallet Tracker", icon: <Search size={14} /> },
+    { href: "/stake", label: "Stake", icon: <ShieldCheck size={14} /> }
 ] as const;
 
 /* ─────────────────────────────────────────────────────────────────────────────
