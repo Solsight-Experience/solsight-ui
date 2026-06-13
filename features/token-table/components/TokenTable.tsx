@@ -103,6 +103,7 @@ export default function TokenTable() {
                             onSortChange={toggleSort}
                         />
                         <FilterButton
+                            filterOptions={{ limit: 100 }}
                             onReset={() => {
                                 resetFilters();
                             }}
@@ -120,6 +121,7 @@ export default function TokenTable() {
                         <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
                         <FilterButton
+                            filterOptions={{ limit: 100 }}
                             onReset={() => {
                                 resetFilters();
                             }}
@@ -137,6 +139,7 @@ export default function TokenTable() {
                     <RightPanelFilter>
                         <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <FilterButton
+                            filterOptions={{ limit: 100 }}
                             onReset={() => {
                                 resetFilters();
                             }}

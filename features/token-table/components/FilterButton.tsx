@@ -18,7 +18,7 @@ export interface FilterOptions {
 interface FilterButtonProps {
     filterOptions?: FilterOptions;
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse) => void;
+    onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
     onError?: (error: Error) => void;
 }
 
@@ -69,7 +69,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
             };
 
             const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
-            onApply?.(response);
+            onApply?.(response, formData);
             setIsOpen(false);
         } catch (error) {
             console.error("Filter error:", error);

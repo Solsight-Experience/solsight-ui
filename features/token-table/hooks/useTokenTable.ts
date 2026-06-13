@@ -294,6 +294,20 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const data = useMemo(() => {
         // If we have filtered data from API, use that instead of regular data
         if (filters.filteredData && filters.filteredData.length > 0) {
+            if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
+                return [...filters.filteredData].sort((a, b) => {
+                    let aValue = 0;
+                    let bValue = 0;
+                    if (filters.sortOption === "volumes") {
+                        aValue = a.volume24h;
+                        bValue = b.volume24h;
+                    } else if (filters.sortOption === "txns") {
+                        aValue = a.transactions.buyCount + a.transactions.sellCount;
+                        bValue = b.transactions.buyCount + b.transactions.sellCount;
+                    }
+                    return filters.sortDirection === "desc" ? bValue - aValue : aValue - bValue;
+                });
+            }
             return filters.filteredData;
         }
 

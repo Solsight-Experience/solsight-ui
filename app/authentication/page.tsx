@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
 import Image from "next/image";
 const SignInForm = nextDynamic(() => import("@/components/auth/sign-in-form"), { ssr: false });
@@ -7,6 +8,8 @@ const SignUpForm = nextDynamic(() => import("@/components/auth/sign-up-form"), {
 import AuthBackground from "@/components/auth/auth-background";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import {
     Shield,
     Zap,
@@ -483,10 +486,24 @@ function MemberCard({ m, idx }: { m: (typeof TEAM)[0]; idx: number }) {
 
 /* ─────────────────── main page ─────────────────── */
 
-export default function Authentication() {
+function AuthenticationPage() {
     const [isSignIn, setIsSignIn] = useState(true);
     const [mobileAuthOpen, setMobileAuthOpen] = useState(false);
     const heroRef = useRef<HTMLDivElement>(null);
+    const { isAuthenticated, isLoading } = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            const redirectTo = searchParams.get("redirect") || "/";
+            router.replace(redirectTo);
+        }
+    }, [isAuthenticated, isLoading, router, searchParams]);
+
+    if (isLoading || isAuthenticated) {
+        return null;
+    }
 
     return (
         <div
@@ -928,6 +945,12 @@ export default function Authentication() {
     );
 }
 
-// Avoid SSR prerender issues caused by client-only hooks used inside child components
-// Force dynamic rendering for this page so next does not attempt prerendering
+export default function Authentication() {
+    return (
+        <Suspense>
+            <AuthenticationPage />
+        </Suspense>
+    );
+}
+
 export const dynamic = "force-dynamic";
