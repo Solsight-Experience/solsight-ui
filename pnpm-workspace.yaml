@@ -1,5 +1,6 @@
 allowBuilds:
   '@tailwindcss/oxide': false
+  bigint-buffer: false
   bufferutil: false
   esbuild: false
   msw: false
