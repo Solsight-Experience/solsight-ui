@@ -68,7 +68,7 @@ function CopyButton({ text }: { text: string }) {
         <button
             onClick={handleCopy}
             title="Copy address"
-            className="ml-1.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border border-white/10 text-gray-500 hover:text-white hover:border-white/25 transition-colors"
+            className="ml-1.5 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-gray-500 dark:hover:border-white/25 dark:hover:text-white"
         >
             {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
         </button>
@@ -84,14 +84,11 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return (
-        <div
-            className="rounded-3xl border border-white/10 backdrop-blur-md overflow-hidden"
-            style={{ background: "linear-gradient(145deg, rgba(20,10,40,0.95) 0%, rgba(10,8,30,0.98) 100%)" }}
-        >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+        <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(145deg,rgba(20,10,40,0.95)_0%,rgba(10,8,30,0.98)_100%)] dark:shadow-none">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-white/8">
                 <div className="flex items-center gap-2.5">
                     <History className="h-4 w-4 text-purple-400" />
-                    <h3 className="text-white font-bold text-[15px] tracking-tight">Stake History</h3>
+                    <h3 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">Stake History</h3>
                     {total > 0 && (
                         <span className="rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-[11px] font-semibold text-purple-300">
                             {total}
@@ -102,13 +99,13 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
 
             {!walletPubkey ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                    <Wallet className="h-8 w-8 text-gray-600" />
-                    <p className="text-gray-500 text-sm">Connect wallet to view history</p>
+                    <Wallet className="h-8 w-8 text-slate-400 dark:text-gray-600" />
+                    <p className="text-sm text-slate-500 dark:text-gray-500">Connect wallet to view history</p>
                 </div>
             ) : isLoading ? (
                 <div className="space-y-2 p-4">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="h-14 rounded-2xl animate-pulse bg-white/5" />
+                        <div key={i} className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" />
                     ))}
                 </div>
             ) : isError ? (
@@ -117,13 +114,13 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 </div>
             ) : records.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                    <History className="h-8 w-8 text-gray-700" />
-                    <p className="text-gray-500 text-sm">No transactions yet</p>
-                    <p className="text-gray-600 text-xs">Your stake and unstake history will appear here</p>
+                    <History className="h-8 w-8 text-slate-400 dark:text-gray-700" />
+                    <p className="text-sm text-slate-500 dark:text-gray-500">No transactions yet</p>
+                    <p className="text-xs text-slate-400 dark:text-gray-600">Your stake and unstake history will appear here</p>
                 </div>
             ) : (
                 <>
-                    <div className="hidden sm:grid grid-cols-[1fr_100px_110px_100px_44px] gap-3 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 border-b border-white/5">
+                    <div className="hidden grid-cols-[1fr_100px_110px_100px_44px] gap-3 border-b border-slate-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-white/5 dark:text-gray-600 sm:grid">
                         <span>Stake Account</span>
                         <span>Amount</span>
                         <span>Type</span>
@@ -131,28 +128,30 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                         <span />
                     </div>
 
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-slate-200 dark:divide-white/5">
                         {records.map((r: StakeRecord) => {
                             const action = ACTION_CONFIG[r.actionType];
                             const status = STATUS_CONFIG[r.status];
                             return (
                                 <div
                                     key={r.id}
-                                    className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_100px_110px_100px_44px] gap-3 items-center px-5 py-3.5 hover:bg-white/[0.025] transition-colors"
+                                    className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.025] sm:grid-cols-[1fr_100px_110px_100px_44px]"
                                 >
                                     <div className="min-w-0">
                                         <div className="flex items-center">
-                                            <p className="font-mono text-[12px] text-gray-300 font-medium">{shortenAddr(r.stakeAccountAddress)}</p>
+                                            <p className="font-mono text-[12px] font-medium text-slate-700 dark:text-gray-300">
+                                                {shortenAddr(r.stakeAccountAddress)}
+                                            </p>
                                             <CopyButton text={r.stakeAccountAddress} />
                                         </div>
-                                        <p className="text-[11px] text-gray-600 mt-0.5">{formatDate(r.createdAt)}</p>
+                                        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-gray-600">{formatDate(r.createdAt)}</p>
                                     </div>
 
                                     <div className="text-right sm:text-left">
-                                        <p className="text-white font-bold text-[13px]">
+                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white">
                                             {Number(r.amountSol) > 0 ? `${Number(r.amountSol).toFixed(4)}` : "—"}
                                         </p>
-                                        {Number(r.amountSol) > 0 && <p className="text-gray-600 text-[11px]">SOL</p>}
+                                        {Number(r.amountSol) > 0 && <p className="text-[11px] text-slate-400 dark:text-gray-600">SOL</p>}
                                     </div>
 
                                     <div className="hidden sm:flex">
@@ -174,7 +173,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                                             href={getSolscanTxUrl(r.signature)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-gray-500 hover:text-white hover:border-white/25 transition-colors"
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-gray-500 dark:hover:border-white/25 dark:hover:text-white"
                                         >
                                             <ExternalLink className="h-3.5 w-3.5" />
                                         </a>
@@ -198,22 +197,22 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                     </div>
 
                     {records.length > 0 && (
-                        <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/8">
-                            <p className="text-[12px] text-gray-600">
+                        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3.5 dark:border-white/8">
+                            <p className="text-[12px] text-slate-500 dark:text-gray-600">
                                 Page {page} / {totalPages}
                             </p>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                                     disabled={page === 1}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/25 dark:hover:text-white"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
                                 <button
                                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/25 dark:hover:text-white"
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </button>

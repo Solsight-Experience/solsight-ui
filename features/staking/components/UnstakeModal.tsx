@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Clock, AlertCircle, CheckCircle2, ArrowUpFromLine } from "lucide-react";
 import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
@@ -36,6 +37,7 @@ const WITHDRAW_LABELS: Record<IFStakeStatus, string> = {
 };
 
 export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadingPosition, connected, onSuccess }: UnstakeModalProps) {
+    const { resolvedTheme } = useTheme();
     const { requestUnstakeState, unstakeState, handleRequestUnstake, handleUnstake } = useIFStaking(connected, walletPubkey, onSuccess);
 
     const [unstakeAmount, setUnstakeAmount] = useState("");
@@ -55,6 +57,7 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
     const unstakeAmountNum = parseFloat(unstakeAmount);
     const maxUnstake = ifPosition?.estimatedSol ?? 0;
     const isUnstakeValid = !isNaN(unstakeAmountNum) && unstakeAmountNum >= IF_MIN_STAKE_SOL && unstakeAmountNum <= maxUnstake;
+    const isDark = resolvedTheme === "dark";
 
     return (
         <Dialog
@@ -64,10 +67,10 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
             }}
         >
             <DialogContent
-                className="sm:max-w-md border-0 text-white p-0 overflow-hidden"
+                className="overflow-hidden border-0 p-0 text-slate-950 sm:max-w-md dark:text-white"
                 style={{
-                    background: "linear-gradient(145deg, #110d20 0%, #080612 100%)",
-                    boxShadow: "0 25px 60px rgba(249,115,22,0.15)"
+                    background: isDark ? "linear-gradient(145deg, #110d20 0%, #080612 100%)" : "#ffffff",
+                    boxShadow: isDark ? "0 25px 60px rgba(249,115,22,0.15)" : "0 25px 60px rgba(15,23,42,0.18)"
                 }}
             >
                 {/* Header gradient bar */}
@@ -82,23 +85,12 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
 
                 <div className="p-6 space-y-5">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-extrabold tracking-tight">
-                            <span
-                                style={{
-                                    background: "linear-gradient(135deg, #fff 40%, #fdba74)",
-                                    WebkitBackgroundClip: "text",
-                                    WebkitTextFillColor: "transparent",
-                                    backgroundClip: "text"
-                                }}
-                            >
-                                Unstake SOL
-                            </span>
-                        </DialogTitle>
+                        <DialogTitle className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">Unstake SOL</DialogTitle>
                     </DialogHeader>
 
                     {/* Loading state */}
                     {isLoadingPosition && (
-                        <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                        <div className="flex items-center justify-center gap-2 py-8 text-slate-500 dark:text-gray-400">
                             <Loader2 className="h-5 w-5 animate-spin" />
                             <span className="text-[13px]">Loading position...</span>
                         </div>
@@ -108,7 +100,7 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                     {!isLoadingPosition && !hasPosition && !hasPendingRequest && (
                         <div className="flex flex-col items-center gap-3 py-8 text-center">
                             <span className="text-4xl">🔍</span>
-                            <p className="text-gray-400 text-[13px]">
+                            <p className="text-[13px] text-slate-500 dark:text-gray-400">
                                 No IF position found.
                                 <br />
                                 Stake SOL first.
@@ -118,38 +110,39 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
 
                     {/* Current IF position */}
                     {!isLoadingPosition && hasPosition && (
-                        <div className="rounded-2xl border border-purple-500/25 bg-purple-500/8 px-4 py-4 space-y-1">
+                        <div className="space-y-1 rounded-2xl border border-purple-500/25 bg-purple-500/10 px-4 py-4 dark:bg-purple-500/8">
                             <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-400/70">Current Position</p>
-                            <p className="text-2xl font-extrabold text-white">
-                                ≈ {ifPosition!.estimatedSol.toFixed(6)} <span className="text-base font-semibold text-gray-400">SOL</span>
+                            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                                ≈ {ifPosition!.estimatedSol.toFixed(6)} <span className="text-base font-semibold text-slate-500 dark:text-gray-400">SOL</span>
                             </p>
-                            <p className="text-[11px] text-gray-500">{ifPosition!.ifShares} IF Shares</p>
+                            <p className="text-[11px] text-slate-500 dark:text-gray-500">{ifPosition!.ifShares} IF Shares</p>
                         </div>
                     )}
 
                     {/* Step 1: Request Remove (no pending request yet) */}
                     {!isLoadingPosition && hasPosition && !hasPendingRequest && (
                         <div className="space-y-3">
-                            <div className="flex gap-2.5 rounded-2xl border border-yellow-500/20 bg-yellow-500/6 px-3.5 py-3 text-[12px] text-yellow-300">
+                            <div className="flex gap-2.5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-3.5 py-3 text-[12px] text-yellow-700 dark:bg-yellow-500/6 dark:text-yellow-300">
                                 <Clock className="h-4 w-4 flex-shrink-0 mt-0.5 text-yellow-400" />
                                 <span className="leading-relaxed">
-                                    <strong className="text-white">Submit a withdrawal request.</strong> Once the cooldown ends, you can withdraw your SOL.
+                                    <strong className="text-slate-900 dark:text-white">Submit a withdrawal request.</strong> Once the cooldown ends, you can
+                                    withdraw your SOL.
                                 </span>
                             </div>
 
                             {/* Amount input */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[13px] font-semibold text-gray-400">Amount to unstake</label>
+                                    <label className="text-[13px] font-semibold text-slate-600 dark:text-gray-400">Amount to unstake</label>
                                     <button
-                                        className="text-[12px] font-bold text-orange-400 hover:text-orange-300 transition-colors"
+                                        className="cursor-pointer text-[12px] font-bold text-orange-400 transition-colors hover:text-orange-300 disabled:cursor-not-allowed"
                                         onClick={() => setUnstakeAmount(maxUnstake.toFixed(6))}
                                         disabled={requestLoading}
                                     >
                                         MAX
                                     </button>
                                 </div>
-                                <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-orange-500/50 transition-colors">
+                                <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors focus-within:border-orange-500/50 dark:border-white/10 dark:bg-white/5">
                                     <input
                                         type="number"
                                         min="0"
@@ -157,12 +150,12 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                                         value={unstakeAmount}
                                         onChange={(e) => setUnstakeAmount(e.target.value)}
                                         placeholder="0.00"
-                                        className="flex-1 bg-transparent text-xl font-bold outline-none placeholder:text-white/20"
+                                        className="flex-1 bg-transparent text-xl font-bold text-slate-900 outline-none placeholder:text-slate-300 dark:text-white dark:placeholder:text-white/20"
                                         disabled={requestLoading}
                                     />
-                                    <span className="text-gray-400 font-semibold ml-2 text-[14px]">SOL</span>
+                                    <span className="ml-2 text-[14px] font-semibold text-slate-500 dark:text-gray-400">SOL</span>
                                 </div>
-                                <p className="text-[11px] text-gray-600 mt-1.5">
+                                <p className="mt-1.5 text-[11px] text-slate-500 dark:text-gray-600">
                                     Available: {maxUnstake.toFixed(6)} SOL · Min {IF_MIN_STAKE_SOL} SOL
                                 </p>
                             </div>
@@ -175,7 +168,7 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                             )}
 
                             <button
-                                className="w-full rounded-2xl py-3.5 text-[13px] font-bold text-white tracking-wide transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="w-full cursor-pointer rounded-2xl py-3.5 text-[13px] font-bold text-white tracking-wide transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                                 style={{
                                     background:
                                         !requestLoading && isUnstakeValid ? "linear-gradient(135deg, #f97316 0%, #f59e0b 100%)" : "rgba(255,255,255,0.05)",
@@ -202,31 +195,37 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                     {/* Step 2: Pending — waiting for cooldown */}
                     {!isLoadingPosition && hasPendingRequest && !canWithdraw && (
                         <div className="space-y-3">
-                            <div className="rounded-2xl border border-orange-500/25 bg-orange-500/8 px-4 py-4 space-y-2">
+                            <div className="space-y-2 rounded-2xl border border-orange-500/25 bg-orange-500/10 px-4 py-4 dark:bg-orange-500/8">
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-orange-400" />
-                                    <p className="text-[13px] font-bold text-orange-300">Awaiting cooldown</p>
+                                    <p className="text-[13px] font-bold text-orange-700 dark:text-orange-300">Awaiting cooldown</p>
                                 </div>
-                                <p className="text-[12px] text-gray-400 leading-relaxed">
-                                    Withdrawal request of <strong className="text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> is in
-                                    the cooldown period.
-                                    {cooldownEndsDate && <span className="block mt-1 text-orange-300/70 font-semibold">Available at: {cooldownEndsDate}</span>}
+                                <p className="text-[12px] leading-relaxed text-slate-600 dark:text-gray-400">
+                                    Withdrawal request of{" "}
+                                    <strong className="text-slate-900 dark:text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> is in the
+                                    cooldown period.
+                                    {cooldownEndsDate && (
+                                        <span className="mt-1 block font-semibold text-orange-700/80 dark:text-orange-300/70">
+                                            Available at: {cooldownEndsDate}
+                                        </span>
+                                    )}
                                 </p>
                             </div>
-                            <p className="text-[11px] text-gray-600 text-center">The Withdraw button will unlock once the cooldown ends.</p>
+                            <p className="text-center text-[11px] text-slate-500 dark:text-gray-600">The Withdraw button will unlock once the cooldown ends.</p>
                         </div>
                     )}
 
                     {/* Step 3: Ready to withdraw */}
                     {!isLoadingPosition && hasPendingRequest && canWithdraw && (
                         <div className="space-y-3">
-                            <div className="rounded-2xl border border-green-500/25 bg-green-500/8 px-4 py-4 space-y-2">
+                            <div className="space-y-2 rounded-2xl border border-green-500/25 bg-green-500/10 px-4 py-4 dark:bg-green-500/8">
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-400" />
-                                    <p className="text-[13px] font-bold text-green-300">Cooldown complete!</p>
+                                    <p className="text-[13px] font-bold text-green-700 dark:text-green-300">Cooldown complete!</p>
                                 </div>
-                                <p className="text-[12px] text-gray-400">
-                                    You can now withdraw <strong className="text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> to your
+                                <p className="text-[12px] text-slate-600 dark:text-gray-400">
+                                    You can now withdraw{" "}
+                                    <strong className="text-slate-900 dark:text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> to your
                                     wallet.
                                 </p>
                             </div>
@@ -252,7 +251,7 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                             )}
 
                             <button
-                                className="w-full rounded-2xl py-3.5 text-[13px] font-bold text-white tracking-wide transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="w-full cursor-pointer rounded-2xl py-3.5 text-[13px] font-bold text-white tracking-wide transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                                 style={{
                                     background: !withdrawLoading ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)" : "rgba(255,255,255,0.05)",
                                     boxShadow: !withdrawLoading ? "0 4px 20px rgba(34,197,94,0.25)" : "none"
@@ -274,7 +273,7 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
 
                     {/* Cancel button */}
                     <button
-                        className="w-full rounded-2xl border border-white/10 py-3 text-[13px] font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-40"
+                        className="w-full cursor-pointer rounded-2xl border border-slate-200 py-3 text-[13px] font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-white"
                         onClick={onClose}
                         disabled={anyLoading}
                     >

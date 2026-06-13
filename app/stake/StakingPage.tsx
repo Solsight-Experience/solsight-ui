@@ -1,10 +1,8 @@
-"use client";
-
 import React from "react";
-import { StakingPanel, StakeHistory } from "@/features/staking/components";
-import { useStakingWallet } from "@/features/staking/hooks/useStakingWallet";
+import { StakingPanel } from "@/features/staking/components";
 import { IF_CONFIG } from "@/features/staking/constants/program";
-import { ShieldCheck, Zap, Clock, TrendingUp } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { StakeHistoryClient } from "./StakeHistoryClient";
 
 // Fixed star positions to avoid SSR/CSR mismatch
 const STARS = [
@@ -35,10 +33,16 @@ const STARS = [
 ];
 
 export function StakingPage() {
-    const { publicKey } = useStakingWallet();
-
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[#06060f] py-12 px-4">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 py-12 px-4 text-slate-950 dark:bg-[#06060f] dark:text-white">
+            <div
+                className="pointer-events-none absolute inset-0 dark:hidden"
+                aria-hidden
+                style={{
+                    background:
+                        "radial-gradient(circle at top, rgba(96,165,250,0.18), transparent 28%), linear-gradient(180deg, #f8fafc 0%, #eef2ff 48%, #f8fafc 100%)"
+                }}
+            />
             {/* Animated gradient orbs */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
                 <div className="animate-float-orb   absolute -top-32 -left-32  h-[500px] w-[500px] rounded-full bg-purple-700/25  blur-[130px]" />
@@ -53,14 +57,14 @@ export function StakingPage() {
                 {STARS.map((s, i) => (
                     <div
                         key={i}
-                        className="absolute h-[3px] w-[3px] rounded-full bg-white/70 animate-pulse"
+                        className="absolute h-[3px] w-[3px] rounded-full bg-slate-500/40 animate-pulse dark:bg-white/70"
                         style={{ left: `${s.x}%`, top: `${s.y}%`, animationDelay: `${s.d}s` }}
                     />
                 ))}
 
                 {/* Subtle grid overlay */}
                 <div
-                    className="absolute inset-0 opacity-[0.03]"
+                    className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
                     style={{
                         backgroundImage:
                             "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
@@ -72,48 +76,18 @@ export function StakingPage() {
             <div className="relative z-10 max-w-3xl mx-auto">
                 {/* Page header */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-500/10 px-4 py-1.5 mb-5 backdrop-blur-sm">
+                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-white/70 px-4 py-1.5 shadow-sm backdrop-blur-sm dark:border-purple-500/40 dark:bg-purple-500/10">
                         <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
-                        <span className="text-xs font-semibold tracking-wide text-purple-300 uppercase">Insurance Fund · {IF_CONFIG.label}</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-purple-300">
+                            Insurance Fund · {IF_CONFIG.label}
+                        </span>
                     </div>
 
-                    <h1
-                        className="mb-3 text-5xl font-extrabold tracking-tight"
-                        style={{
-                            background: "linear-gradient(135deg, #fff 30%, #a78bfa 60%, #60a5fa 90%)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                            backgroundClip: "text"
-                        }}
-                    >
-                        Stake &amp; Earn
-                    </h1>
+                    <h1 className="mb-3 text-5xl font-extrabold tracking-tight text-slate-950 dark:text-white">Stake &amp; Earn</h1>
 
-                    <p className="text-gray-400 text-[15px] leading-relaxed max-w-xs mx-auto">
+                    <p className="mx-auto max-w-xs text-[15px] leading-relaxed text-slate-600 dark:text-gray-400">
                         Deposit SOL into the <span className="text-purple-400 font-semibold">Insurance Fund</span> and earn trading fees from the protocol.
                     </p>
-                </div>
-
-                {/* Stats pills */}
-                <div className="grid grid-cols-3 gap-3 mb-8 text-center">
-                    {[
-                        {
-                            icon: TrendingUp,
-                            label: "Yield Source",
-                            value: "IF Fees",
-                            color: "text-purple-400",
-                            border: "border-purple-500/25",
-                            bg: "bg-purple-500/5"
-                        },
-                        { icon: Clock, label: "Cooldown", value: "Variable", color: "text-yellow-400", border: "border-yellow-500/25", bg: "bg-yellow-500/5" },
-                        { icon: Zap, label: "Network", value: IF_CONFIG.label, color: "text-blue-400", border: "border-blue-500/25", bg: "bg-blue-500/5" }
-                    ].map(({ icon: Icon, label, value, color, border, bg }) => (
-                        <div key={label} className={`rounded-2xl border ${border} ${bg} py-4 backdrop-blur-sm transition-transform hover:-translate-y-0.5`}>
-                            <Icon className={`h-4 w-4 mx-auto mb-1.5 ${color}`} />
-                            <p className={`text-base font-bold ${color}`}>{value}</p>
-                            <p className="text-[11px] text-gray-500 mt-0.5 font-medium uppercase tracking-wide">{label}</p>
-                        </div>
-                    ))}
                 </div>
 
                 {/* Main staking panel */}
@@ -121,12 +95,12 @@ export function StakingPage() {
 
                 {/* Stake History */}
                 <div className="mt-6">
-                    <StakeHistory walletPubkey={publicKey} />
+                    <StakeHistoryClient />
                 </div>
 
                 {/* How it works */}
-                <div className="mt-8 rounded-2xl border border-white/8 bg-white/[0.03] p-6 space-y-4 backdrop-blur-sm">
-                    <h3 className="text-white font-bold text-base tracking-tight">How it works</h3>
+                <div className="mt-8 space-y-4 rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-white/8 dark:bg-white/[0.03] dark:shadow-none">
+                    <h3 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">How it works</h3>
                     <ol className="space-y-3">
                         {[
                             {
@@ -159,8 +133,8 @@ export function StakingPage() {
                                     {step}
                                 </span>
                                 <div className="pt-1">
-                                    <span className="text-white font-semibold text-[13px]">{title}</span>
-                                    <p className="text-gray-500 text-[12px] mt-0.5 leading-relaxed">{body}</p>
+                                    <span className="text-[13px] font-semibold text-slate-900 dark:text-white">{title}</span>
+                                    <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500 dark:text-gray-500">{body}</p>
                                 </div>
                             </li>
                         ))}

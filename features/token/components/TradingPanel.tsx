@@ -15,8 +15,6 @@ import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.h
 import { toast } from "sonner";
 import {
     executeJupiterSwap,
-    base64ToBytes,
-    bytesToBase64,
     fetchJupiterQuote,
     formatDisplay,
     formatFromBaseUnits,
@@ -731,10 +729,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             });
 
             // Step 2: Sign transaction
-            const txBuffer = base64ToBytes(createResponse.transaction);
+            const txBuffer = Buffer.from(createResponse.transaction, "base64");
             const transaction = VersionedTransaction.deserialize(txBuffer);
             const signedTx = await provider.signTransaction(transaction);
-            const signedTxBase64 = bytesToBase64(signedTx.serialize());
+            const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Step 3: Execute
             const executeResponse = await LimitOrderService.executeOrder({

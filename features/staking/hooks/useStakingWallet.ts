@@ -16,29 +16,45 @@ interface PhantomProvider {
     network?: string;
 }
 
+type WindowWithPhantom = Window &
+    typeof globalThis & {
+        phantom?: { solana?: PhantomProvider };
+        solana?: PhantomProvider;
+    };
+
 function getPhantom(): PhantomProvider | undefined {
     if (typeof window === "undefined") return undefined;
-     
-    return (window as any).phantom?.solana ?? (window as any).solana ?? undefined;
+    const walletWindow = window as WindowWithPhantom;
+    return walletWindow.phantom?.solana ?? walletWindow.solana ?? undefined;
 }
 
 export function useStakingWallet() {
-    const phantom = getPhantom();
-
-    const [connected, setConnected] = useState<boolean>(phantom?.isConnected ?? false);
-    const [publicKey, setPublicKey] = useState<string | null>(phantom?.publicKey?.toString() ?? null);
+    const [connected, setConnected] = useState(false);
+    const [publicKey, setPublicKey] = useState<string | null>(null);
+    const [isDevnet, setIsDevnet] = useState<boolean | null>(null);
 
     useEffect(() => {
         const p = getPhantom();
-        if (!p) return;
+        if (!p) {
+            setIsDevnet(null);
+            return;
+        }
+
+        const syncWalletState = () => {
+            setConnected(p.isConnected);
+            setPublicKey(p.isConnected ? (p.publicKey?.toString() ?? null) : null);
+            setIsDevnet(p.network ? p.network === "devnet" : null);
+        };
 
         const onConnect = () => {
             setConnected(true);
             setPublicKey(p.publicKey?.toString() ?? null);
+            setIsDevnet(p.network ? p.network === "devnet" : null);
         };
         const onDisconnect = () => {
             setConnected(false);
             setPublicKey(null);
+            setIsDevnet(p.network ? p.network === "devnet" : null);
         };
         const onAccountChanged = (pk: unknown) => {
             if (pk) {
@@ -48,16 +64,14 @@ export function useStakingWallet() {
                 setConnected(false);
                 setPublicKey(null);
             }
+            setIsDevnet(p.network ? p.network === "devnet" : null);
         };
 
         p.on("connect", onConnect);
         p.on("disconnect", onDisconnect);
         p.on("accountChanged", onAccountChanged);
 
-        if (p.isConnected && p.publicKey) {
-            setConnected(true);
-            setPublicKey(p.publicKey.toString());
-        }
+        syncWalletState();
 
         return () => {
             p.off("connect", onConnect);
@@ -76,6 +90,7 @@ export function useStakingWallet() {
             const resp = await p.connect();
             setConnected(true);
             setPublicKey(resp.publicKey.toString());
+            setIsDevnet(p.network ? p.network === "devnet" : null);
         } catch (err) {
             const msg = ((err as Error)?.message ?? "").toLowerCase();
             if (!msg.includes("rejected") && !msg.includes("cancelled")) {
@@ -89,14 +104,8 @@ export function useStakingWallet() {
         if (p) await p.disconnect();
         setConnected(false);
         setPublicKey(null);
+        setIsDevnet(p?.network ? p.network === "devnet" : null);
     }, []);
-
-    const isDevnet: boolean | null = (() => {
-        const p = getPhantom();
-        const network = p?.network;
-        if (!network) return null;
-        return network === "devnet";
-    })();
 
     return {
         connected,
