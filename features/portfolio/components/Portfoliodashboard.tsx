@@ -4,6 +4,7 @@ import { createChart, AreaSeries, UTCTimestamp } from "lightweight-charts";
 import { miniChartOptions, areaSeriesPresets } from "@/lib/chart-config";
 import { usePortfolioOverview, usePnlChart } from "../hooks/portfolio.hooks";
 import { MockConnectWalletDialog } from "./MockConnectWalletDialog";
+import { currencyFormatter } from "@/lib/formatters";
 
 // Mini PnL chart component using lightweight-charts
 const PnlLineChart: React.FC<{ data: { time: UTCTimestamp; value: number }[] }> = ({ data }) => {
@@ -315,7 +316,8 @@ export const PortfolioDashboard: React.FC = () => {
                         <span
                             className={`text-sm font-bold tracking-tight font-mono ${pnl.total >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}
                         >
-                            {pnl.total >= 0 ? "+" : ""}${(pnl.total / 1000).toFixed(2)}K
+                            {pnl.total > 0 ? "+" : ""}
+                            {currencyFormatter.format(pnl.total)}
                         </span>
                     </div>
                     <div className="bg-[var(--surface-panel)] border border-[var(--border-faint)] rounded-xl p-3 flex flex-col items-center justify-center">
