@@ -16,6 +16,14 @@ type OpaqueItem = SwapConfigItem<unknown>;
 
 const renderCompact = (item: OpaqueItem, state: unknown, ctx: SwapConfigSurfaceProps["ctx"]): React.ReactNode => item.getCompactDisplay(state, ctx);
 
+const getPriorityFeeCompactValue = (state: unknown, ctx: SwapConfigSurfaceProps["ctx"]): string => {
+    const priorityFeeState = state as { mode?: "auto" | "custom"; custom?: number | null } | undefined;
+    const autoValue = priorityFeeItem.autoValue(ctx) ?? 0;
+    const effectiveLamports = priorityFeeState?.mode === "auto" ? autoValue : (priorityFeeState?.custom ?? autoValue);
+
+    return priorityFeeItem.format(effectiveLamports);
+};
+
 export const SwapConfigBar: React.FC<SwapConfigBarProps> = ({ ctx, states, open, onToggleOpen }) => {
     const gaslessState = states.gasless as { value: "sol" | "quote" | "receive" } | undefined;
     const isGaslessActive = gaslessItem.isVisible(ctx) && gaslessState?.value !== undefined && gaslessState.value !== "sol";
@@ -26,7 +34,16 @@ export const SwapConfigBar: React.FC<SwapConfigBarProps> = ({ ctx, states, open,
         if (!item.isVisible(ctx)) continue;
 
         if (item.id === priorityFeeItem.id && isGaslessActive) {
-            const node = renderCompact(gaslessItem as unknown as OpaqueItem, states.gasless, ctx);
+            const gaslessNode = renderCompact(gaslessItem as unknown as OpaqueItem, states.gasless, ctx);
+            const priorityFeeValue = getPriorityFeeCompactValue(states.priorityFee, ctx);
+
+            const node = gaslessNode ? (
+                <span className="inline-flex items-center gap-1">
+                    {gaslessNode}
+                    {priorityFeeValue}
+                </span>
+            ) : null;
+
             if (node) itemsToRender.push(node);
             continue;
         }
