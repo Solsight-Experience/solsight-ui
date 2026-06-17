@@ -5,7 +5,6 @@ import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from
 import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ChatBubble } from "./ChatBubble";
 import { ChatMessageDto } from "@/types/dto";
@@ -212,7 +211,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     return (
         <div className="flex flex-col h-full relative">
-            <ScrollArea className="flex-1 overflow-auto" onScrollCapture={handleScroll}>
+            <div ref={parentRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
                 <div className="flex flex-col gap-4 px-3 py-4 sm:px-4" role="log" aria-live="polite">
                     {messages.length === 0 && <WelcomeScreen onSelect={sendMessage} />}
 
@@ -269,7 +268,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         </div>
                     )}
                 </div>
-            </ScrollArea>
+            </div>
 
             {showScrollButton && (
                 <Button

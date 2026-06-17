@@ -29,26 +29,46 @@ export const ChatWidget: React.FC = () => {
         setIsOpen(false);
     };
 
+    const MARGIN = 16;
+    const PANEL_W = 400;
+    const PANEL_H = 620;
+
+    const panelStyle: React.CSSProperties = isExpanded
+        ? {
+              position: "fixed",
+              bottom: 0,
+              right: 0,
+              width: "100dvw",
+              height: "100dvh",
+              borderRadius: 0
+          }
+        : {
+              position: "fixed",
+              bottom: MARGIN,
+              right: MARGIN,
+              width: `min(${PANEL_W}px, calc(100dvw - ${MARGIN * 2}px))`,
+              height: `min(${PANEL_H}px, calc(100dvh - ${MARGIN * 2}px))`,
+              borderRadius: "1rem"
+          };
+
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+            {/* Chat panel transitions from the bottom-right anchor by changing width and height. */}
             <div
-                className={cn(
-                    "transition-all duration-300 ease-out flex flex-col overflow-hidden origin-bottom-right",
-                    // Base (mobile): anchor left+right with margin — no w-full that bleeds on desktop
-                    "fixed bottom-[72px] left-3 right-3 rounded-2xl",
-                    // Constrain height so it never taller than viewport minus FAB+gap
-                    "max-h-[calc(100svh-80px)]",
-                    // ≥sm: revert to fixed-size floating panel, right-anchored
-                    "sm:left-auto sm:right-4 sm:w-[400px] sm:h-[min(620px,calc(100svh-80px))] sm:max-h-none sm:bottom-[80px]",
-                    "bg-background/95 backdrop-blur-xl",
-                    "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]",
-
-                    isExpanded
-                        ? "right-0 bottom-0 w-full h-full rounded-none"
-                        : ["right-0 bottom-0 w-full h-[88vh] rounded-t-2xl", "sm:right-4 sm:bottom-4 sm:w-[400px] sm:h-[620px] sm:rounded-2xl"],
-
-                    isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
-                )}
+                style={{
+                    ...panelStyle,
+                    transition: isOpen
+                        ? "width 0.35s ease, height 0.35s ease, right 0.35s ease, bottom 0.35s ease, border-radius 0.35s ease, opacity 0.25s ease, transform 0.25s ease"
+                        : "opacity 0.2s ease, transform 0.2s ease",
+                    opacity: isOpen ? 1 : 0,
+                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    pointerEvents: isOpen ? "auto" : "none",
+                    zIndex: 50,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden"
+                }}
+                className="bg-background/95 backdrop-blur-xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]"
                 role="dialog"
                 aria-label="AI Assistant Chat"
                 aria-hidden={!isOpen}
