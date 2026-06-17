@@ -39,6 +39,8 @@ export type NumbericInputProps = BaseProps &
         min?: number;
         /** Max value (inclusive). Clamped on blur. */
         max?: number;
+        /** Class applied to the wrapper around the underlying input. */
+        containerClassName?: string;
         /**
          * mode="string" only: max number of fractional digits accepted while typing.
          * Excess digits are clipped.
@@ -59,7 +61,7 @@ export type NumbericInputProps = BaseProps &
  * does not implement it.
  */
 export const NumbericInput = (props: NumbericInputProps) => {
-    const { formatter, showStepper = false, step = 1, min, max, decimals, className, onFocus, disabled, ...rest } = props;
+    const { formatter, showStepper = false, step = 1, min, max, decimals, className, containerClassName, onFocus, disabled, ...rest } = props;
 
     const mode: "number" | "string" = props.mode ?? "number";
     const numericValue =
@@ -230,7 +232,7 @@ export const NumbericInput = (props: NumbericInputProps) => {
     const stepperDownDisabled = disabled || (typeof min === "number" && numericValue !== null && numericValue <= min);
 
     return (
-        <div className="relative flex items-center" data-slot="numberic-input">
+        <div className={cn("relative flex items-center", containerClassName)} data-slot="numberic-input">
             <Input
                 {...rest}
                 type="text"
