@@ -44,11 +44,11 @@ export class CurrencyFormatter implements INumberFormatter {
      * Smart currency formatter that handles all ranges:
      * - Large numbers (≥1000) when `compact`: Compact notation (K, M, B)
      * - Regular numbers (0.01 - 999): Standard currency format
-     * - Small numbers (<0.01 with 4+ leading zeros): Subscript notation ($0.0₅412)
+     * - Small numbers (<0.01 with 4+ leading zeros): Subscript notation (for example, $0.0₅412 in en-US)
      */
     format(value: number | null, significantDigits: number = this.significantDigits): string {
-        if (value == null || Number.isNaN(value)) return "$0";
-        if (value === 0) return "$0";
+        if (value == null || !Number.isFinite(value)) return this.formatZero();
+        if (value === 0) return this.formatZero();
 
         const absValue = Math.abs(value);
 
@@ -135,10 +135,10 @@ export class CurrencyFormatter implements INumberFormatter {
 
     /**
      * Format small prices with subscript notation (Axiom style)
-     * e.g., 0.00000412 -> $0.0₅412
+     * e.g., 0.00000412 -> $0.0₅412 in en-US.
      */
     private formatSmallPrice(value: number, significantDigits: number = this.significantDigits): string {
-        if (value === 0) return "$0";
+        if (value === 0) return this.formatZero();
 
         const absValue = Math.abs(value);
         const sign = value < 0 ? "-" : "";
@@ -167,7 +167,7 @@ export class CurrencyFormatter implements INumberFormatter {
                 .split("")
                 .map((d) => SUBSCRIPT_DIGITS[d])
                 .join("");
-            return `${sign}$0.0${subscript}${significantPart}`;
+            return this.formatSmallCurrency(sign, subscript, significantPart);
         }
 
         const precision = leadingZeros + significantDigits;
@@ -177,5 +177,33 @@ export class CurrencyFormatter implements INumberFormatter {
             minimumFractionDigits: precision,
             maximumFractionDigits: precision
         }).format(value);
+    }
+
+    private formatZero(): string {
+        return new Intl.NumberFormat(this.config.locale, {
+            style: "currency",
+            currency: this.config.currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(0);
+    }
+
+    private formatSmallCurrency(sign: string, leadingZerosSubscript: string, significantPart: string): string {
+        const parts = new Intl.NumberFormat(this.config.locale, {
+            style: "currency",
+            currency: this.config.currency,
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }).formatToParts(0);
+
+        const formatted = parts
+            .map((part) => {
+                if (part.type === "integer") return "0";
+                if (part.type === "fraction") return `0${leadingZerosSubscript}${significantPart}`;
+                return part.value;
+            })
+            .join("");
+
+        return `${sign}${formatted}`;
     }
 }
