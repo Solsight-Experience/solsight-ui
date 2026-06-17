@@ -1,96 +1,62 @@
 import { INumberFormatter } from "./types";
+import { getLocaleSeparators } from "./utils";
 
-const SUBSCRIPT_DIGITS: Record<string, string> = {
-    "0": "₀",
-    "1": "₁",
-    "2": "₂",
-    "3": "₃",
-    "4": "₄",
-    "5": "₅",
-    "6": "₆",
-    "7": "₇",
-    "8": "₈",
-    "9": "₉"
-};
-
-const DIGITS_BY_SUBSCRIPT = Object.fromEntries(Object.entries(SUBSCRIPT_DIGITS).map(([digit, subscript]) => [subscript, digit]));
+export interface DecimalFormatterOptions {
+    /** BCP-47 locale tag. Defaults to "en-US". */
+    locale?: string;
+    /** Render with K / M / B compact notation when blurred. Defaults to false. */
+    compact?: boolean;
+    /** Minimum fraction digits when blurred (Intl.NumberFormat). */
+    minimumFractionDigits?: number;
+    /** Maximum fraction digits when blurred (Intl.NumberFormat). Defaults to 6. */
+    maximumFractionDigits?: number;
+}
 
 export class DecimalFormatter implements INumberFormatter {
-    format(value: number | null, significantDigits: number = 3): string {
-        if (value === null || !Number.isFinite(value)) {
-            return "";
-        }
+    private readonly locale: string;
+    private readonly compact: boolean;
+    private readonly minimumFractionDigits: number | undefined;
+    private readonly maximumFractionDigits: number;
 
-        if (value === 0) {
-            return "0";
-        }
+    constructor(options: DecimalFormatterOptions = {}) {
+        this.locale = options.locale ?? "en-US";
+        this.compact = options.compact ?? false;
+        this.minimumFractionDigits = options.minimumFractionDigits;
+        this.maximumFractionDigits = options.maximumFractionDigits ?? 6;
+    }
 
-        if (Math.abs(value) < 0.01) {
-            return this.formatSmallDecimal(value, significantDigits);
-        }
+    format(value: number | null, maximumFractionDigits: number = this.maximumFractionDigits): string {
+        if (value === null || value === undefined || !Number.isFinite(value)) return "";
+        return new Intl.NumberFormat(this.locale, {
+            style: "decimal",
+            notation: this.compact ? "compact" : "standard",
+            minimumFractionDigits: this.minimumFractionDigits,
+            maximumFractionDigits
+        }).format(value);
+    }
 
-        return String(value);
+    formatFocused(value: number | null): string {
+        if (value === null || value === undefined || !Number.isFinite(value)) return "";
+        return new Intl.NumberFormat(this.locale, {
+            style: "decimal",
+            maximumFractionDigits: 20
+        }).format(value);
     }
 
     convertBack(value: string): number | null {
         if (!value) return null;
-        const smallDecimal = this.convertBackSmallDecimal(value);
-        if (smallDecimal !== null) return smallDecimal;
-
-        const cleaned = value.replace(/,/g, ".");
-        const num = Number(cleaned);
-        return isNaN(num) ? null : num;
+        const { group, decimal } = getLocaleSeparators(this.locale);
+        const escapedGroup = group.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escapedDecimal = decimal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        let cleaned = value.replace(new RegExp(escapedGroup, "g"), "");
+        cleaned = cleaned.replace(new RegExp(`[^0-9\\-${escapedDecimal}]`, "g"), "");
+        const standard = decimal === "." ? cleaned : cleaned.replace(decimal, ".");
+        if (!standard || standard === "-" || standard === ".") return null;
+        const num = parseFloat(standard);
+        return Number.isFinite(num) ? num : null;
     }
 
-    private formatSmallDecimal(value: number, significantDigits: number = 3): string {
-        const absValue = Math.abs(value);
-        const sign = value < 0 ? "-" : "";
-        const decimalString = absValue.toFixed(20);
-        const decimalIndex = decimalString.indexOf(".");
-
-        if (decimalIndex === -1) {
-            return String(value);
-        }
-
-        const decimals = decimalString.slice(decimalIndex + 1);
-        let leadingZeros = 0;
-
-        for (const char of decimals) {
-            if (char !== "0") {
-                break;
-            }
-            leadingZeros++;
-        }
-
-        if (leadingZeros >= 4) {
-            const significantPart = decimals.slice(leadingZeros, leadingZeros + significantDigits);
-            const subscript = String(leadingZeros)
-                .split("")
-                .map((digit) => SUBSCRIPT_DIGITS[digit])
-                .join("");
-
-            return `${sign}0.0${subscript}${significantPart}`;
-        }
-
-        const precision = leadingZeros + significantDigits;
-        return new Intl.NumberFormat("en-US", {
-            maximumFractionDigits: precision
-        }).format(value);
-    }
-
-    private convertBackSmallDecimal(value: string): number | null {
-        const match = value.trim().match(/^(-)?0\.0([₀₁₂₃₄₅₆₇₈₉]+)(\d+)$/);
-        if (!match) {
-            return null;
-        }
-
-        const [, sign = "", leadingZerosSubscript, significantPart] = match;
-        const leadingZeros = leadingZerosSubscript
-            .split("")
-            .map((digit) => DIGITS_BY_SUBSCRIPT[digit])
-            .join("");
-
-        const parsed = Number(`${sign}0.${"0".repeat(Number(leadingZeros))}${significantPart}`);
-        return Number.isFinite(parsed) ? parsed : null;
+    getSeparators(): { group: string; decimal: string } {
+        return getLocaleSeparators(this.locale);
     }
 }
