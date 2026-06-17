@@ -71,9 +71,11 @@ export const TopTradersTable: React.FC<TopTradersTableProps> = ({ tokenAddress }
                     </tr>
                 </thead>
                 <tbody>
-                    {tradersData.traders.map((trader, index) => (
-                        <TopTraderRow key={trader.address} rank={index + 1} {...trader} />
-                    ))}
+                    {[...tradersData.traders]
+                        .sort((a, b) => b.total_pnl - a.total_pnl)
+                        .map((trader, index) => (
+                            <TopTraderRow key={trader.address} rank={index + 1} {...trader} />
+                        ))}
                 </tbody>
             </table>
         </div>
