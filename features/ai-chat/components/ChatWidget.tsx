@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Bot, Sparkles, ChevronDown, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { ChatWindow } from "./ChatWindow";
 import { Button } from "@/components/ui/button";
@@ -19,16 +19,8 @@ export const ChatWidget: React.FC = () => {
     const { isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    // Track viewport width so minimized `left` is a number (not auto) → CSS can animate it
-    const [vpWidth, setVpWidth] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1280));
     const { messages, isTyping, isHistoryLoading, toolProgressLabel, error, sendMessage, clearMessages, fetchNextPage, hasNextPage, isFetchingNextPage } =
         useChat();
-
-    useEffect(() => {
-        const handler = () => setVpWidth(window.innerWidth);
-        window.addEventListener("resize", handler);
-        return () => window.removeEventListener("resize", handler);
-    }, []);
 
     if (!isAuthenticated) return null;
 
@@ -41,15 +33,12 @@ export const ChatWidget: React.FC = () => {
     const PANEL_W = 400;
     const PANEL_H = 620;
 
-    // All properties are explicit numbers in BOTH states → CSS transitions work smoothly.
-    // Expanded: left:0 + right:0 (no width) pins exactly to viewport edges — no scrollbar overflow.
-    // Minimized: left is computed from vpWidth so it's a number, not 'auto'.
     const panelStyle: React.CSSProperties = isExpanded
         ? {
               position: "fixed",
               bottom: 0,
               right: 0,
-              left: 0,
+              width: "100dvw",
               height: "100dvh",
               borderRadius: 0
           }
@@ -57,19 +46,19 @@ export const ChatWidget: React.FC = () => {
               position: "fixed",
               bottom: MARGIN,
               right: MARGIN,
-              left: vpWidth - MARGIN - PANEL_W,
-              height: PANEL_H,
+              width: `min(${PANEL_W}px, calc(100dvw - ${MARGIN * 2}px))`,
+              height: `min(${PANEL_H}px, calc(100dvh - ${MARGIN * 2}px))`,
               borderRadius: "1rem"
           };
 
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
-            {/* Chat panel — transitions via inline style so animation runs bottom-right → top-left */}
+            {/* Chat panel transitions from the bottom-right anchor by changing width and height. */}
             <div
                 style={{
                     ...panelStyle,
                     transition: isOpen
-                        ? "left 0.35s ease, right 0.35s ease, bottom 0.35s ease, height 0.35s ease, border-radius 0.35s ease, opacity 0.25s ease, transform 0.25s ease"
+                        ? "width 0.35s ease, height 0.35s ease, right 0.35s ease, bottom 0.35s ease, border-radius 0.35s ease, opacity 0.25s ease, transform 0.25s ease"
                         : "opacity 0.2s ease, transform 0.2s ease",
                     opacity: isOpen ? 1 : 0,
                     transform: isOpen ? "translateY(0)" : "translateY(16px)",
