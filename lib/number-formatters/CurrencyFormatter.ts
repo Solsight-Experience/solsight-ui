@@ -47,7 +47,7 @@ export class CurrencyFormatter implements INumberFormatter {
      * - Small numbers (<0.01 with 4+ leading zeros): Subscript notation ($0.0₅412)
      */
     format(value: number | null, significantDigits: number = this.significantDigits): string {
-        if (value === null || value === undefined || Number.isNaN(value)) return "$0";
+        if (value == null || Number.isNaN(value)) return "$0";
         if (value === 0) return "$0";
 
         const absValue = Math.abs(value);
@@ -81,7 +81,7 @@ export class CurrencyFormatter implements INumberFormatter {
      * no compact, max precision so users can edit any digit.
      */
     formatFocused(value: number | null): string {
-        if (value === null || value === undefined || Number.isNaN(value)) return "";
+        if (value == null || Number.isNaN(value)) return "";
         return new Intl.NumberFormat(this.config.locale, {
             style: "decimal",
             maximumFractionDigits: 20

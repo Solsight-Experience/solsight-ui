@@ -26,7 +26,7 @@ export class DecimalFormatter implements INumberFormatter {
     }
 
     format(value: number | null, maximumFractionDigits: number = this.maximumFractionDigits): string {
-        if (value === null || value === undefined || !Number.isFinite(value)) return "";
+        if (value == null || !Number.isFinite(value)) return "";
         return new Intl.NumberFormat(this.locale, {
             style: "decimal",
             notation: this.compact ? "compact" : "standard",
@@ -36,7 +36,7 @@ export class DecimalFormatter implements INumberFormatter {
     }
 
     formatFocused(value: number | null): string {
-        if (value === null || value === undefined || !Number.isFinite(value)) return "";
+        if (value == null || !Number.isFinite(value)) return "";
         return new Intl.NumberFormat(this.locale, {
             style: "decimal",
             maximumFractionDigits: 20

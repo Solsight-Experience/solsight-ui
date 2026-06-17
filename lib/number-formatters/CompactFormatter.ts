@@ -31,7 +31,7 @@ export class CompactFormatter implements INumberFormatter {
     }
 
     format(value: number | null): string {
-        if (value === null || value === undefined || !Number.isFinite(value)) {
+        if (value == null || !Number.isFinite(value)) {
             return "0";
         }
 
@@ -43,7 +43,7 @@ export class CompactFormatter implements INumberFormatter {
     }
 
     formatFocused(value: number | null): string {
-        if (value === null || value === undefined || !Number.isFinite(value)) return "";
+        if (value == null || !Number.isFinite(value)) return "";
         // While focused: full grouping, no compact, max precision.
         return new Intl.NumberFormat(this.locale, {
             style: "decimal",
