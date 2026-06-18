@@ -19,7 +19,7 @@ const PriceChangeIndicator: React.FC<{ value: number; showIcon?: boolean }> = ({
     );
 };
 
-const TopTraderRow: React.FC<TopTrader & { rank: number }> = ({ rank, address, name, total_pnl, roi_percent, win_rate, trades_count }) => (
+const TopTraderRow: React.FC<TopTrader & { rank: number }> = ({ rank, address, name, total_pnl, roi_percent, trades_count }) => (
     <tr className="border-b border-[var(--border-faint)] hover:bg-[var(--surface-btn)]">
         <td className="py-3 px-4 text-sm font-semibold text-[var(--text-muted)]">#{rank}</td>
         <td className="py-3 px-4">
@@ -37,7 +37,6 @@ const TopTraderRow: React.FC<TopTrader & { rank: number }> = ({ rank, address, n
         <td className="py-3 px-4">
             <PriceChangeIndicator value={roi_percent} showIcon={false} />
         </td>
-        <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{win_rate.toFixed(1)}%</td>
         <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{trades_count}</td>
     </tr>
 );
@@ -68,14 +67,15 @@ export const TopTradersTable: React.FC<TopTradersTableProps> = ({ tokenAddress }
                         <th className="py-2 text-start px-4 font-medium">Trader</th>
                         <th className="py-2 text-start px-4 font-medium">Total PNL</th>
                         <th className="py-2 text-start px-4 font-medium">ROI</th>
-                        <th className="py-2 text-start px-4 font-medium">Win Rate</th>
                         <th className="py-2 text-start px-4 font-medium">Trades</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {tradersData.traders.map((trader, index) => (
-                        <TopTraderRow key={trader.address} rank={index + 1} {...trader} />
-                    ))}
+                    {[...tradersData.traders]
+                        .sort((a, b) => b.total_pnl - a.total_pnl)
+                        .map((trader, index) => (
+                            <TopTraderRow key={trader.address} rank={index + 1} {...trader} />
+                        ))}
                 </tbody>
             </table>
         </div>
