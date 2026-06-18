@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { TOKEN_ENDPOINTS } from "@/lib/constants";
 
 interface SolPriceResponse {

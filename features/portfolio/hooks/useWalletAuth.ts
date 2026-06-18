@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import bs58 from "bs58";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { portfolioKeys } from "./portfolio.hooks";
 import { getErrorMessage } from "@/lib/error-utils";

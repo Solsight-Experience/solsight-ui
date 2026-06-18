@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { TokenFilterRequest, TokenFilterResponse, SortBy, SortOrder } from "@/types/filter";
 
 export interface CategoryOverview {

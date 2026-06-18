@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi, loginWithSolanaApi } from "@/features/auth/authservice";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import bs58 from "bs58";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";

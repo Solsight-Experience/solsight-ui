@@ -1,4 +1,4 @@
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { EmailSubscriptionStatus } from "../types/watchlist.types";
 
 const BASE = "/email/subscription";

@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 
 interface User {
     id: string;

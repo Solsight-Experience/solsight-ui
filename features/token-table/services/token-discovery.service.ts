@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { TokenOverview } from "@/types/filter";
 import { CategoryOverview } from "../config/types";
 import { CategoriesResponse } from "./filter.service";

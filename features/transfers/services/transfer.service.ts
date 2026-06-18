@@ -1,4 +1,4 @@
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { TransactionResponseDto, CreateTransactionDto } from "@/types/dto";
 import { ApiResponse, PaginatedResponse } from "@/types/api";

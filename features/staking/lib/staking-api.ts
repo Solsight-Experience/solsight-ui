@@ -1,6 +1,6 @@
 "use client";
 
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 
 export type StakingTransactionAction = "stake" | "request-unstake" | "unstake" | "cancel-request";
 

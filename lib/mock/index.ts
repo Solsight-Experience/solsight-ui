@@ -1,5 +1,5 @@
 import MockAdapter from "axios-mock-adapter";
-import apiClient from "../api-client";
+import { axiosClient } from "../network-requests/api-client";
 
 // Import mock handlers
 import { setupPortfolioMocks } from "./handlers/portfolioHandlers";
@@ -24,7 +24,7 @@ export function setupMockAdapter() {
     }
 
     // Create mock adapter with delay to simulate network latency
-    mockAdapter = new MockAdapter(apiClient.client, {
+    mockAdapter = new MockAdapter(axiosClient, {
         delayResponse: 50, // 50ms delay
         onNoMatch: "passthrough" // Pass through unmatched requests
     });

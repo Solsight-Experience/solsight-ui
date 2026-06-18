@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { PORTFOLIO_WATCH_ENDPOINTS } from "@/lib/constants";
 import type { PortfolioOverview, PositionsResponse, ActivitiesResponse } from "@/features/portfolio/types/portfolio.types";
 

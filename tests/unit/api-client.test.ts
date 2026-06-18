@@ -1,61 +1,52 @@
-import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import apiClient from "@/lib/api-client";
+import { beforeEach, describe, expect, it } from "vitest";
+import { axiosClient, DefaultApiClient, type ApiRequest, type HttpTransport } from "@/lib/network-requests/api-client";
 import useClusterStore from "@/stores/cluster.store";
 
 describe("apiClient", () => {
-    const originalAdapter = apiClient.client.defaults.adapter;
-    let latestConfig: InternalAxiosRequestConfig | undefined;
+    let latestRequest: ApiRequest | undefined;
+    let client: DefaultApiClient;
 
     beforeEach(() => {
-        latestConfig = undefined;
+        latestRequest = undefined;
         useClusterStore.setState({ cluster: "devnet" });
 
-        apiClient.client.defaults.adapter = (async (config) => {
-            latestConfig = config;
-
-            return {
-                data: {},
-                status: 200,
-                statusText: "OK",
-                headers: {},
-                config
-            };
-        }) as AxiosAdapter;
-    });
-
-    afterEach(() => {
-        apiClient.client.defaults.adapter = originalAdapter;
+        const transport: HttpTransport = {
+            request: async <T>(request: ApiRequest) => {
+                latestRequest = request;
+                return {} as T;
+            }
+        };
+        client = new DefaultApiClient(transport);
     });
 
     it("routes resource paths through the browser /api base path", async () => {
-        await apiClient.get("/auth/login");
+        await client.get("/auth/login");
 
-        expect(latestConfig?.baseURL).toBe("/api");
-        expect(latestConfig?.url).toBe("/auth/login");
+        expect(axiosClient.defaults.baseURL).toBe("/api");
+        expect(latestRequest?.url).toBe("/auth/login");
     });
 
     it("does not inject cluster into auth requests", async () => {
-        await apiClient.get("/auth/login");
+        await client.get("/auth/login");
 
-        expect(latestConfig?.params).toBeUndefined();
+        expect(latestRequest?.params).toEqual({});
     });
 
     it("injects cluster into non-auth API requests", async () => {
-        await apiClient.get("/swap/quote");
+        await client.get("/swap/quote");
 
-        expect(latestConfig?.params).toEqual({ cluster: "devnet" });
+        expect(latestRequest?.params).toEqual({ cluster: "devnet" });
     });
 
     it("preserves an explicitly provided cluster param", async () => {
-        await apiClient.get("/swap/quote", {
+        await client.get("/swap/quote", {
             params: {
                 cluster: "mainnet",
                 inputMint: "So11111111111111111111111111111111111111112"
             }
         });
 
-        expect(latestConfig?.params).toEqual({
+        expect(latestRequest?.params).toEqual({
             cluster: "mainnet",
             inputMint: "So11111111111111111111111111111111111111112"
         });
