@@ -3,7 +3,10 @@
 import { useFilterStore } from "@/stores/filter.stores";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
+
+const RISK_SCORE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
 
 const audits = [
     {
@@ -62,17 +65,16 @@ export const AuditsTab = () => {
                             <Label htmlFor="min-risk" className="text-xs text-muted-foreground">
                                 Min Score (0-100)
                             </Label>
-                            <Input
+                            <NumbericInput
                                 id="min-risk"
-                                type="number"
-                                min="0"
-                                max="100"
+                                formatter={RISK_SCORE_FORMATTER}
+                                min={0}
+                                max={100}
+                                step={1}
+                                showStepper
                                 placeholder="0"
-                                value={tokenAudits.min_risk_score === "" ? "" : String(tokenAudits.min_risk_score)}
-                                onChange={(e) => {
-                                    const value = e.target.value === "" ? "" : Number(e.target.value);
-                                    setTokenAudit("min_risk_score", value);
-                                }}
+                                value={tokenAudits.min_risk_score === "" ? null : (tokenAudits.min_risk_score as number)}
+                                onChange={(value) => setTokenAudit("min_risk_score", value === null ? "" : value)}
                                 className="text-xs h-8"
                             />
                         </div>
@@ -80,17 +82,16 @@ export const AuditsTab = () => {
                             <Label htmlFor="max-risk" className="text-xs text-muted-foreground">
                                 Max Score (0-100)
                             </Label>
-                            <Input
+                            <NumbericInput
                                 id="max-risk"
-                                type="number"
-                                min="0"
-                                max="100"
+                                formatter={RISK_SCORE_FORMATTER}
+                                min={0}
+                                max={100}
+                                step={1}
+                                showStepper
                                 placeholder="100"
-                                value={tokenAudits.max_risk_score === "" ? "" : String(tokenAudits.max_risk_score)}
-                                onChange={(e) => {
-                                    const value = e.target.value === "" ? "" : Number(e.target.value);
-                                    setTokenAudit("max_risk_score", value);
-                                }}
+                                value={tokenAudits.max_risk_score === "" ? null : (tokenAudits.max_risk_score as number)}
+                                onChange={(value) => setTokenAudit("max_risk_score", value === null ? "" : value)}
                                 className="text-xs h-8"
                             />
                         </div>

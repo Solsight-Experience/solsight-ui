@@ -9,6 +9,8 @@ import { useEmailSubscription } from "../hooks/useEmailSubscription";
 import { WalletAlert, WalletAlertType, CreateWalletAlertDto } from "../types/watchlist.types";
 import { ZaloBotDialog } from "./ZaloBotDialog";
 import { EmailDialog } from "./EmailDialog";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 
 // ── Alert type config ─────────────────────────────────────────────────────────
 
@@ -29,6 +31,8 @@ const ALERT_TYPE_META: Record<WalletAlertType, { label: string; description: str
         icon: <Zap className="size-3.5" />
     }
 };
+
+const WALLET_ALERT_NUMBER_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 // ── Add Alert Form ────────────────────────────────────────────────────────────
 
@@ -137,13 +141,14 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Min Change Amount</label>
-                            <input
-                                type="number"
+                            <NumbericInput
+                                mode="string"
+                                decimals={9}
+                                formatter={WALLET_ALERT_NUMBER_FORMATTER}
                                 value={threshold}
-                                onChange={(e) => setThreshold(e.target.value)}
+                                onChange={setThreshold}
                                 placeholder="0"
-                                min="0"
-                                step="any"
+                                min={0}
                                 className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
                            text-[12px] text-white placeholder:text-white/25 outline-none
                            focus:border-violet-500/50 transition-colors"
@@ -170,13 +175,14 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
             {alertType === WalletAlertType.LARGE_TRANSFER && (
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Minimum SOL Amount</label>
-                    <input
-                        type="number"
+                    <NumbericInput
+                        mode="string"
+                        decimals={9}
+                        formatter={WALLET_ALERT_NUMBER_FORMATTER}
                         value={minAmountSol}
-                        onChange={(e) => setMinAmountSol(e.target.value)}
+                        onChange={setMinAmountSol}
                         placeholder="1"
-                        min="0"
-                        step="any"
+                        min={0}
                         className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
                        text-[12px] text-white placeholder:text-white/25 outline-none
                        focus:border-violet-500/50 transition-colors"
