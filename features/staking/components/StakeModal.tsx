@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Info, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
 import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
@@ -25,6 +27,8 @@ const STATUS_LABELS: Record<IFStakeStatus, string> = {
     done: "Stake SOL",
     error: "Stake SOL"
 };
+
+const STAKE_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 export function StakeModal({ open, onClose, walletPubkey, solBalance, connected, onSuccess }: StakeModalProps) {
     const { resolvedTheme } = useTheme();
@@ -119,13 +123,15 @@ export function StakeModal({ open, onClose, walletPubkey, solBalance, connected,
                             </button>
                         </div>
                         <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 transition-colors focus-within:border-purple-500/50 dark:border-white/10 dark:bg-white/5">
-                            <input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                            <NumbericInput
+                                mode="string"
+                                decimals={9}
+                                formatter={STAKE_AMOUNT_FORMATTER}
+                                min={0}
                                 value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                onChange={setAmount}
                                 placeholder="0.00"
+                                containerClassName="flex-1"
                                 className="flex-1 bg-transparent text-2xl font-bold text-slate-900 outline-none placeholder:text-slate-300 dark:text-white dark:placeholder:text-white/20"
                                 disabled={loading || clientLoading}
                             />

@@ -2,7 +2,10 @@
 
 import { useFilterStore } from "@/stores/filter.stores";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
+
+const METRIC_NUMBER_FORMATTER = new DecimalFormatter({ locale: "en-US" });
 
 export const MetricsTab = () => {
     const { tokenMetrics, setTokenMetric } = useFilterStore();
@@ -33,14 +36,11 @@ export const MetricsTab = () => {
                     <div key={key} className="grid grid-cols-4 items-center gap-2">
                         <Label className="col-span-1 text-xs">{label}</Label>
                         <div className="col-span-3">
-                            <Input
-                                type="number"
+                            <NumbericInput
+                                formatter={METRIC_NUMBER_FORMATTER}
                                 placeholder={placeholder}
-                                value={tokenMetrics[key] === "" ? "" : String(tokenMetrics[key])}
-                                onChange={(e) => {
-                                    const value = e.target.value === "" ? "" : Number(e.target.value);
-                                    setTokenMetric(key, value);
-                                }}
+                                value={tokenMetrics[key] === "" ? null : (tokenMetrics[key] as number)}
+                                onChange={(value) => setTokenMetric(key, value === null ? "" : value)}
                                 className="text-right text-xs h-8"
                             />
                         </div>

@@ -1,17 +1,21 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { transferFormSchema, TransferFormData } from "@/lib/validators";
 import { useTransfer } from "../hooks/useTransfer";
 import { useWallet, useWalletBalance } from "@/features/wallets/hooks/useWallet";
 import { Wallet, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatWalletAddress } from "@/lib/formatters";
+
+const TRANSFER_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 export default function TransferForm() {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
@@ -21,6 +25,7 @@ export default function TransferForm() {
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors },
         reset,
         watch
@@ -124,13 +129,21 @@ export default function TransferForm() {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="amount">Amount (SOL)</Label>
-                                    <Input
-                                        id="amount"
-                                        type="number"
-                                        step="0.000001"
-                                        placeholder="0.0"
-                                        {...register("amount", { valueAsNumber: true })}
-                                        className={errors.amount ? "border-red-500" : ""}
+                                    <Controller
+                                        name="amount"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <NumbericInput
+                                                id="amount"
+                                                formatter={TRANSFER_AMOUNT_FORMATTER}
+                                                min={0}
+                                                placeholder="0.0"
+                                                value={field.value ?? null}
+                                                onChange={(value) => field.onChange(value ?? 0)}
+                                                onBlur={field.onBlur}
+                                                className={errors.amount ? "border-red-500" : ""}
+                                            />
+                                        )}
                                     />
                                     {errors.amount && <p className="text-sm text-red-500">{errors.amount.message}</p>}
                                     {balance !== undefined && amount > balance && (
