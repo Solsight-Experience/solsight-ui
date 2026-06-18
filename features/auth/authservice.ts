@@ -87,3 +87,22 @@ export async function logout(): Promise<boolean> {
     window.location.href = "/login";
     return true;
 }
+
+export async function loginWithSolanaApi(payload: { walletAddress: string; signature: string; walletIcon: string }): Promise<LoginResponse> {
+    const response = await fetch(`/api/auth/solana/login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Wallet login failed");
+    }
+
+    return data;
+}
