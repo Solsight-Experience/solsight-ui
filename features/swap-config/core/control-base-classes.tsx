@@ -2,15 +2,18 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { ExpandedFormProps, SwapConfigItem } from "./swap-config-item";
 import type { ConfigCtx } from "./types";
 
+const SWAP_CONFIG_NUMBER_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
+
 // Two-element preset+custom (slippage, priority fee, tip fee)
-export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" | "custom"; custom: T | null }> {
+export abstract class PresetCustomItem<T extends number> extends SwapConfigItem<{ mode: "auto" | "custom"; custom: T | null }> {
     abstract autoValue(ctx: ConfigCtx): T | null;
     abstract format(value: T): string;
     abstract placeholderCustom(ctx: ConfigCtx): T | null;
@@ -31,8 +34,8 @@ export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" 
             onChange({ ...state, mode: "auto" });
         };
 
-        const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            const parsed = this.parseCustom(e.target.value);
+        const handleCustomChange = (value: string) => {
+            const parsed = this.parseCustom(value);
             onChange({ mode: "custom", custom: parsed });
         };
 
@@ -55,8 +58,10 @@ export abstract class PresetCustomItem<T> extends SwapConfigItem<{ mode: "auto" 
                         Auto {auto !== null ? `(${this.format(auto)})` : ""}
                     </Button>
                     <div className={cn("relative flex-grow ring-1 ring-transparent rounded-md", state.mode === "custom" && "ring-white/80")}>
-                        <Input
-                            type="text"
+                        <NumbericInput
+                            mode="string"
+                            decimals={9}
+                            formatter={SWAP_CONFIG_NUMBER_FORMATTER}
                             value={customInput}
                             placeholder={this.placeholderCustom(ctx) ? this.toInputString(this.placeholderCustom(ctx)!) : "Custom"}
                             onChange={handleCustomChange}
@@ -93,11 +98,11 @@ export abstract class NumericFieldItem extends SwapConfigItem<{ value: number | 
         return (
             <div className="space-y-2">
                 <div className="relative">
-                    <Input
-                        type="number"
-                        value={state.value ?? ""}
+                    <NumbericInput
+                        formatter={SWAP_CONFIG_NUMBER_FORMATTER}
+                        value={state.value}
                         placeholder={this.placeholder(ctx)?.toString() ?? "0"}
-                        onChange={(e) => onChange({ value: e.target.value === "" ? null : Number(e.target.value) })}
+                        onChange={(value) => onChange({ value })}
                         className="bg-zinc-800 border-zinc-700 pr-12"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-zinc-400">{this.suffix}</div>

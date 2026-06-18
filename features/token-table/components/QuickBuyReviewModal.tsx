@@ -6,8 +6,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COMMON_TOKENS } from "@/lib/constants";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { useWallet } from "@/features/wallets/hooks/useWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
@@ -25,6 +27,8 @@ type PhantomProvider = {
     isPhantom?: boolean;
     signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 };
+
+const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
@@ -222,14 +226,15 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                             <Label htmlFor="quick-buy-slippage" className="text-xs text-muted-foreground">
                                 Slippage (bps)
                             </Label>
-                            <input
+                            <NumbericInput
                                 id="quick-buy-slippage"
-                                type="number"
-                                min="1"
-                                step="1"
+                                formatter={QUICK_BUY_SLIPPAGE_FORMATTER}
+                                min={1}
+                                max={10000}
+                                step={10}
+                                showStepper
                                 value={slippageBps}
-                                onChange={(e) => setSlippageBps(Number(e.target.value))}
-                                className="mt-2 w-full rounded-md border border-border bg-transparent p-2"
+                                onChange={(value) => setSlippageBps(value ?? 0)}
                             />
                         </div>
 

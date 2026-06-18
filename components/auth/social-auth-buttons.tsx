@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi, loginWithSolanaApi } from "@/features/auth/authservice";
 import bs58 from "bs58";
 import Image from "next/image";
+import apiClient from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 
 interface PhantomSolanaProvider {
@@ -160,12 +161,7 @@ export default function SocialAuthButtons() {
             const connectionResp = await provider.connect();
             const walletAddress = connectionResp.publicKey.toString();
 
-            const nonceRes = await fetch(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-            if (!nonceRes.ok) {
-                const errorData = await nonceRes.json().catch(() => ({}));
-                throw new Error(errorData.message || "Failed to retrieve signing nonce");
-            }
-            const { nonce } = await nonceRes.json();
+            const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
 
             const messageBytes = new TextEncoder().encode(nonce);
             const { signature } = await provider.signMessage(messageBytes);
@@ -187,7 +183,9 @@ export default function SocialAuthButtons() {
             routerRef.current.push(finalRedirectTo);
         } catch (error) {
             console.error("Phantom login failed:", error);
-            const errorMessage = error instanceof Error ? error.message : "Phantom login failed. Please try again.";
+            const errorWithResponse = error as { response?: { data?: { message?: string } } };
+            const errorMessage =
+                error instanceof Error ? errorWithResponse.response?.data?.message || error.message : "Phantom login failed. Please try again.";
             toast.error(errorMessage);
         } finally {
             setIsPhantomLoading(false);

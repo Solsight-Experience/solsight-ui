@@ -50,9 +50,11 @@ const BP_COMPACT = 1000; // below this: icons-only nav
 const BP_SIDEBAR = 700; // below this: hamburger + slide-in sidebar
 
 function useWindowWidth() {
-    const [width, setWidth] = useState<number>(() => (typeof window !== "undefined" ? window.innerWidth : 9999));
+    const [width, setWidth] = useState<number>(9999);
+
     useEffect(() => {
         const onResize = () => setWidth(window.innerWidth);
+        onResize();
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, []);
