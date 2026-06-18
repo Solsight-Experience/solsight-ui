@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NumbericInput } from "@/components/ui/NumbericInput";
+import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Clock, AlertCircle, CheckCircle2, ArrowUpFromLine } from "lucide-react";
 import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
 import { IFPosition } from "../hooks/useIFPositions";
@@ -35,6 +37,8 @@ const WITHDRAW_LABELS: Record<IFStakeStatus, string> = {
     done: "Withdrawn successfully! 🎉",
     error: "Withdraw SOL"
 };
+
+const UNSTAKE_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadingPosition, connected, onSuccess }: UnstakeModalProps) {
     const { resolvedTheme } = useTheme();
@@ -143,13 +147,15 @@ export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadin
                                     </button>
                                 </div>
                                 <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors focus-within:border-orange-500/50 dark:border-white/10 dark:bg-white/5">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.001"
+                                    <NumbericInput
+                                        mode="string"
+                                        decimals={9}
+                                        formatter={UNSTAKE_AMOUNT_FORMATTER}
+                                        min={0}
                                         value={unstakeAmount}
-                                        onChange={(e) => setUnstakeAmount(e.target.value)}
+                                        onChange={setUnstakeAmount}
                                         placeholder="0.00"
+                                        containerClassName="flex-1"
                                         className="flex-1 bg-transparent text-xl font-bold text-slate-900 outline-none placeholder:text-slate-300 dark:text-white dark:placeholder:text-white/20"
                                         disabled={requestLoading}
                                     />
