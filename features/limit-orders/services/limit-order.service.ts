@@ -13,7 +13,7 @@ export class LimitOrderService {
      * Create a new limit order
      */
     static async createOrder(request: CreateLimitOrderRequest): Promise<CreateLimitOrderResponse> {
-        const response = await apiClient.post<{ success: boolean; data: CreateLimitOrderResponse }>("/api/limit-orders/create", request);
+        const response = await apiClient.post<{ success: boolean; data: CreateLimitOrderResponse }>("/limit-orders/create", request);
         if (!response.success || !response.data) {
             throw new Error("Failed to create limit order");
         }
@@ -24,7 +24,7 @@ export class LimitOrderService {
      * Execute a signed limit order transaction
      */
     static async executeOrder(request: ExecuteLimitOrderRequest): Promise<ExecuteLimitOrderResponse> {
-        const response = await apiClient.post<{ success: boolean; data: ExecuteLimitOrderResponse }>("/api/limit-orders/execute", request);
+        const response = await apiClient.post<{ success: boolean; data: ExecuteLimitOrderResponse }>("/limit-orders/execute", request);
         if (!response.success || !response.data) {
             throw new Error("Failed to execute limit order");
         }
@@ -51,7 +51,7 @@ export class LimitOrderService {
             ...(options?.page && { page: options.page.toString() })
         });
 
-        const response = await apiClient.get<{ success: boolean; data: GetOrdersResponse }>(`/api/limit-orders?${params.toString()}`);
+        const response = await apiClient.get<{ success: boolean; data: GetOrdersResponse }>(`/limit-orders?${params.toString()}`);
         if (!response.success || !response.data) {
             throw new Error("Failed to fetch limit orders");
         }
@@ -62,7 +62,7 @@ export class LimitOrderService {
      * Cancel a single limit order
      */
     static async cancelOrder(maker: string, order: string): Promise<CancelOrderResponse> {
-        const response = await apiClient.post<{ success: boolean; data: CancelOrderResponse }>("/api/limit-orders/cancel", {
+        const response = await apiClient.post<{ success: boolean; data: CancelOrderResponse }>("/limit-orders/cancel", {
             maker,
             order,
             computeUnitPrice: "auto"
@@ -77,7 +77,7 @@ export class LimitOrderService {
      * Cancel multiple limit orders
      */
     static async cancelMultipleOrders(maker: string, orders: string[]): Promise<{ transactions: string[]; requestId: string }> {
-        const response = await apiClient.post<{ success: boolean; data: { transactions: string[]; requestId: string } }>("/api/limit-orders/cancel-multiple", {
+        const response = await apiClient.post<{ success: boolean; data: { transactions: string[]; requestId: string } }>("/limit-orders/cancel-multiple", {
             maker,
             orders,
             computeUnitPrice: "auto"

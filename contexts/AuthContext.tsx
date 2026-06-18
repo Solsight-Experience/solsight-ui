@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import apiClient from "@/lib/api-client";
 
 interface User {
     id: string;
@@ -53,10 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            await fetch("/api/auth/logout", {
-                method: "POST",
-                credentials: "include" // để gửi cookie lên BE
-            });
+            await apiClient.post("/auth/logout");
         } catch (err) {
             console.error("Logout API error:", err);
         }

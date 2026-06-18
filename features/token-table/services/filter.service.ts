@@ -37,7 +37,7 @@ class FilterService {
         if (params?.limit) queryParams.append("limit", params.limit.toString());
         if (params?.offset) queryParams.append("offset", params.offset.toString());
 
-        const url = `/api/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+        const url = `/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
         return apiClient.post<TokenFilterResponse>(url, body);
     }
@@ -46,7 +46,7 @@ class FilterService {
      * Get all available categories
      */
     async getCategories(): Promise<CategoriesResponse> {
-        return apiClient.get<CategoriesResponse>("/api/discovery/categories");
+        return apiClient.get<CategoriesResponse>("/discovery/categories");
     }
 }
 

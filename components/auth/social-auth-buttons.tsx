@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi, loginWithSolanaApi } from "@/features/auth/authservice";
+import apiClient from "@/lib/api-client";
 import bs58 from "bs58";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -160,12 +161,9 @@ export default function SocialAuthButtons() {
             const connectionResp = await provider.connect();
             const walletAddress = connectionResp.publicKey.toString();
 
-            const nonceRes = await fetch(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-            if (!nonceRes.ok) {
-                const errorData = await nonceRes.json().catch(() => ({}));
-                throw new Error(errorData.message || "Failed to retrieve signing nonce");
-            }
-            const { nonce } = await nonceRes.json();
+            const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
+                params: { walletAddress }
+            });
 
             const messageBytes = new TextEncoder().encode(nonce);
             const { signature } = await provider.signMessage(messageBytes);

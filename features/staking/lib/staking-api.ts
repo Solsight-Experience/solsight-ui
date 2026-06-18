@@ -67,17 +67,17 @@ export interface StakingHistoryResponse {
 }
 
 export function buildStakingTransaction(request: BuildStakingTransactionRequest): Promise<BuiltStakingTransaction> {
-    return apiClient.post<BuiltStakingTransaction>("/api/staking/transaction", request);
+    return apiClient.post<BuiltStakingTransaction>("/staking/transaction", request);
 }
 
 export function getStakingPosition(wallet: string): Promise<StakingPositionResponse | null> {
-    return apiClient.get<StakingPositionResponse | null>("/api/staking/position", {
+    return apiClient.get<StakingPositionResponse | null>("/staking/position", {
         params: { wallet }
     });
 }
 
 export function getStakingHistory(wallet: string, page: number, pageSize: number): Promise<StakingHistoryResponse> {
-    return apiClient.get<StakingHistoryResponse>("/api/staking/history", {
+    return apiClient.get<StakingHistoryResponse>("/staking/history", {
         params: { wallet, page, pageSize }
     });
 }

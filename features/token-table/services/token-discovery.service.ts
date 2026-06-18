@@ -40,11 +40,11 @@ export type GainerLoserType = "gainers" | "losers" | "both";
  */
 export class TokenDiscoveryService {
     /**
-     * GET /api/discovery/trending
+     * GET /discovery/trending
      * Get trending tokens
      */
     static async getTrending(params?: { sort_by?: SortBy; time_frame?: TimeFrame; limit?: number; offset?: number }): Promise<TrendingResponse> {
-        return apiClient.get<TrendingResponse>("/api/discovery/trending", {
+        return apiClient.get<TrendingResponse>("/discovery/trending", {
             params: {
                 sort_by: params?.sort_by || "volume_24h",
                 time_frame: params?.time_frame || "24h",
@@ -55,11 +55,11 @@ export class TokenDiscoveryService {
     }
 
     /**
-     * GET /api/discovery/new-listings
+     * GET /discovery/new-listings
      * Get newly listed tokens
      */
     static async getNewListings(params?: { time_frame?: "24h" | "7d"; min_liquidity?: number; limit?: number; offset?: number }): Promise<NewListingsResponse> {
-        return apiClient.get<NewListingsResponse>("/api/discovery/new-listings", {
+        return apiClient.get<NewListingsResponse>("/discovery/new-listings", {
             params: {
                 time_frame: params?.time_frame || "24h",
                 min_liquidity: params?.min_liquidity,
@@ -70,11 +70,11 @@ export class TokenDiscoveryService {
     }
 
     /**
-     * GET /api/discovery/categories
+     * GET /discovery/categories
      * Get all categories
      */
     static async getCategories(params?: { limit?: number; offset?: number }): Promise<CategoriesResponse> {
-        return apiClient.get<CategoriesResponse>("/api/discovery/categories", {
+        return apiClient.get<CategoriesResponse>("/discovery/categories", {
             params: {
                 limit: params?.limit || 50,
                 offset: params?.offset || 0
@@ -83,7 +83,7 @@ export class TokenDiscoveryService {
     }
 
     /**
-     * GET /api/discovery/categories/{category_slug}
+     * GET /discovery/categories/{category_slug}
      * Get tokens in a specific category
      */
     static async getCategoryDetail(
@@ -94,7 +94,7 @@ export class TokenDiscoveryService {
             offset?: number;
         }
     ): Promise<CategoryDetailResponse> {
-        return apiClient.get<CategoryDetailResponse>(`/api/discovery/categories/${categorySlug}`, {
+        return apiClient.get<CategoryDetailResponse>(`/discovery/categories/${categorySlug}`, {
             params: {
                 sort_by: params?.sort_by,
                 limit: params?.limit || 50,
@@ -104,11 +104,11 @@ export class TokenDiscoveryService {
     }
 
     /**
-     * GET /api/discovery/gainers-losers
+     * GET /discovery/gainers-losers
      * Get top gainers and losers
      */
     static async getGainersLosers(params?: { time_frame?: TimeFrame; type?: GainerLoserType; limit?: number }): Promise<GainersLosersResponse> {
-        return apiClient.get<GainersLosersResponse>("/api/discovery/gainers-losers", {
+        return apiClient.get<GainersLosersResponse>("/discovery/gainers-losers", {
             params: {
                 time_frame: params?.time_frame || "24h",
                 type: params?.type || "both",
