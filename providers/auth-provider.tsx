@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { UserResponseDto } from "@/types/dto";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { API_ENDPOINTS } from "@/lib/constants";
 import Cookies from "js-cookie";
 

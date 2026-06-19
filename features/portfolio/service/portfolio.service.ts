@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { PORTFOLIO_ENDPOINTS } from "@/lib/constants";
 import type { WalletsResponse, PortfolioOverview, PositionsResponse, ActivitiesResponse, Wallet } from "../types/portfolio.types";
 

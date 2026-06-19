@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi, loginWithSolanaApi } from "@/features/auth/authservice";
+import apiClient from "@/lib/network-requests/api-client";
 import bs58 from "bs58";
 import Image from "next/image";
-import apiClient from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 
 interface PhantomSolanaProvider {
@@ -161,7 +161,9 @@ export default function SocialAuthButtons() {
             const connectionResp = await provider.connect();
             const walletAddress = connectionResp.publicKey.toString();
 
-            const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+            const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
+                params: { walletAddress }
+            });
 
             const messageBytes = new TextEncoder().encode(nonce);
             const { signature } = await provider.signMessage(messageBytes);
@@ -183,9 +185,7 @@ export default function SocialAuthButtons() {
             routerRef.current.push(finalRedirectTo);
         } catch (error) {
             console.error("Phantom login failed:", error);
-            const errorWithResponse = error as { response?: { data?: { message?: string } } };
-            const errorMessage =
-                error instanceof Error ? errorWithResponse.response?.data?.message || error.message : "Phantom login failed. Please try again.";
+            const errorMessage = error instanceof Error ? error.message : "Phantom login failed. Please try again.";
             toast.error(errorMessage);
         } finally {
             setIsPhantomLoading(false);

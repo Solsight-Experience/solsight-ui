@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import bs58 from "bs58";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { portfolioKeys } from "./portfolio.hooks";
 import { getErrorMessage } from "@/lib/error-utils";
@@ -199,7 +199,9 @@ export const useWalletAuth = () => {
                     const walletAddress = pubKey.toString();
 
                     // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+                    const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
+                        params: { walletAddress }
+                    });
 
                     // 2. Sign Nonce
                     const messageBytes = new TextEncoder().encode(nonce);
@@ -209,7 +211,7 @@ export const useWalletAuth = () => {
                     const signatureStr = bs58.encode(signature);
 
                     // 3. Verify
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
+                    const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
                         walletAddress,
                         signature: signatureStr,
                         walletIcon: "phantom",
@@ -240,7 +242,9 @@ export const useWalletAuth = () => {
                 const walletAddress = await connectMetaMask();
                 if (walletAddress) {
                     // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
+                    const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
+                        params: { walletAddress }
+                    });
 
                     // 2. Sign Nonce
                     const provider = getMetaMaskProvider();
@@ -267,7 +271,7 @@ export const useWalletAuth = () => {
                     const signatureStr = signature;
 
                     // 3. Verify & Login
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
+                    const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
                         walletAddress,
                         signature: signatureStr,
                         userId
