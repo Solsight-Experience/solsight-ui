@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { axiosClient, DefaultApiClient, type ApiRequest, type HttpTransport } from "@/lib/network-requests/api-client";
+import { axiosClient } from "@/lib/network-requests/api-client";
 import useClusterStore from "@/stores/cluster.store";
+import { ApiRequest, HttpTransport } from "@/lib/network-requests/http-transport";
+import { DefaultApiClient } from "@/lib/network-requests/impl/DefaultApiClient";
 
 describe("apiClient", () => {
     let latestRequest: ApiRequest | undefined;

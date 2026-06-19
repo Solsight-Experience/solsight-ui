@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { callOAuthLoginApi, loginWithSolanaApi } from "@/features/auth/authservice";
-import apiClient from "@/lib/network-requests/api-client";
-import bs58 from "bs58";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
 
 interface PhantomSolanaProvider {
     isPhantom?: boolean;
@@ -161,18 +160,14 @@ export default function SocialAuthButtons() {
             const connectionResp = await provider.connect();
             const walletAddress = connectionResp.publicKey.toString();
 
-            const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
-                params: { walletAddress }
-            });
-
-            const messageBytes = new TextEncoder().encode(nonce);
-            const { signature } = await provider.signMessage(messageBytes);
-            const signatureStr = bs58.encode(signature);
-
             const data = await loginWithSolanaApi({
                 walletAddress,
-                signature: signatureStr,
-                walletIcon: "phantom"
+                walletIcon: "phantom",
+                signMessage: async (messageBytes) => {
+                    const { signature } = await provider.signMessage(messageBytes);
+
+                    return signature;
+                }
             });
 
             if (!data.user) {
