@@ -1,7 +1,7 @@
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { ZaloSubscriptionStatus, GenerateZaloTokenResponse } from "../types/watchlist.types";
 
-const BASE = "/api/zalo/subscription";
+const BASE = "/zalo/subscription";
 
 export const zaloService = {
     getSubscription: () => apiClient.get<ZaloSubscriptionStatus>(BASE),

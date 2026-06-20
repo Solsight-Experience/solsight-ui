@@ -1,3 +1,7 @@
+import bs58 from "bs58";
+
+import apiClient from "@/lib/network-requests/api-client";
+
 export interface User {
     id: string;
     email: string;
@@ -24,66 +28,54 @@ export interface SignUpResponse {
     message?: string;
 }
 
+export interface SolanaLoginPayload {
+    walletAddress: string;
+    signature: string;
+    walletIcon: string;
+}
+
+export interface SolanaWalletLoginPayload {
+    walletAddress: string;
+    walletIcon: string;
+    signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+}
+
 export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
-    const response = await fetch(`/api/auth/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-    }
-
-    return data;
+    return apiClient.post<LoginResponse>("/auth/login", payload);
 }
 export async function signupApi(payload: SignUpPayload): Promise<SignUpResponse> {
-    const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // nếu server set cookie
-        body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Sign up failed");
-    }
-
-    return data;
+    return apiClient.post<SignUpResponse>("/auth/register", payload);
 }
 export const callOAuthLoginApi = async (token: string) => {
-    const response = await fetch("/api/auth/oauth-login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify({ token, provider: "google" })
-    });
-
-    if (!response.ok) {
-        throw new Error("OAuth login failed");
-    }
-
-    return response.json();
+    return apiClient.post<LoginResponse>("/auth/oauth-login", { token, provider: "google" });
 };
 export async function logout(): Promise<boolean> {
-    const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include"
-    });
-
-    if (!res.ok) {
-        throw new Error("Logout failed");
-    }
-
+    await apiClient.post("/auth/logout");
     window.location.href = "/login";
     return true;
+}
+
+export async function getSolanaNonceMessage(walletAddress: string): Promise<Uint8Array> {
+    const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
+        params: { walletAddress }
+    });
+
+    return new TextEncoder().encode(nonce);
+}
+
+export async function signSolanaNonce(walletAddress: string, signMessage: (message: Uint8Array) => Promise<Uint8Array>): Promise<string> {
+    const messageBytes = await getSolanaNonceMessage(walletAddress);
+    const signature = await signMessage(messageBytes);
+
+    return bs58.encode(signature);
+}
+
+export async function loginWithSolanaApi(payload: SolanaLoginPayload | SolanaWalletLoginPayload): Promise<LoginResponse> {
+    const signature = "signature" in payload ? payload.signature : await signSolanaNonce(payload.walletAddress, payload.signMessage);
+
+    return apiClient.post<LoginResponse>("/auth/solana/login", {
+        walletAddress: payload.walletAddress,
+        signature,
+        walletIcon: payload.walletIcon
+    });
 }

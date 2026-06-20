@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import bs58 from "bs58";
-import apiClient from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
-import { portfolioKeys } from "./portfolio.hooks";
+import { useEffect, useState } from "react";
+
+import { getSolanaNonceMessage, signSolanaNonce } from "@/features/auth/authservice";
 import { getErrorMessage } from "@/lib/error-utils";
+import apiClient from "@/lib/network-requests/api-client";
+
+import { portfolioKeys } from "./portfolio.hooks";
 
 // Define Phantom types
 type PhantomEvent = "connect" | "disconnect" | "accountChanged";
@@ -198,18 +200,15 @@ export const useWalletAuth = () => {
                 if (pubKey) {
                     const walletAddress = pubKey.toString();
 
-                    // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-
-                    // 2. Sign Nonce
-                    const messageBytes = new TextEncoder().encode(nonce);
                     if (!provider) throw new Error("Provider not found");
 
-                    const { signature } = await provider.signMessage(messageBytes);
-                    const signatureStr = bs58.encode(signature);
+                    const signatureStr = await signSolanaNonce(walletAddress, async (messageBytes) => {
+                        const { signature } = await provider.signMessage(messageBytes);
 
-                    // 3. Verify
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
+                        return signature;
+                    });
+
+                    const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
                         walletAddress,
                         signature: signatureStr,
                         walletIcon: "phantom",
@@ -239,14 +238,10 @@ export const useWalletAuth = () => {
             try {
                 const walletAddress = await connectMetaMask();
                 if (walletAddress) {
-                    // 1. Get Nonce
-                    const { nonce } = await apiClient.get<{ nonce: string }>(`/api/auth/solana/nonce?walletAddress=${walletAddress}`);
-
-                    // 2. Sign Nonce
                     const provider = getMetaMaskProvider();
                     if (!provider) throw new Error("MetaMask provider not found");
 
-                    const messageBytes = new TextEncoder().encode(nonce);
+                    const messageBytes = await getSolanaNonceMessage(walletAddress);
 
                     // Solflare Snap expects message as Uint8Array (serialized as array) or string.
                     const snapResult = await provider.request({
@@ -266,8 +261,7 @@ export const useWalletAuth = () => {
 
                     const signatureStr = signature;
 
-                    // 3. Verify & Login
-                    const response = await apiClient.post<{ success: boolean; message: string }>("/api/auth/solana/verify", {
+                    const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
                         walletAddress,
                         signature: signatureStr,
                         userId

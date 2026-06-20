@@ -11,7 +11,7 @@ import type { TokenTableData } from "../config/types";
 import { TokenDiscoveryService, SortBy, TimeFrame } from "../services/token-discovery.service";
 import { transformTokenOverviews } from "../utils/transform";
 import { queryKeys } from "@/lib/react-query-keys";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { USER_ENDPOINTS } from "@/lib/constants";
 import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";

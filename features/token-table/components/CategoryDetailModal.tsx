@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { formatCurrency, percentFormatter } from "@/lib/formatters";
 
 interface CategoryDetail {
@@ -39,7 +39,7 @@ export function CategoryDetailModal({ categorySlug, onClose }: CategoryDetailMod
             setError(null);
             setCategory(null);
             try {
-                const data = await apiClient.get<CategoryDetail>(`/api/discovery/categories/${categorySlug}`);
+                const data = await apiClient.get<CategoryDetail>(`/discovery/categories/${categorySlug}`);
                 setCategory(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to load category details");

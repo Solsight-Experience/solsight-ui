@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { WATCHLIST_ENDPOINTS } from "@/lib/constants";
 import type { WatchedWallet, WatchlistResponse, AddWatchedWalletDto, UpdateWatchedWalletDto } from "../types/watchlist.types";
 

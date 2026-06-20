@@ -1,6 +1,6 @@
 import axios from "axios";
 import { VersionedTransaction } from "@solana/web3.js";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/network-requests/api-client";
 import { SWAP_ENDPOINTS } from "@/lib/constants";
 import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse } from "./types";
 import { buildRoutePathTokens, getRouteDetails } from "./utils";
