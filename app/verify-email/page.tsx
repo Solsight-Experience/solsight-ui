@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Mail, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { verifyEmailApi, resendVerificationApi } from "@/features/auth/authservi
 
 type PageState = "loading" | "success" | "error" | "no-token";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get("token");
@@ -182,5 +182,13 @@ export default function VerifyEmailPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function VerifyEmailPage() {
+    return (
+        <Suspense>
+            <VerifyEmailContent />
+        </Suspense>
     );
 }
