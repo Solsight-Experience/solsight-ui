@@ -28,6 +28,14 @@ export interface SignUpResponse {
     message?: string;
 }
 
+export interface VerifyEmailResponse {
+    message: string;
+}
+
+export interface ResendVerificationResponse {
+    message: string;
+}
+
 export interface SolanaLoginPayload {
     walletAddress: string;
     signature: string;
@@ -45,6 +53,12 @@ export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
 }
 export async function signupApi(payload: SignUpPayload): Promise<SignUpResponse> {
     return apiClient.post<SignUpResponse>("/auth/register", payload);
+}
+export async function verifyEmailApi(token: string): Promise<VerifyEmailResponse> {
+    return apiClient.post<VerifyEmailResponse>("/auth/verify-email", { token });
+}
+export async function resendVerificationApi(email: string): Promise<ResendVerificationResponse> {
+    return apiClient.post<ResendVerificationResponse>("/auth/resend-verification", { email });
 }
 export const callOAuthLoginApi = async (token: string) => {
     return apiClient.post<LoginResponse>("/auth/oauth-login", { token, provider: "google" });
