@@ -227,6 +227,8 @@ export const useWalletAuth = () => {
                         });
 
                         return true;
+                    } else {
+                        throw new Error(response.message || "Failed to verify wallet signature");
                     }
                 }
                 return false;
@@ -279,6 +281,8 @@ export const useWalletAuth = () => {
                         });
 
                         return true;
+                    } else {
+                        throw new Error(response.message || "Failed to verify wallet signature");
                     }
                 }
                 return false;
