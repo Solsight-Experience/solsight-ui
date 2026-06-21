@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 import SocialAuthButtons from "./social-auth-buttons";
-import { loginApi } from "../../features/auth/authservice";
+import { loginApi, resendVerificationApi } from "../../features/auth/authservice";
 import { getErrorMessage } from "@/lib/error-utils";
 
 interface SignInFormProps {
@@ -22,12 +23,15 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [isUnverified, setIsUnverified] = useState(false);
+    const [isResending, setIsResending] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
+        setIsUnverified(false);
 
         try {
             const data = await loginApi({ email, password });
@@ -37,9 +41,28 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
             login(data.user);
             router.push(redirectTo);
         } catch (err: unknown) {
-            setError(getErrorMessage(err, "Login Failed"));
+            const e = err as { response?: { status?: number; data?: { message?: string } } };
+            if (e.response?.status === 401 && e.response?.data?.message === "Please verify your email before logging in") {
+                setIsUnverified(true);
+                setError(e.response.data.message!);
+            } else {
+                setError(getErrorMessage(err, "Login Failed"));
+            }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        setIsResending(true);
+        try {
+            await resendVerificationApi(email);
+            toast.success("Verification email sent. Please check your inbox.");
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { message?: string } } };
+            toast.error(e.response?.data?.message || "Failed to resend email");
+        } finally {
+            setIsResending(false);
         }
     };
 
@@ -68,15 +91,32 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
             {/* Error */}
             {error && (
                 <div
-                    className="mb-5 p-3.5 rounded-xl flex items-start gap-2.5 text-sm"
+                    className="mb-5 p-3.5 rounded-xl text-sm"
                     style={{
                         background: "rgba(239,68,68,0.08)",
                         border: "1px solid rgba(239,68,68,0.25)",
                         color: "#fca5a5"
                     }}
                 >
-                    <span className="mt-0.5 flex-shrink-0">⚠</span>
-                    {error}
+                    <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 shrink-0">⚠</span>
+                        {error}
+                    </div>
+                    {isUnverified && (
+                        <button
+                            type="button"
+                            onClick={handleResend}
+                            disabled={isResending}
+                            className="mt-2.5 w-full rounded-lg py-2 text-xs font-semibold transition-all cursor-pointer"
+                            style={{
+                                background: isResending ? "rgba(139,92,246,0.2)" : "rgba(139,92,246,0.15)",
+                                border: "1px solid rgba(139,92,246,0.35)",
+                                color: "#c4b5fd"
+                            }}
+                        >
+                            {isResending ? "Sending..." : "Resend verification email"}
+                        </button>
+                    )}
                 </div>
             )}
 
