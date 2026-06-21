@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
+import { toast } from "sonner";
 import SocialAuthButtons from "./social-auth-buttons";
-import { signupApi } from "@/features/auth/authservice";
+import { signupApi, resendVerificationApi } from "@/features/auth/authservice";
 
 interface SignUpFormProps {
     onToggle: () => void;
@@ -24,6 +25,8 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
     const [error, setError] = useState("");
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [successEmail, setSuccessEmail] = useState<string | null>(null);
+    const [isResending, setIsResending] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,7 +47,7 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
 
         try {
             await signupApi({ email, password });
-            onToggle();
+            setSuccessEmail(email);
         } catch (err: unknown) {
             console.error("Signup failed:", err);
             const error = err as { response?: { data?: { message?: string } } };
@@ -61,9 +64,72 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
         transition: "all 0.2s ease"
     });
 
+    const handleResend = async () => {
+        if (!successEmail) return;
+        setIsResending(true);
+        try {
+            await resendVerificationApi(successEmail);
+            toast.success("Verification email sent. Please check your inbox.");
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { message?: string } } };
+            toast.error(e.response?.data?.message || "Failed to resend email");
+        } finally {
+            setIsResending(false);
+        }
+    };
+
     const passwordStrength = PASSWORD_RULES.filter((r) => r.test(password)).length;
 
     const strengthColor = ["#ef4444", "#f59e0b", "#10b981"][Math.min(passwordStrength - 1, 2)] ?? "rgba(255,255,255,0.1)";
+
+    if (successEmail) {
+        return (
+            <div
+                className="w-full rounded-2xl p-7 flex flex-col items-center text-center"
+                style={{
+                    background: "rgba(255,255,255,0.04)",
+                    backdropFilter: "blur(24px)",
+                    border: "1px solid rgba(255,255,255,0.08)"
+                }}
+            >
+                <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+                    style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)" }}
+                >
+                    <Mail className="w-8 h-8 text-violet-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Check your inbox</h2>
+                <p className="text-white/40 text-sm mb-1">We sent a verification link to</p>
+                <p className="text-violet-300 text-sm font-medium mb-7">{successEmail}</p>
+
+                <button
+                    onClick={handleResend}
+                    disabled={isResending}
+                    className="w-full rounded-xl py-3 font-semibold text-sm text-white transition-all mb-4 cursor-pointer"
+                    style={{
+                        background: isResending ? "rgba(139,92,246,0.3)" : "linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4f46e5 100%)",
+                        boxShadow: isResending ? "none" : "0 0 30px rgba(139,92,246,0.35)"
+                    }}
+                >
+                    {isResending ? (
+                        <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Sending...
+                        </span>
+                    ) : (
+                        "Resend verification email"
+                    )}
+                </button>
+
+                <button onClick={onToggle} className="text-white/30 text-xs hover:text-white/60 transition-colors cursor-pointer">
+                    Back to sign in
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div
