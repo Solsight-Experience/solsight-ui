@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Trade, TradeStreamResponse, TopTrader, Holder, TokenDetail } from "../types/token.types";
 import type { ChartInterval } from "@/lib/constants";
 import { CandlestickData, UTCTimestamp } from "lightweight-charts";
+import { normalizeCandlePoint } from "../utils/chart.utils";
 
 const socket = TokenSocketManager.getInstance();
 
@@ -112,13 +113,11 @@ export function useChartDataStream(address: string, interval: ChartInterval) {
         };
 
         socket.onDomainEvent<{ priceOHLC: CandlestickData; time: UTCTimestamp }>(priceDto, ({ priceOHLC, time }) => {
-            setChart(() => ({
-                open: priceOHLC.open,
-                high: priceOHLC.high,
-                low: priceOHLC.low,
-                close: priceOHLC.close,
-                time: time as UTCTimestamp
-            }));
+            const nextPoint = normalizeCandlePoint({ ...priceOHLC, time });
+
+            if (nextPoint) {
+                setChart(nextPoint);
+            }
         });
 
         return () => {
