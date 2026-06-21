@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { phantomWallet } from "@/lib/wallet";
 import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto, ChatPageContext } from "@/types/dto";
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { CHAT_ENDPOINTS } from "@/lib/constants";
 
 const SESSION_ID_KEY = "solsight_chat_session_id";

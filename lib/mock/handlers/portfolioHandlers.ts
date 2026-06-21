@@ -118,7 +118,7 @@ export function setupPortfolioMocks(mock: MockAdapter) {
     });
 
     // PATCH: Set Default Wallet
-    mock.onPatch(new RegExp("/api/users/me/wallets/.*/set-default")).reply((config) => {
+    mock.onPatch(new RegExp("/users/me/wallets/.*/set-default")).reply((config) => {
         const address = config.url?.split("/").slice(-2, -1)[0];
         if (!address) return [400, { error: "Invalid wallet address" }];
 
@@ -134,7 +134,7 @@ export function setupPortfolioMocks(mock: MockAdapter) {
     });
 
     // DELETE: Delete Wallet
-    mock.onDelete(new RegExp("/api/users/me/wallets/.*")).reply((config) => {
+    mock.onDelete(new RegExp("/users/me/wallets/.*")).reply((config) => {
         const address = config.url?.split("/").pop();
         if (!address) return [400, { error: "Invalid wallet address" }];
 

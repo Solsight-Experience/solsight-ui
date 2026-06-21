@@ -1,4 +1,4 @@
-import apiClient from "@/lib/api-client";
+import apiClient from "@/lib/network-requests/api-client";
 import { API_ENDPOINTS, PORTFOLIO_ENDPOINTS } from "@/lib/constants";
 import { WalletResponseDto, GetWalletsResponseDto } from "@/types/dto";
 import { ApiResponse } from "@/types/api";

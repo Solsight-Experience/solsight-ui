@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
         PROFILE: "/auth/profile"
     },
     WALLETS: {
-        LIST: "/api/users/me/wallets",
+        LIST: "/users/me/wallets",
         CREATE: "/wallets",
         BALANCE: (address: string) => `/wallets/${address}/balance`,
         CONNECT: "/wallets/connect",
@@ -78,55 +78,55 @@ export const UI_CONSTANTS = {
 // Portfolio API Endpoints
 export const PORTFOLIO_ENDPOINTS = {
     // Wallet Management
-    WALLETS: "/api/users/me/wallets",
-    WALLET_DETAIL: (address: string) => `/api/users/me/wallets/${address}`,
-    SET_DEFAULT_WALLET: (address: string) => `/api/users/me/wallets/${address}/set-default`,
-    DELETE_WALLET: (address: string) => `/api/users/me/wallets/${address}`,
+    WALLETS: "/users/me/wallets",
+    WALLET_DETAIL: (address: string) => `/users/me/wallets/${address}`,
+    SET_DEFAULT_WALLET: (address: string) => `/users/me/wallets/${address}/set-default`,
+    DELETE_WALLET: (address: string) => `/users/me/wallets/${address}`,
 
     // Portfolio Overview
-    OVERVIEW: "/api/portfolio/overview",
-    PNL_CHART: "/api/portfolio/pnl-chart",
-    POSITIONS: "/api/portfolio/positions",
-    ACTIVITIES: "/api/portfolio/activities",
-    PERFORMANCE: "/api/portfolio/performance"
+    OVERVIEW: "/portfolio/overview",
+    PNL_CHART: "/portfolio/pnl-chart",
+    POSITIONS: "/portfolio/positions",
+    ACTIVITIES: "/portfolio/activities",
+    PERFORMANCE: "/portfolio/performance"
 } as const;
 
 // User API Endpoints
 export const USER_ENDPOINTS = {
-    ME: "/api/account/me",
-    STATS: "/api/account/me/stats",
-    FAVORITES: "/api/account/me/favorites",
-    FAVORITE_DETAIL: (tokenAddress: string) => `/api/account/me/favorites/${tokenAddress}`
+    ME: "/account/me",
+    STATS: "/account/me/stats",
+    FAVORITES: "/account/me/favorites",
+    FAVORITE_DETAIL: (tokenAddress: string) => `/account/me/favorites/${tokenAddress}`
 } as const;
 
 // Limit Order API Endpoints
 export const LIMIT_ORDER_ENDPOINTS = {
-    CREATE: "/api/limit-orders/create",
-    EXECUTE: "/api/limit-orders/execute",
-    LIST: "/api/limit-orders",
-    CANCEL: "/api/limit-orders/cancel",
-    CANCEL_MULTIPLE: "/api/limit-orders/cancel-multiple"
+    CREATE: "/limit-orders/create",
+    EXECUTE: "/limit-orders/execute",
+    LIST: "/limit-orders",
+    CANCEL: "/limit-orders/cancel",
+    CANCEL_MULTIPLE: "/limit-orders/cancel-multiple"
 } as const;
 
 // Token API Endpoints
 export const TOKEN_ENDPOINTS = {
     // Token Details
-    TOKEN_DETAIL: (address: string) => `/api/tokens/${address}`,
-    TOKEN_CHART: (address: string) => `/api/tokens/${address}/chart`,
-    TOKEN_TRADES: (address: string) => `/api/tokens/${address}/trades`,
-    TOKEN_HOLDERS: (address: string) => `/api/tokens/${address}/holders`,
-    TOKEN_TOP_TRADERS: (address: string) => `/api/tokens/${address}/top-traders`,
+    TOKEN_DETAIL: (address: string) => `/tokens/${address}`,
+    TOKEN_CHART: (address: string) => `/tokens/${address}/chart`,
+    TOKEN_TRADES: (address: string) => `/tokens/${address}/trades`,
+    TOKEN_HOLDERS: (address: string) => `/tokens/${address}/holders`,
+    TOKEN_TOP_TRADERS: (address: string) => `/tokens/${address}/top-traders`,
 
     // Token Actions
-    SWAP_PREVIEW: (address: string) => `/api/tokens/${address}/swap-preview`,
-    ADD_FAVORITE: (_address: string) => `/api/account/me/favorites`,
-    REMOVE_FAVORITE: (address: string) => `/api/account/me/favorites/${address}`,
+    SWAP_PREVIEW: (address: string) => `/tokens/${address}/swap-preview`,
+    ADD_FAVORITE: (_address: string) => `/account/me/favorites`,
+    REMOVE_FAVORITE: (address: string) => `/account/me/favorites/${address}`,
 
     // AI Summary
-    AI_SUMMARY: "/api/tokens/summarize",
+    AI_SUMMARY: "/tokens/summarize",
 
     // SOL price (Redis-backed, falls back to CoinGecko)
-    SOL_PRICE: "/api/tokens/sol-price"
+    SOL_PRICE: "/tokens/sol-price"
 } as const;
 
 // Chart intervals
@@ -139,40 +139,40 @@ export type TradeTab = (typeof TRADE_TABS)[number];
 
 // Wallet Alert API Endpoints
 export const WALLET_ALERT_ENDPOINTS = {
-    LIST: (address: string) => `/api/watchlist/${address}/alerts`,
-    CREATE: (address: string) => `/api/watchlist/${address}/alerts`,
-    UPDATE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`,
-    DELETE: (address: string, id: string) => `/api/watchlist/${address}/alerts/${id}`
+    LIST: (address: string) => `/watchlist/${address}/alerts`,
+    CREATE: (address: string) => `/watchlist/${address}/alerts`,
+    UPDATE: (address: string, id: string) => `/watchlist/${address}/alerts/${id}`,
+    DELETE: (address: string, id: string) => `/watchlist/${address}/alerts/${id}`
 } as const;
 
 // Watchlist API Endpoints
 export const WATCHLIST_ENDPOINTS = {
-    LIST: "/api/watchlist",
-    ADD: "/api/watchlist",
-    UPDATE: (address: string) => `/api/watchlist/${address}`,
-    REMOVE: (address: string) => `/api/watchlist/${address}`
+    LIST: "/watchlist",
+    ADD: "/watchlist",
+    UPDATE: (address: string) => `/watchlist/${address}`,
+    REMOVE: (address: string) => `/watchlist/${address}`
 } as const;
 
 // Portfolio Watch (arbitrary wallet) API Endpoints
 export const PORTFOLIO_WATCH_ENDPOINTS = {
-    OVERVIEW: "/api/portfolio/watch/overview",
-    POSITIONS: "/api/portfolio/watch/positions",
-    ACTIVITIES: "/api/portfolio/watch/activities",
-    PNL_CHART: "/api/portfolio/watch/pnl-chart"
+    OVERVIEW: "/portfolio/watch/overview",
+    POSITIONS: "/portfolio/watch/positions",
+    ACTIVITIES: "/portfolio/watch/activities",
+    PNL_CHART: "/portfolio/watch/pnl-chart"
 } as const;
 
 // Swap API Endpoints
 export const SWAP_ENDPOINTS = {
-    QUOTE: "/api/swap/quote",
-    TRANSACTION: "/api/swap/transaction",
-    EXECUTE: "/api/swap/execute",
-    INFO: "/api/swap/info"
+    QUOTE: "/swap/quote",
+    TRANSACTION: "/swap/transaction",
+    EXECUTE: "/swap/execute",
+    INFO: "/swap/info"
 } as const;
 
 // Chat API Endpoints
 export const CHAT_ENDPOINTS = {
-    MESSAGE: "/api/chat/message",
-    MESSAGES: (sessionId: string) => `/api/chat/sessions/${sessionId}/messages`
+    MESSAGE: "/chat/message",
+    MESSAGES: (sessionId: string) => `/chat/sessions/${sessionId}/messages`
 } as const;
 
 // Chat Socket Events
