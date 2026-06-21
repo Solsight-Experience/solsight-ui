@@ -29,10 +29,12 @@ type PhantomProvider = {
 };
 
 const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
+const QUICK_BUY_SLIPPAGE_DEBOUNCE_MS = 350;
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
     const [slippageBps, setSlippageBps] = useState(50);
+    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(slippageBps);
     const [decimals, setDecimals] = useState(9);
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -40,6 +42,11 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
     const [swapError, setSwapError] = useState<string | null>(null);
     const [signature, setSignature] = useState<string | null>(null);
     const [quote, setQuote] = useState<Awaited<ReturnType<typeof fetchJupiterQuote>> | null>(null);
+
+    useEffect(() => {
+        const timeout = window.setTimeout(() => setDebouncedSlippageBps(slippageBps), QUICK_BUY_SLIPPAGE_DEBOUNCE_MS);
+        return () => window.clearTimeout(timeout);
+    }, [slippageBps]);
 
     useEffect(() => {
         if (!open || !token) return;
@@ -90,7 +97,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                 outputMint: token.id,
                 amount: amountBaseUnits,
                 swapMode: "ExactIn",
-                slippageBps
+                slippageBps: debouncedSlippageBps
             },
             {
                 signal: controller.signal,
@@ -113,7 +120,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return () => {
             controller.abort();
         };
-    }, [open, token, amountSol, slippageBps]);
+    }, [open, token, amountSol, debouncedSlippageBps]);
 
     const receiveAmount = useMemo(() => {
         if (!quote?.outAmount) return "--";
@@ -125,7 +132,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return formatDisplay(formatFromBaseUnits(quote.otherAmountThreshold, decimals), decimals);
     }, [quote?.otherAmountThreshold, decimals]);
 
-    const canConfirm = !!quote?.rawQuote && !quoteLoading && !swapLoading && !quoteError && parseInputNumber(amountSol) > 0;
+    const quoteRefreshing = quoteLoading || slippageBps !== debouncedSlippageBps;
+    const canConfirm = !!quote?.rawQuote && !quoteRefreshing && !swapLoading && !quoteError && parseInputNumber(amountSol) > 0;
 
     const handleConfirm = async () => {
         if (!quote?.rawQuote || !token) return;
@@ -238,8 +246,15 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                             />
                         </div>
 
-                        {quoteLoading && <div className="text-muted-foreground text-xs">Fetching quote...</div>}
-                        {quoteError && <div className="text-red-500 text-xs">{quoteError}</div>}
+                        <div data-testid="quick-buy-quote-status" aria-live="polite" className="h-4 overflow-hidden text-xs">
+                            {quoteRefreshing ? (
+                                <span className="text-muted-foreground">Fetching quote...</span>
+                            ) : quoteError ? (
+                                <span className="block truncate text-red-500" title={quoteError}>
+                                    {quoteError}
+                                </span>
+                            ) : null}
+                        </div>
                         {swapError && <div className="text-red-500 text-xs">{swapError}</div>}
                         {signature && (
                             <div className="text-green-500 text-xs">
