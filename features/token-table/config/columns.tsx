@@ -2,17 +2,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownRight, ArrowUpRight, Users, Shield, Star, Zap } from "lucide-react";
 import Sparkline from "../components/Sparkline";
 import TokenCell from "../components/TokenCell";
-import { TokenCategory, TokenTableData } from "./types";
+import { TokenTableData } from "./types";
 import { cn } from "@/lib/utils";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
-
-const categoryStyles: Record<TokenCategory, string> = {
-    MEME: "bg-fuchsia-500/20 text-fuchsia-400",
-    GameFi: "bg-emerald-500/20 text-emerald-400",
-    Infrastructure: "bg-blue-500/20 text-blue-400",
-    AI: "bg-indigo-500/20 text-indigo-400",
-    DeFi: "bg-orange-500/20 text-orange-400"
-};
 
 /**
  * Creates columns with optional favorite toggle handler
@@ -56,15 +48,6 @@ export const createColumns = (
         enableSorting: false,
         enableHiding: false,
         cell: ({ row }) => <Sparkline points={row.original.token.priceHistory} />
-    },
-    {
-        accessorKey: "token.category",
-        header: "Category",
-        cell: ({ row }) => (
-            <span className={cn("rounded-full px-3 py-1 text-xs font-medium uppercase", categoryStyles[row.original.token.category])}>
-                {row.original.token.category}
-            </span>
-        )
     },
     {
         accessorKey: "marketCap.value",
