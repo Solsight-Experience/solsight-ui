@@ -28,6 +28,8 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
             const success = await handleWalletConnect(walletName, user?.id);
             if (success) {
                 onOpenChange(false);
+            } else {
+                setError("Failed to connect wallet");
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to connect wallet");
@@ -79,35 +81,6 @@ export function MockConnectWalletDialog({ open, onOpenChange }: MockConnectWalle
                             <span className="text-xs text-(--text-muted)">Connect to Phantom Wallet</span>
                         </div>
                         {connectingWallet === "Phantom" && (
-                            <span className="ml-auto flex items-center gap-1.5 text-sm text-violet-500 dark:text-violet-400">
-                                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                Connecting...
-                            </span>
-                        )}
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        className="w-full h-16 justify-start gap-4 border-(--border-default) hover:bg-violet-500/10 hover:border-violet-500/50"
-                        onClick={() => handleConnect("MetaMask")}
-                        disabled={isConnecting}
-                    >
-                        <Image
-                            src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg"
-                            alt="MetaMask"
-                            width={32}
-                            height={32}
-                            className="h-8 w-8 object-contain"
-                            unoptimized
-                        />
-                        <div className="flex flex-col items-start">
-                            <span className="text-base font-medium">MetaMask</span>
-                            <span className="text-xs text-(--text-muted)">Connect to MetaMask</span>
-                        </div>
-                        {connectingWallet === "MetaMask" && (
                             <span className="ml-auto flex items-center gap-1.5 text-sm text-violet-500 dark:text-violet-400">
                                 <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

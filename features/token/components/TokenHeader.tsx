@@ -1,10 +1,12 @@
-import React from "react";
-import { Shield, Star, Copy, TrendingUp, TrendingDown } from "lucide-react";
+import React, { useState } from "react";
+import { Shield, Star, Copy, Check, TrendingUp, TrendingDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTokenUIStore } from "../stores/token.stores";
 import { useToggleFavorite } from "../hooks/token.hooks";
 import { copyToClipboard, formatNumber } from "../utils/token.utils";
 import type { TokenDetail } from "../types/token.types";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface TokenHeaderProps {
     token: TokenDetail;
@@ -29,6 +31,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton
     const { isFavorite, toggleFavorite } = useTokenUIStore();
     const toggleFavoriteMutation = useToggleFavorite();
     const isTokenFavorite = isFavorite(token.address);
+    const [copied, setCopied] = useState(false);
 
     const handleFavoriteClick = () => {
         toggleFavorite(token.address);
@@ -39,7 +42,12 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton
     };
 
     const handleCopyAddress = async () => {
-        await copyToClipboard(token.address);
+        const success = await copyToClipboard(token.address);
+        if (success) {
+            setCopied(true);
+            toast.success("Address copied to clipboard!");
+            setTimeout(() => setCopied(false), 1500);
+        }
     };
 
     return (
@@ -105,13 +113,14 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
                 {aiSummaryButton}
-                <button
+                <Button
+                    variant="secondary"
                     onClick={handleCopyAddress}
-                    className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--surface-btn)] px-2 py-1 rounded border border-[var(--border-subtle)]"
+                    className="h-7 px-2.5 text-xs font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] gap-1.5 rounded border border-[var(--border-subtle)]"
                 >
-                    <Copy className="w-3 h-3" />
-                    {token.address.slice(0, 4)}...{token.address.slice(-4)}
-                </button>
+                    {copied ? <Check className="w-3 h-3 size-3 text-emerald-400" /> : <Copy className="w-3 h-3 size-3" />}
+                    {token.address.slice(0, 6)}...{token.address.slice(-4)}
+                </Button>
             </div>
         </div>
     );
