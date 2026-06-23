@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient } from "@tanstack/react-query";
-// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
@@ -68,9 +68,7 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             }}
         >
             {children}
-            {/* 
             <ReactQueryDevtools initialIsOpen={false} />
-             */}
         </PersistQueryClientProvider>
     );
 }

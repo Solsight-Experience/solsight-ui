@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { Coins, ArrowRightLeft } from "lucide-react";
+import { Coins, ArrowRightLeft, SlidersHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { PortfolioSidebar } from "@/features/portfolio/components/Portfoliosidebar";
 import { PortfolioDashboard } from "@/features/portfolio/components/Portfoliodashboard";
 import { PositionsTab } from "@/features/portfolio/components/Positionstab";
@@ -38,6 +40,28 @@ export default function PortfolioPage() {
                             </div>
                             <h1 className="text-[22px] font-bold tracking-tight leading-tight">Portfolio</h1>
                             <p className="text-[12.5px] text-[var(--text-muted)] mt-0.5">Track balances, positions, and activity across your wallets</p>
+                        </div>
+
+                        {/* Mobile Wallet & Filter Trigger */}
+                        <div className="lg:hidden">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex items-center gap-2 border-[var(--border-subtle)] bg-[var(--surface-btn)] hover:bg-[var(--surface-btn-hover)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--text-primary)] rounded-lg cursor-pointer"
+                                    >
+                                        <SlidersHorizontal className="size-4 text-violet-500" />
+                                        Wallets & Filters
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent
+                                    side="right"
+                                    className="w-[320px] p-0 pt-12 overflow-y-auto border-l border-[var(--border-faint)] bg-[var(--surface-glass)] backdrop-blur-xl"
+                                >
+                                    <PortfolioSidebar />
+                                </SheetContent>
+                            </Sheet>
                         </div>
                     </div>
 
