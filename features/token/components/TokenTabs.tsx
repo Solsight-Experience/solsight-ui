@@ -34,7 +34,7 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
                         <TopTradersTable tokenAddress={tokenAddress} />
                     </TabsContent>
 
-                    <TabsContent forceMount value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent value="holders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <HoldersTable tokenAddress={tokenAddress} />
                     </TabsContent>
                 </div>

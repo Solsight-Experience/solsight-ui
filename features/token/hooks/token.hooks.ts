@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
-import type { Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
+import type { HoldersResponse, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
 import { useEffect, useMemo, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
@@ -143,7 +143,15 @@ export function useHolders(
         staleTime: 30000 // 30 seconds
     });
     const holderUpdate = useHoldersStream(address);
-    const [data, setData] = useState<{ holders: Holder[] }>({ holders: [] });
+    const [data, setData] = useState<HoldersResponse>({
+        holders: [],
+        total: 0,
+        summary: {
+            total_holders: 0,
+            top_10_holding_percent: 0,
+            top_20_holding_percent: 0
+        }
+    });
 
     useEffect(() => {
         if (initial.data) setData(initial.data);
@@ -171,7 +179,7 @@ export function useHolders(
                 .sort((a, b) => b.balance - a.balance)
                 .slice(0, limit);
 
-            return { holders: sortedHolders };
+            return { ...prev, holders: sortedHolders };
         });
     }, [holderUpdate, params?.limit]);
 
