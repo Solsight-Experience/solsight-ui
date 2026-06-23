@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
+import useClusterStore, { type Cluster } from "@/stores/cluster.store";
 import { useTrades } from "../hooks/token.hooks";
 import { formatTimeAgo, formatNumber, formatTokenAmount } from "../utils/token.utils";
 import type { Trade } from "../types/token.types";
@@ -8,7 +9,15 @@ interface TradesTableProps {
     tokenAddress: string;
 }
 
-const TradeRow: React.FC<Trade> = ({ timestamp, type, amount_token, price_usd, trader_address, market_cap, tx_url }) => (
+const getSolscanTxUrl = (txUrl: string, cluster: Cluster) => {
+    const url = new URL(txUrl);
+    if (cluster === "devnet") {
+        url.searchParams.set("cluster", "devnet");
+    }
+    return url.toString();
+};
+
+const TradeRow: React.FC<Trade & { cluster: Cluster }> = ({ timestamp, type, amount_token, price_usd, trader_address, market_cap, tx_url, cluster }) => (
     <tr className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)]">
         <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{formatTimeAgo(timestamp)}</td>
         <td className="py-3 px-4">
@@ -28,7 +37,7 @@ const TradeRow: React.FC<Trade> = ({ timestamp, type, amount_token, price_usd, t
         </td>
         <td className="py-3 px-4">
             <a
-                href={tx_url}
+                href={getSolscanTxUrl(tx_url, cluster)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
@@ -40,6 +49,7 @@ const TradeRow: React.FC<Trade> = ({ timestamp, type, amount_token, price_usd, t
 );
 
 export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
+    const cluster = useClusterStore((state) => state.cluster);
     const { data: tradesData, isLoading } = useTrades(tokenAddress, { limit: 50 });
 
     if (isLoading) {
@@ -72,7 +82,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
                 </thead>
                 <tbody>
                     {tradesData.trades.map((trade) => (
-                        <TradeRow key={trade.tx_hash} {...trade} />
+                        <TradeRow key={trade.tx_hash} cluster={cluster} {...trade} />
                     ))}
                 </tbody>
             </table>
