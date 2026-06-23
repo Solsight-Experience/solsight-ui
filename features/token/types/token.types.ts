@@ -1,3 +1,11 @@
+import { TokenOverview } from "@/types/filter";
+
+export interface FavoriteToken {
+    token_address: string;
+    added_at: string;
+    token: TokenOverview | null;
+}
+
 // Token Detail Types
 export interface TokenDetail {
     address: string;
