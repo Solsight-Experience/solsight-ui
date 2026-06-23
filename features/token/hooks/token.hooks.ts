@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
-import type { ChartCandlePointDto, Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
+import type { Holder, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
 import { useEffect, useMemo, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
 import { generateCandleData } from "../utils/token.utils";
-import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
+import { normalizeChartPoints } from "../utils/chart.utils";
 
 // Query Keys
 export const tokenKeys = {
@@ -15,45 +15,6 @@ export const tokenKeys = {
     trades: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "trades", address, params] as const,
     topTraders: (address: string, timeFrame: string) => [...tokenKeys.all, "top-traders", address, timeFrame] as const,
     holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const
-};
-
-const normalizeCandlePoint = (point: ChartCandlePointDto): CandlestickData | null => {
-    const rawTimestamp = Number(point.timestamp);
-    const open = Number(point.open);
-    const high = Number(point.high);
-    const low = Number(point.low);
-    const close = Number(point.close);
-
-    if (!Number.isFinite(rawTimestamp) || !Number.isFinite(open) || !Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(close)) {
-        return null;
-    }
-
-    const seconds = rawTimestamp > 10_000_000_000 ? Math.floor(rawTimestamp / 1000) : Math.floor(rawTimestamp);
-
-    if (seconds <= 0) {
-        return null;
-    }
-
-    return {
-        time: seconds as UTCTimestamp,
-        open,
-        high,
-        low,
-        close
-    };
-};
-
-const normalizeChartPoints = (points: ChartCandlePointDto[] | undefined): CandlestickData[] => {
-    if (!points?.length) {
-        return [];
-    }
-
-    const normalized = points
-        .map(normalizeCandlePoint)
-        .filter((point): point is CandlestickData => point !== null)
-        .sort((a, b) => Number(a.time) - Number(b.time));
-
-    return normalized;
 };
 
 // Hooks
