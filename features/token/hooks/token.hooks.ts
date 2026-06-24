@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
-import type { HoldersResponse, SwapPreviewRequest, TokenDetail, TopTrader, Trade } from "../types/token.types";
+import type { HoldersResponse, SwapPreviewRequest, TokenDetail, TopTrader, Trade, FavoriteToken } from "../types/token.types";
+import { useAuth } from "@/contexts/AuthContext";
+import { queryKeys } from "@/lib/react-query-keys";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
 import { useEffect, useMemo, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
@@ -193,6 +195,18 @@ export function useSwapPreview(address: string) {
     });
 }
 
+export function useFavoriteTokens() {
+    const { user } = useAuth();
+    const isLoggedIn = !!user;
+
+    return useQuery({
+        queryKey: queryKeys.user.favorites(),
+        queryFn: () => tokenApi.getFavorites(),
+        enabled: isLoggedIn,
+        staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+    });
+}
+
 export function useToggleFavorite() {
     const queryClient = useQueryClient();
 
@@ -204,8 +218,34 @@ export function useToggleFavorite() {
                 return tokenApi.addFavorite(address);
             }
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["favorites"] });
+        onMutate: async ({ address, isFavorite }) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: queryKeys.user.favorites() });
+
+            // Snapshot the previous value
+            const previousFavorites = queryClient.getQueryData<FavoriteToken[]>(queryKeys.user.favorites());
+
+            // Optimistically update to the new value
+            queryClient.setQueryData<FavoriteToken[]>(queryKeys.user.favorites(), (old) => {
+                const list = old || [];
+                if (isFavorite) {
+                    return list.filter((fav) => fav.token_address !== address);
+                } else {
+                    return [...list, { token_address: address, added_at: new Date().toISOString(), token: null }];
+                }
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousFavorites };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousFavorites) {
+                queryClient.setQueryData(queryKeys.user.favorites(), context.previousFavorites);
+            }
+            console.error("Failed to toggle favorite:", err);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.user.favorites() });
         }
     });
 }
