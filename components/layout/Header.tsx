@@ -14,7 +14,6 @@ import {
     Wallet,
     Settings,
     LogOut,
-    User,
     TrendingUp,
     Zap,
     LayoutGrid,
@@ -386,7 +385,6 @@ function Sidebar({ id, open, onClose, isAuthenticated, user, onSearchOpen, onLog
                     {isAuthenticated ? (
                         <div className="flex flex-col gap-1">
                             <p className="text-[0.70rem] text-[var(--text-muted)] mb-2 truncate">{user?.email || "user@solsight.io"}</p>
-                            <SidebarAction href="/profile" icon={<User size={14} />} label="Profile" onClose={onClose} />
                             <SidebarAction href="/notifications" icon={<Bell size={14} />} label="Notifications" onClose={onClose} />
                             <SidebarAction href="/settings" icon={<Settings size={14} />} label="Settings" onClose={onClose} />
                             <button
@@ -617,7 +615,6 @@ function UserDropdown({ user, open, onToggle, onClose, onLogout }: UserDropdownP
                             <p className="text-[11px] text-white/50 truncate">{user?.email || "user@solsight.io"}</p>
                         </div>
                         <div className="h-px bg-white/[0.07] my-0.5" />
-                        <DropdownItem href="/profile" icon={<User size={14} />} label="Profile" />
                         <DropdownItem href="/portfolio" icon={<BarChart2 size={14} />} label="Portfolio" />
                         <DropdownItem href="/notifications" icon={<Bell size={14} />} label="Notifications" />
                         <DropdownItem href="/settings" icon={<Settings size={14} />} label="Settings" />
