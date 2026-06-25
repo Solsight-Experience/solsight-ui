@@ -17,16 +17,16 @@ enum FilterTabList {
 
 export interface FilterFormData {
     // Metrics
-    age_min_minutes: number;
-    age_max_minutes: number;
-    liquidity_min: number;
-    liquidity_max: number;
-    market_cap_min: number;
-    market_cap_max: number;
-    volume_24h_min: number;
-    volume_24h_max: number;
-    txns_24h_min: number;
-    txns_24h_max: number;
+    age_min_minutes?: number;
+    age_max_minutes?: number;
+    liquidity_min?: number;
+    liquidity_max?: number;
+    market_cap_min?: number;
+    market_cap_max?: number;
+    volume_24h_min?: number;
+    volume_24h_max?: number;
+    txns_24h_min?: number;
+    txns_24h_max?: number;
 
     // Audits
     mint_authority_disabled: boolean;
@@ -119,15 +119,15 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
 }
 
 function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormData; onFormChange: (data: Partial<FilterFormData>) => void }) {
-    const handleFieldChange = (field: keyof FilterFormData, value: string | number) => {
-        onFormChange({ [field]: value });
+    const handleFieldChange = (field: keyof FilterFormData, value: number | null) => {
+        onFormChange({ [field]: value === null ? undefined : value });
     };
 
     return (
         <FilterListContainer>
             <FilterField
                 label="Token Age"
-                placeholder="minutes"
+                placeholder="second"
                 minValue={formData.age_min_minutes}
                 maxValue={formData.age_max_minutes}
                 onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
@@ -257,23 +257,19 @@ function FilterListContainer({ className, children }: { children: ReactNode; cla
 type FilterFieldProps = {
     label: string;
     placeholder?: string;
-    minValue: number;
-    maxValue: number;
+    minValue?: number;
+    maxValue?: number;
     // numeric inputs can be numbers or formatted strings depending on formatter
-    onMinChange: (value: number | string) => void;
-    onMaxChange: (value: number | string) => void;
+    onMinChange: (value: number | null) => void;
+    onMaxChange: (value: number | null) => void;
     inputFormatter: INumberFormatter;
 };
 
 function FilterField({ label, placeholder, minValue, maxValue, onMinChange, onMaxChange, inputFormatter }: FilterFieldProps) {
-    const input = (value: number, onChange: (value: number | string) => void) => (
+    const input = (value: number | undefined, onChange: (value: number | null) => void) => (
         <NumbericInput
-            value={value}
-            onChange={(val) => {
-                if (val !== null && !isNaN(val)) {
-                    onChange(val);
-                }
-            }}
+            value={value ?? undefined}
+            onChange={(val) => onChange(val)}
             formatter={inputFormatter}
             placeholder={placeholder}
             className="text-right rounded-2xl [appearance:textfield] [::-webkit-inner-spin-button]:appearance-none [::-webkit-outer-spin-button]:appearance-none"

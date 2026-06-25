@@ -18,21 +18,11 @@ export interface FilterOptions {
 interface FilterButtonProps {
     filterOptions?: FilterOptions;
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
+    onApply?: (response: TokenFilterResponse | null, formData: FilterFormData) => void;
     onError?: (error: Error) => void;
 }
 
 const getInitialFormData = (): FilterFormData => ({
-    age_min_minutes: 0,
-    age_max_minutes: 0,
-    liquidity_min: 0,
-    liquidity_max: 0,
-    market_cap_min: 0,
-    market_cap_max: 0,
-    volume_24h_min: 0,
-    volume_24h_max: 0,
-    txns_24h_min: 0,
-    txns_24h_max: 0,
     mint_authority_disabled: false,
     freeze_authority_disabled: false,
     lp_burnt: false,
@@ -46,6 +36,9 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
 
     const tokenFilterMutation = useApplyTokenFilter();
     const isLoading = tokenFilterMutation.isPending;
+
+    const requestBody = getFilterRequestBody(formData);
+    const isFormEmpty = Object.keys(requestBody).length === 0;
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -61,6 +54,14 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
 
         try {
             const requestBody = getFilterRequestBody(formData);
+
+            if (Object.keys(requestBody).length === 0) {
+                // If the user hasn't specified any actual filters, we don't call the API.
+                onApply?.(null, formData);
+                setIsOpen(false);
+                return;
+            }
+
             const params: TokenFilterParams = {
                 sort_by: filterOptions?.sort_by,
                 sort_order: filterOptions?.sort_order,
@@ -110,7 +111,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Reset
                             </Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={isLoading || isFormEmpty}>
                                 {isLoading ? "Applying..." : "Apply"}
                             </Button>
                         </div>
