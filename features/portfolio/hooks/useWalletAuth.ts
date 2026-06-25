@@ -202,7 +202,7 @@ export const useWalletAuth = () => {
 
                     if (!provider) throw new Error("Provider not found");
 
-                    const signatureStr = await signSolanaNonce(walletAddress, async (messageBytes) => {
+                    const signedPayload = await signSolanaNonce(walletAddress, async (messageBytes) => {
                         const { signature } = await provider.signMessage(messageBytes);
 
                         return signature;
@@ -210,7 +210,9 @@ export const useWalletAuth = () => {
 
                     const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
                         walletAddress,
-                        signature: signatureStr,
+                        signature: signedPayload.signature,
+                        nonce: signedPayload.nonce,
+                        message: signedPayload.message,
                         walletIcon: "phantom",
                         userId
                     });
