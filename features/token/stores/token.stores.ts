@@ -31,11 +31,6 @@ interface TokenUIState {
     // Reset trading panel
     resetTradingPanel: () => void;
 
-    // Favorites (cached)
-    favoriteTokens: Set<string>;
-    toggleFavorite: (address: string) => void;
-    isFavorite: (address: string) => boolean;
-
     // Holders Table Columns
     holdersTableColumns: Record<string, boolean>;
     toggleHoldersTableColumn: (columnId: string) => void;
@@ -51,7 +46,7 @@ interface TokenUIState {
 
 export const useTokenUIStore = create<TokenUIState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             // Chart state
             chartInterval: "10s",
             setChartInterval: (interval) => set({ chartInterval: interval }),
@@ -88,20 +83,6 @@ export const useTokenUIStore = create<TokenUIState>()(
                     limitPrice: "0.00"
                 }),
 
-            // Favorites
-            favoriteTokens: new Set<string>(),
-            toggleFavorite: (address) =>
-                set((state) => {
-                    const newFavorites = new Set(state.favoriteTokens);
-                    if (newFavorites.has(address)) {
-                        newFavorites.delete(address);
-                    } else {
-                        newFavorites.add(address);
-                    }
-                    return { favoriteTokens: newFavorites };
-                }),
-            isFavorite: (address) => get().favoriteTokens.has(address),
-
             // Holders Table Columns
             holdersTableColumns: {
                 balance: true,
@@ -130,7 +111,6 @@ export const useTokenUIStore = create<TokenUIState>()(
             name: "token-ui-state",
             partialize: (state) => ({
                 chartInterval: state.chartInterval,
-                favoriteTokens: Array.from(state.favoriteTokens), // Convert Set to Array for storage
                 holdersTableColumns: state.holdersTableColumns
             }),
             // Custom storage to handle Set conversion
@@ -142,7 +122,6 @@ export const useTokenUIStore = create<TokenUIState>()(
                     return {
                         state: {
                             ...stored.state,
-                            favoriteTokens: new Set(stored.state.favoriteTokens || []),
                             holdersTableColumns: stored.state.holdersTableColumns || {
                                 balance: true,
                                 bought: true,
@@ -158,8 +137,7 @@ export const useTokenUIStore = create<TokenUIState>()(
                 setItem: (name, value) => {
                     const toStore = {
                         state: {
-                            ...value.state,
-                            favoriteTokens: Array.from(value.state.favoriteTokens)
+                            ...value.state
                         }
                     };
                     localStorage.setItem(name, JSON.stringify(toStore));
