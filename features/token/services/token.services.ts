@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/network-requests/api-client";
-import { TOKEN_ENDPOINTS } from "@/lib/constants";
+import { TOKEN_ENDPOINTS, USER_ENDPOINTS } from "@/lib/constants";
 import type {
     TokenDetail,
     ChartData,
@@ -7,7 +7,8 @@ import type {
     TopTradersResponse,
     HoldersResponse,
     SwapPreviewRequest,
-    SwapPreviewResponse
+    SwapPreviewResponse,
+    FavoriteToken
 } from "../types/token.types";
 
 export const tokenApi = {
@@ -92,6 +93,12 @@ export const tokenApi = {
     // Remove from favorites
     removeFavorite: async (address: string): Promise<{ success: boolean }> => {
         const response = await apiClient.delete<{ success: boolean }>(TOKEN_ENDPOINTS.REMOVE_FAVORITE(address));
+        return response;
+    },
+
+    // Get favorites
+    getFavorites: async (): Promise<FavoriteToken[]> => {
+        const response = await apiClient.get<FavoriteToken[]>(USER_ENDPOINTS.FAVORITES);
         return response;
     }
 };

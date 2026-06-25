@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Shield, Star, Copy, Check, TrendingUp, TrendingDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTokenUIStore } from "../stores/token.stores";
-import { useToggleFavorite } from "../hooks/token.hooks";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToggleFavorite, useFavoriteTokens } from "../hooks/token.hooks";
 import { copyToClipboard, formatNumber } from "../utils/token.utils";
 import type { TokenDetail } from "../types/token.types";
 import { toast } from "sonner";
@@ -28,13 +28,23 @@ const PriceChangeIndicator: React.FC<{ value: number }> = ({ value }) => {
 };
 
 export const TokenHeader: React.FC<TokenHeaderProps> = ({ token, aiSummaryButton }) => {
-    const { isFavorite, toggleFavorite } = useTokenUIStore();
+    const { user } = useAuth();
+    const isLoggedIn = !!user;
+    const { data: favoritesData } = useFavoriteTokens();
     const toggleFavoriteMutation = useToggleFavorite();
-    const isTokenFavorite = isFavorite(token.address);
+
+    const isTokenFavorite = useMemo(() => {
+        if (!favoritesData || !Array.isArray(favoritesData)) return false;
+        return favoritesData.some((fav) => fav.token_address === token.address);
+    }, [favoritesData, token.address]);
+
     const [copied, setCopied] = useState(false);
 
     const handleFavoriteClick = () => {
-        toggleFavorite(token.address);
+        if (!isLoggedIn) {
+            toast.info("Sign in to save favourite tokens.");
+            return;
+        }
         toggleFavoriteMutation.mutate({
             address: token.address,
             isFavorite: isTokenFavorite
