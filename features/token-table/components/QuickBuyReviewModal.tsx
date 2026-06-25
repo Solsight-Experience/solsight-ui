@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", max
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
     const [slippageBps, setSlippageBps] = useState(50);
+    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(50);
     const [decimals, setDecimals] = useState(9);
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -40,6 +41,22 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
     const [swapError, setSwapError] = useState<string | null>(null);
     const [signature, setSignature] = useState<string | null>(null);
     const [quote, setQuote] = useState<Awaited<ReturnType<typeof fetchJupiterQuote>> | null>(null);
+    const quoteRequestIdRef = useRef(0);
+
+    useEffect(() => {
+        if (!open) {
+            setDebouncedSlippageBps(slippageBps);
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedSlippageBps(slippageBps);
+        }, 250);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [open, slippageBps]);
 
     useEffect(() => {
         if (!open || !token) return;
@@ -78,6 +95,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         }
 
         const controller = new AbortController();
+        const requestId = quoteRequestIdRef.current + 1;
+        quoteRequestIdRef.current = requestId;
 
         setQuoteLoading(true);
         setQuoteError(null);
@@ -90,7 +109,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                 outputMint: token.id,
                 amount: amountBaseUnits,
                 swapMode: "ExactIn",
-                slippageBps
+                slippageBps: debouncedSlippageBps
             },
             {
                 signal: controller.signal,
@@ -99,21 +118,24 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
             }
         )
             .then((result) => {
+                if (quoteRequestIdRef.current !== requestId) return;
                 setQuote(result);
             })
             .catch((error) => {
                 if ((error as Error).name === "AbortError") return;
+                if (quoteRequestIdRef.current !== requestId) return;
                 setQuote(null);
                 setQuoteError(error instanceof Error ? error.message : "Quote failed.");
             })
             .finally(() => {
+                if (quoteRequestIdRef.current !== requestId) return;
                 setQuoteLoading(false);
             });
 
         return () => {
             controller.abort();
         };
-    }, [open, token, amountSol, slippageBps]);
+    }, [open, token, amountSol, debouncedSlippageBps]);
 
     const receiveAmount = useMemo(() => {
         if (!quote?.outAmount) return "--";
@@ -125,6 +147,17 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return formatDisplay(formatFromBaseUnits(quote.otherAmountThreshold, decimals), decimals);
     }, [quote?.otherAmountThreshold, decimals]);
 
+    const showInitialQuoteLoading = quoteLoading && !quote;
+    const statusMessage = quoteError
+        ? quoteError
+        : swapError
+          ? swapError
+          : signature
+            ? `Swap submitted: ${signature.slice(0, 4)}...${signature.slice(-4)}`
+            : showInitialQuoteLoading
+              ? "Fetching quote..."
+              : null;
+    const statusClassName = quoteError || swapError ? "text-red-500" : signature ? "text-green-500" : "text-muted-foreground";
     const canConfirm = !!quote?.rawQuote && !quoteLoading && !swapLoading && !quoteError && parseInputNumber(amountSol) > 0;
 
     const handleConfirm = async () => {
@@ -217,9 +250,11 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                                 <span>Route</span>
                                 <span>{quote?.routeLabel ?? "--"}</span>
                             </div>
-                            {quote?.routeDetails && quote.routeDetails.length > 0 && (
-                                <div className="text-xs text-muted-foreground">{quote.routeDetails.join(" -> ")}</div>
-                            )}
+                            <div
+                                className={`text-xs text-muted-foreground truncate transition-none ${!(quote?.routeDetails && quote.routeDetails.length > 0) ? "invisible" : ""}`}
+                            >
+                                {quote?.routeDetails?.join(" -> ") ?? "\u00A0"}
+                            </div>
                         </div>
 
                         <div className="rounded-lg border border-border p-3">
@@ -238,14 +273,9 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                             />
                         </div>
 
-                        {quoteLoading && <div className="text-muted-foreground text-xs">Fetching quote...</div>}
-                        {quoteError && <div className="text-red-500 text-xs">{quoteError}</div>}
-                        {swapError && <div className="text-red-500 text-xs">{swapError}</div>}
-                        {signature && (
-                            <div className="text-green-500 text-xs">
-                                Swap submitted: {signature.slice(0, 4)}...{signature.slice(-4)}
-                            </div>
-                        )}
+                        <div className="min-h-[1.25rem]">
+                            <p className={`text-xs truncate ${statusClassName}`}>{statusMessage ?? "\u00A0"}</p>
+                        </div>
                     </div>
                 ) : (
                     <div className="text-sm text-muted-foreground">No token selected.</div>
