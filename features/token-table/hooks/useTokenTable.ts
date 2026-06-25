@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { getCoreRowModel, useReactTable, SortingState, getSortedRowModel } from "@tanstack/react-table";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { TimeFilterValue } from "../components/TimeFilters";
@@ -11,8 +11,7 @@ import type { TokenTableData } from "../config/types";
 import { TokenDiscoveryService, SortBy, TimeFrame } from "../services/token-discovery.service";
 import { transformTokenOverviews } from "../utils/transform";
 import { queryKeys } from "@/lib/react-query-keys";
-import { apiClient } from "@/lib/network-requests/api-client";
-import { USER_ENDPOINTS } from "@/lib/constants";
+import { useFavoriteTokens, useToggleFavorite } from "@/features/token/hooks/token.hooks";
 import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";
 
@@ -58,7 +57,6 @@ export interface TokenTableFilters {
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
-    const queryClient = useQueryClient();
     const [filters, setFilters] = useState<TokenTableFilters>({
         timeFilter: "1m",
         activeTab: "TRENDING",
@@ -74,20 +72,12 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const [sorting, setSorting] = useState<SortingState>([]);
 
     // Fetch favorites from backend — only when logged in
-    const { data: favoritesData } = useQuery({
-        queryKey: queryKeys.user.favorites(),
-        queryFn: async () => {
-            try {
-                const response = await apiClient.get<Array<{ token_address: string }>>(USER_ENDPOINTS.FAVORITES);
-                return response;
-            } catch (error) {
-                console.error("Failed to fetch favorites:", error);
-                return [];
-            }
-        },
-        enabled: isLoggedIn,
-        staleTime: 5 * 60 * 1000 // Cache for 5 minutes
-    });
+    const { data: favoritesData, isPending: isFavoritesLoading } = useFavoriteTokens();
+
+    const favoritesTokens = useMemo(() => {
+        if (!favoritesData || !Array.isArray(favoritesData)) return [];
+        return favoritesData.map((fav) => fav.token).filter((t): t is NonNullable<typeof t> => t !== null);
+    }, [favoritesData]);
 
     // Update local favorites when backend data changes
     useEffect(() => {
@@ -109,47 +99,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     }, [isLoggedIn]);
 
     // Mutation for toggling favorites
-    const toggleFavoriteMutation = useMutation({
-        mutationFn: async ({ tokenId, isFavorite }: { tokenId: string; isFavorite: boolean }) => {
-            if (isFavorite) {
-                // Remove from favorites
-                return apiClient.delete(`${USER_ENDPOINTS.FAVORITES}/${tokenId}`);
-            } else {
-                // Add to favorites
-                return apiClient.post(USER_ENDPOINTS.FAVORITES, { token_address: tokenId });
-            }
-        },
-        onMutate: async ({ tokenId, isFavorite }) => {
-            // Optimistic update
-            await queryClient.cancelQueries({ queryKey: queryKeys.user.favorites() });
-
-            const previousFavorites = queryClient.getQueryData(queryKeys.user.favorites());
-
-            // Update local state immediately
-            setFilters((prev) => {
-                const newFavourites = new Set(prev.favouriteIds);
-                if (isFavorite) {
-                    newFavourites.delete(tokenId);
-                } else {
-                    newFavourites.add(tokenId);
-                }
-                return { ...prev, favouriteIds: newFavourites };
-            });
-
-            return { previousFavorites };
-        },
-        onError: (err, variables, context) => {
-            // Revert on error
-            if (context?.previousFavorites) {
-                queryClient.setQueryData(queryKeys.user.favorites(), context.previousFavorites);
-            }
-            console.error("Failed to toggle favorite:", err);
-        },
-        onSettled: () => {
-            // Refetch to ensure sync with backend
-            queryClient.invalidateQueries({ queryKey: queryKeys.user.favorites() });
-        }
-    });
+    const toggleFavoriteMutation = useToggleFavorite();
 
     // Only expose toggleFavourite when the user is authenticated.
     // Passing undefined to createColumns omits the star column entirely.
@@ -160,7 +110,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 return;
             }
             const isFavorite = filters.favouriteIds.has(tokenId);
-            toggleFavoriteMutation.mutate({ tokenId, isFavorite });
+            toggleFavoriteMutation.mutate({ address: tokenId, isFavorite });
         },
         [isLoggedIn, filters.favouriteIds, toggleFavoriteMutation]
     );
@@ -292,6 +242,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     // Process and filter data
     const data = useMemo(() => {
+        if (filters.activeTab === "FAVOURITES") {
+            return transformTokenOverviews(favoritesTokens);
+        }
+
         // If we have filtered data from API, use that instead of regular data
         if (filters.filteredData && filters.filteredData.length > 0) {
             if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
@@ -314,11 +268,6 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         if (!apiData?.tokens) return [];
 
         let transformedData = transformTokenOverviews(apiData.tokens);
-
-        // Filter by favourites
-        if (filters.activeTab === "FAVOURITES") {
-            transformedData = transformedData.filter((token) => filters.favouriteIds.has(token.id));
-        }
 
         // Filter by category search
         if (filters.categorySearch && filters.activeTab === "CATEGORIES") {
@@ -344,7 +293,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
 
         return transformedData;
-    }, [apiData, filters]);
+    }, [apiData, filters, favoritesTokens]);
 
     const applyFilterResults = useCallback((filterResponse: TokenFilterResponse) => {
         const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
@@ -445,7 +394,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         toggleFavourite,
         resetFilters,
         applyFilterResults,
-        isLoading: isPending,
+        isLoading: filters.activeTab === "FAVOURITES" ? isFavoritesLoading : isPending,
         isFetching,
         isFetchingNextPage: canLoadMore ? isFetchingNextPage : false,
         fetchNextPage,

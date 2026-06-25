@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import { Clock, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,10 +34,17 @@ export default function TokenTable() {
     const { isAuthenticated } = useAuth();
     const [quickBuyToken, setQuickBuyToken] = useState<TokenTableData | null>(null);
     const [quickBuyModalOpen, setQuickBuyModalOpen] = useState(false);
-    const handleQuickBuy = useCallback((token: TokenTableData) => {
-        setQuickBuyToken(token);
-        setQuickBuyModalOpen(true);
-    }, []);
+    const handleQuickBuy = useCallback(
+        (token: TokenTableData) => {
+            if (!isAuthenticated) {
+                toast.info("Please sign in to your Solsight account to buy tokens.");
+                return;
+            }
+            setQuickBuyToken(token);
+            setQuickBuyModalOpen(true);
+        },
+        [isAuthenticated]
+    );
     const {
         table,
         filters,
