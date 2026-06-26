@@ -126,8 +126,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
     return (
         <FilterListContainer>
             <FilterField
-                label="Token Age"
-                placeholder="minutes"
+                label="Token Age (sec)"
                 minValue={formData.age_min_minutes}
                 maxValue={formData.age_max_minutes}
                 onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
@@ -135,7 +134,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 inputFormatter={new DecimalFormatter({ compact: true })}
             />
             <FilterField
-                label="Liquidity"
+                label="Liquidity (USD)"
                 prefix="$"
                 minValue={formData.liquidity_min}
                 maxValue={formData.liquidity_max}
@@ -144,7 +143,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 inputFormatter={new CurrencyFormatter(Locale.US)}
             />
             <FilterField
-                label="Market Cap"
+                label="Market Cap (USD)"
                 prefix="$"
                 minValue={formData.market_cap_min}
                 maxValue={formData.market_cap_max}
@@ -153,7 +152,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 inputFormatter={new CurrencyFormatter()}
             />
             <FilterField
-                label="Volume"
+                label="Volume (USD)"
                 prefix="$"
                 minValue={formData.volume_24h_min}
                 maxValue={formData.volume_24h_max}
@@ -271,9 +270,9 @@ function FilterField({ label, placeholder, prefix, minValue, maxValue, onMinChan
         "text-right rounded-2xl [appearance:textfield] [::-webkit-inner-spin-button]:appearance-none [::-webkit-outer-spin-button]:appearance-none";
 
     return (
-        <div className="grid grid-cols-4 gap-y-1">
-            <Label className="col-span-1 self-center">{label}</Label>
-            <div className="flex items-center col-span-3 gap-2">
+        <div className="grid grid-cols-[2fr_3fr] gap-y-1">
+            <Label className="self-center text-sm">{label}</Label>
+            <div className="flex items-center gap-2">
                 <NumbericInput
                     value={minValue}
                     onChange={(val) => {
@@ -297,7 +296,7 @@ function FilterField({ label, placeholder, prefix, minValue, maxValue, onMinChan
                     className={inputClassName}
                 />
             </div>
-            {hasError && <p className="col-start-2 col-span-3 text-xs text-red-500 mt-0.5">Min must not exceed max</p>}
+            {hasError && <p className="col-start-2 col-span-1 text-xs text-red-500 mt-0.5">Min must not exceed max</p>}
         </div>
     );
 }
