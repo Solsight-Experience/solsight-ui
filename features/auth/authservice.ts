@@ -36,6 +36,21 @@ export interface ResendVerificationResponse {
     message: string;
 }
 
+export interface MessageResponse {
+    message: string;
+}
+
+export interface VerifyResetOtpPayload {
+    email: string;
+    otp: string;
+}
+
+export interface ResetPasswordPayload {
+    email: string;
+    otp: string;
+    password: string;
+}
+
 export interface SolanaLoginPayload {
     walletAddress: string;
     signature: string;
@@ -73,6 +88,15 @@ export async function verifyEmailApi(token: string): Promise<VerifyEmailResponse
 }
 export async function resendVerificationApi(email: string): Promise<ResendVerificationResponse> {
     return apiClient.post<ResendVerificationResponse>("/auth/resend-verification", { email });
+}
+export async function requestPasswordResetOtpApi(email: string): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/forgot-password", { email });
+}
+export async function verifyPasswordResetOtpApi(payload: VerifyResetOtpPayload): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/verify-reset-otp", payload);
+}
+export async function resetPasswordApi(payload: ResetPasswordPayload): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/reset-password", payload);
 }
 export const callOAuthLoginApi = async (token: string) => {
     return apiClient.post<LoginResponse>("/auth/oauth-login", { token, provider: "google" });
