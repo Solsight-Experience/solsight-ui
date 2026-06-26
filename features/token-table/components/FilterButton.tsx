@@ -24,15 +24,15 @@ interface FilterButtonProps {
 
 const getInitialFormData = (): FilterFormData => ({
     age_min_minutes: 0,
-    age_max_minutes: 0,
+    age_max_minutes: null,
     liquidity_min: 0,
-    liquidity_max: 0,
+    liquidity_max: null,
     market_cap_min: 0,
-    market_cap_max: 0,
+    market_cap_max: null,
     volume_24h_min: 0,
-    volume_24h_max: 0,
+    volume_24h_max: null,
     txns_24h_min: 0,
-    txns_24h_max: 0,
+    txns_24h_max: null,
     mint_authority_disabled: false,
     freeze_authority_disabled: false,
     lp_burnt: false,
@@ -46,6 +46,16 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
 
     const tokenFilterMutation = useApplyTokenFilter();
     const isLoading = tokenFilterMutation.isPending;
+
+    const hasValidationErrors = (
+        [
+            [formData.age_min_minutes, formData.age_max_minutes],
+            [formData.liquidity_min, formData.liquidity_max],
+            [formData.market_cap_min, formData.market_cap_max],
+            [formData.volume_24h_min, formData.volume_24h_max],
+            [formData.txns_24h_min, formData.txns_24h_max]
+        ] as [number, number | null][]
+    ).some(([min, max]) => max !== null && min > max);
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -110,7 +120,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Reset
                             </Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={isLoading || hasValidationErrors}>
                                 {isLoading ? "Applying..." : "Apply"}
                             </Button>
                         </div>

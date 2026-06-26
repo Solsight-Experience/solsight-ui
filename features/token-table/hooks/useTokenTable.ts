@@ -247,7 +247,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
 
         // If we have filtered data from API, use that instead of regular data
-        if (filters.filteredData && filters.filteredData.length > 0) {
+        // NOTE: filteredData=[] (empty array) means filter is active but returned no results —
+        // must NOT fall through to apiData, otherwise the full unfiltered list shows instead.
+        if (filters.filteredData !== undefined) {
             if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
                 return [...filters.filteredData].sort((a, b) => {
                     let aValue = 0;
@@ -379,7 +381,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     }, []);
 
     const isFavouritesTab = filters.activeTab === "FAVOURITES";
-    const isFilteredResults = filters.filteredData != null && filters.filteredData.length > 0;
+    const isFilteredResults = filters.filteredData != null; // true even when empty — prevents infinite scroll in filter mode
     const canLoadMore = !isFavouritesTab && !isFilteredResults && hasNextPage;
 
     return {

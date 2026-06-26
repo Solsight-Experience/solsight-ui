@@ -175,6 +175,9 @@ export default function TokenTable() {
         if (!hasData && filters.activeTab === "FAVOURITES") {
             return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
         }
+        if (!hasData && filters.filteredData !== undefined) {
+            return <EmptyState message="No tokens match your filters." />;
+        }
         if (hasData) {
             return (
                 <div

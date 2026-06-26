@@ -18,15 +18,15 @@ enum FilterTabList {
 export interface FilterFormData {
     // Metrics
     age_min_minutes: number;
-    age_max_minutes: number;
+    age_max_minutes: number | null;
     liquidity_min: number;
-    liquidity_max: number;
+    liquidity_max: number | null;
     market_cap_min: number;
-    market_cap_max: number;
+    market_cap_max: number | null;
     volume_24h_min: number;
-    volume_24h_max: number;
+    volume_24h_max: number | null;
     txns_24h_min: number;
-    txns_24h_max: number;
+    txns_24h_max: number | null;
 
     // Audits
     mint_authority_disabled: boolean;
@@ -119,24 +119,23 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
 }
 
 function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormData; onFormChange: (data: Partial<FilterFormData>) => void }) {
-    const handleFieldChange = (field: keyof FilterFormData, value: string | number) => {
+    const handleFieldChange = (field: keyof FilterFormData, value: string | number | null) => {
         onFormChange({ [field]: value });
     };
 
     return (
         <FilterListContainer>
             <FilterField
-                label="Token Age"
-                placeholder="minutes"
+                label="Token Age (sec)"
                 minValue={formData.age_min_minutes}
                 maxValue={formData.age_max_minutes}
                 onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
                 onMaxChange={(value) => handleFieldChange("age_max_minutes", value)}
-                inputFormatter={new DecimalFormatter()}
+                inputFormatter={new DecimalFormatter({ compact: true })}
             />
             <FilterField
-                label="Liquidity"
-                placeholder="$"
+                label="Liquidity (USD)"
+                prefix="$"
                 minValue={formData.liquidity_min}
                 maxValue={formData.liquidity_max}
                 onMinChange={(value) => handleFieldChange("liquidity_min", value)}
@@ -144,8 +143,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 inputFormatter={new CurrencyFormatter(Locale.US)}
             />
             <FilterField
-                label="Market Cap"
-                placeholder="$"
+                label="Market Cap (USD)"
+                prefix="$"
                 minValue={formData.market_cap_min}
                 maxValue={formData.market_cap_max}
                 onMinChange={(value) => handleFieldChange("market_cap_min", value)}
@@ -153,8 +152,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 inputFormatter={new CurrencyFormatter()}
             />
             <FilterField
-                label="Volume"
-                placeholder="$"
+                label="Volume (USD)"
+                prefix="$"
                 minValue={formData.volume_24h_min}
                 maxValue={formData.volume_24h_max}
                 onMinChange={(value) => handleFieldChange("volume_24h_min", value)}
@@ -167,7 +166,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 maxValue={formData.txns_24h_max}
                 onMinChange={(value) => handleFieldChange("txns_24h_min", value)}
                 onMaxChange={(value) => handleFieldChange("txns_24h_max", value)}
-                inputFormatter={new DecimalFormatter()}
+                inputFormatter={new DecimalFormatter({ compact: true })}
             />
         </FilterListContainer>
     );
@@ -257,36 +256,47 @@ function FilterListContainer({ className, children }: { children: ReactNode; cla
 type FilterFieldProps = {
     label: string;
     placeholder?: string;
+    prefix?: string;
     minValue: number;
-    maxValue: number;
-    // numeric inputs can be numbers or formatted strings depending on formatter
+    maxValue: number | null;
     onMinChange: (value: number | string) => void;
-    onMaxChange: (value: number | string) => void;
+    onMaxChange: (value: number | null) => void;
     inputFormatter: INumberFormatter;
 };
 
-function FilterField({ label, placeholder, minValue, maxValue, onMinChange, onMaxChange, inputFormatter }: FilterFieldProps) {
-    const input = (value: number, onChange: (value: number | string) => void) => (
-        <NumbericInput
-            value={value}
-            onChange={(val) => {
-                if (val !== null && !isNaN(val)) {
-                    onChange(val);
-                }
-            }}
-            formatter={inputFormatter}
-            placeholder={placeholder}
-            className="text-right rounded-2xl [appearance:textfield] [::-webkit-inner-spin-button]:appearance-none [::-webkit-outer-spin-button]:appearance-none"
-        />
-    );
+function FilterField({ label, placeholder, prefix, minValue, maxValue, onMinChange, onMaxChange, inputFormatter }: FilterFieldProps) {
+    const hasError = maxValue !== null && minValue > maxValue;
+    const inputClassName =
+        "text-right rounded-2xl [appearance:textfield] [::-webkit-inner-spin-button]:appearance-none [::-webkit-outer-spin-button]:appearance-none";
+
     return (
-        <div className="grid grid-cols-4">
-            <Label className="col-span-1">{label}</Label>
-            <div className="flex items-center col-span-3 gap-2">
-                {input(minValue, onMinChange)}
+        <div className="grid grid-cols-[2fr_3fr] gap-y-1">
+            <Label className="self-center text-sm">{label}</Label>
+            <div className="flex items-center gap-2">
+                <NumbericInput
+                    value={minValue}
+                    onChange={(val) => {
+                        if (val !== null && !isNaN(val)) onMinChange(val);
+                    }}
+                    formatter={inputFormatter}
+                    placeholder={placeholder}
+                    prefix={prefix}
+                    className={inputClassName}
+                />
                 <span>~</span>
-                {input(maxValue, onMaxChange)}
+                <NumbericInput
+                    value={maxValue}
+                    onChange={(val) => onMaxChange(val !== null && !isNaN(val) ? val : null)}
+                    onFocus={() => {
+                        if (maxValue === null) onMaxChange(0);
+                    }}
+                    formatter={inputFormatter}
+                    placeholder="∞"
+                    prefix={prefix}
+                    className={inputClassName}
+                />
             </div>
+            {hasError && <p className="col-start-2 col-span-1 text-xs text-red-500 mt-0.5">Min must not exceed max</p>}
         </div>
     );
 }
