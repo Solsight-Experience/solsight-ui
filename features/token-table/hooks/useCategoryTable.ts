@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCoreRowModel, getSortedRowModel, getPaginationRowModel, SortingState, PaginationState, useReactTable } from "@tanstack/react-table";
 import { categoryColumns } from "../config/categoryColumns";
@@ -40,54 +40,64 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         pageSize: 7
     });
 
+    // Debounce search query 300ms trước khi gọi API
+    const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 300);
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, [searchQuery]);
+
+    // Reset pagination khi search thay đổi
+    useEffect(() => {
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    }, [debouncedSearch]);
+
     // Fetch categories from API
     const {
         data: apiData,
         isLoading,
         error
     } = useQuery({
-        queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex, pagination.pageSize],
+        queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex, pagination.pageSize, debouncedSearch],
         queryFn: () =>
             TokenDiscoveryService.getCategories({
                 limit: pagination.pageSize,
-                offset: pagination.pageIndex * pagination.pageSize
+                offset: pagination.pageIndex * pagination.pageSize,
+                name: debouncedSearch || undefined
             }),
-        staleTime: 30000, // 30 seconds - shorter to ensure fresher data
-        refetchInterval: 300000 // Refetch every 5 minutes
+        staleTime: 30000,
+        refetchInterval: 300000
     });
-
-    // Reset pagination when searching
-    useEffect(() => {
-        if (searchQuery) {
-            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-        }
-    }, [searchQuery]);
 
     // Prefetch next page
     useEffect(() => {
-        // Assume has more if we got a full page of results
         const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
         if (apiData && rawArray.length >= pagination.pageSize) {
             queryClient.prefetchQuery({
-                queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex + 1, pagination.pageSize],
+                queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex + 1, pagination.pageSize, debouncedSearch],
                 queryFn: () =>
                     TokenDiscoveryService.getCategories({
                         limit: pagination.pageSize,
-                        offset: (pagination.pageIndex + 1) * pagination.pageSize
+                        offset: (pagination.pageIndex + 1) * pagination.pageSize,
+                        name: debouncedSearch || undefined
                     })
             });
         }
-    }, [apiData, pagination.pageIndex, pagination.pageSize, queryClient]);
+    }, [apiData, pagination.pageIndex, pagination.pageSize, debouncedSearch, queryClient]);
 
-    // Filter categories based on search query
-    const data = useMemo(() => {
-        // Handle array response directly or inside an object
+    const data = useMemo((): CategoryOverview[] => {
         const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
 
         if (!rawArray || rawArray.length === 0) return [];
 
-        // Map API response to CategoryOverview format
-        const mappedCategories: CategoryOverview[] = rawArray.map((cat: CategoryApiItem) => ({
+        return rawArray.map((cat: CategoryApiItem) => ({
             id: cat.id || "",
             name: cat.name || "",
             slug: cat.id || cat.slug || "",
@@ -96,14 +106,10 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
             market_cap_change_24h: cat.market_cap_change_24h ?? 0,
             volume_24h: cat.volume_24h ?? cat.volume ?? 0,
             top_3_coins_id: cat.top_3_coins_id || [],
-            top_3_coins: cat.top_3_coins || cat.top_tokens || [], // Contains image URLs
+            top_3_coins: cat.top_3_coins || cat.top_tokens || [],
             updated_at: cat.updated_at || ""
         }));
-
-        if (!searchQuery) return mappedCategories;
-
-        return mappedCategories.filter((category: CategoryOverview) => category.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [apiData, searchQuery]);
+    }, [apiData]);
 
     const pageCount = useMemo(() => {
         const total = (apiData as CategoryApiResponse)?.total || -1;
