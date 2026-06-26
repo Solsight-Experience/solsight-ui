@@ -4,6 +4,7 @@ import { getCoreRowModel, getSortedRowModel, getPaginationRowModel, SortingState
 import { categoryColumns } from "../config/categoryColumns";
 import { TokenDiscoveryService } from "../services/token-discovery.service";
 import { queryKeys } from "@/lib/react-query-keys";
+import { CategoryOverview } from "../config/types";
 
 interface CategoryApiItem {
     id?: string;
@@ -91,7 +92,7 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         }
     }, [apiData, pagination.pageIndex, pagination.pageSize, debouncedSearch, queryClient]);
 
-    const data = useMemo(() => {
+    const data = useMemo((): CategoryOverview[] => {
         const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
 
         if (!rawArray || rawArray.length === 0) return [];
