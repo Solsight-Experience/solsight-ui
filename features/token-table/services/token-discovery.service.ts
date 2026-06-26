@@ -73,11 +73,12 @@ export class TokenDiscoveryService {
      * GET /discovery/categories
      * Get all categories
      */
-    static async getCategories(params?: { limit?: number; offset?: number }): Promise<CategoriesResponse> {
+    static async getCategories(params?: { limit?: number; offset?: number; name?: string }): Promise<CategoriesResponse> {
         return apiClient.get<CategoriesResponse>("/discovery/categories", {
             params: {
                 limit: params?.limit || 50,
-                offset: params?.offset || 0
+                offset: params?.offset || 0,
+                ...(params?.name ? { name: params.name } : {})
             }
         });
     }
