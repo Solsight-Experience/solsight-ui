@@ -36,16 +36,45 @@ export interface ResendVerificationResponse {
     message: string;
 }
 
+export interface MessageResponse {
+    message: string;
+}
+
+export interface VerifyResetOtpPayload {
+    email: string;
+    otp: string;
+}
+
+export interface ResetPasswordPayload {
+    email: string;
+    otp: string;
+    password: string;
+}
+
 export interface SolanaLoginPayload {
     walletAddress: string;
     signature: string;
     walletIcon: string;
+    nonce?: string;
+    message?: string;
 }
 
 export interface SolanaWalletLoginPayload {
     walletAddress: string;
     walletIcon: string;
     signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+}
+
+export interface SolanaSignInPayload {
+    nonce: string;
+    message: string;
+    messageBytes: Uint8Array;
+}
+
+export interface SolanaSignedMessagePayload {
+    nonce: string;
+    message: string;
+    signature: string;
 }
 
 export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
@@ -60,6 +89,15 @@ export async function verifyEmailApi(token: string): Promise<VerifyEmailResponse
 export async function resendVerificationApi(email: string): Promise<ResendVerificationResponse> {
     return apiClient.post<ResendVerificationResponse>("/auth/resend-verification", { email });
 }
+export async function requestPasswordResetOtpApi(email: string): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/forgot-password", { email });
+}
+export async function verifyPasswordResetOtpApi(payload: VerifyResetOtpPayload): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/verify-reset-otp", payload);
+}
+export async function resetPasswordApi(payload: ResetPasswordPayload): Promise<MessageResponse> {
+    return apiClient.post<MessageResponse>("/auth/reset-password", payload);
+}
 export const callOAuthLoginApi = async (token: string) => {
     return apiClient.post<LoginResponse>("/auth/oauth-login", { token, provider: "google" });
 };
@@ -69,27 +107,54 @@ export async function logout(): Promise<boolean> {
     return true;
 }
 
-export async function getSolanaNonceMessage(walletAddress: string): Promise<Uint8Array> {
+export function buildSolanaSignInMessage(nonce: string): string {
+    return ["Sign in to SolSight", "", `Nonce: ${nonce}`, "", "By signing, you agree to SolSight's Terms of Use & Privacy Policy"].join("\n");
+}
+
+export async function getSolanaSignInPayload(walletAddress: string): Promise<SolanaSignInPayload> {
     const { nonce } = await apiClient.get<{ nonce: string }>("/auth/solana/nonce", {
         params: { walletAddress }
     });
 
-    return new TextEncoder().encode(nonce);
+    const message = buildSolanaSignInMessage(nonce);
+    return {
+        nonce,
+        message,
+        messageBytes: new TextEncoder().encode(message)
+    };
 }
 
-export async function signSolanaNonce(walletAddress: string, signMessage: (message: Uint8Array) => Promise<Uint8Array>): Promise<string> {
-    const messageBytes = await getSolanaNonceMessage(walletAddress);
+export async function getSolanaNonceMessage(walletAddress: string): Promise<Uint8Array> {
+    const { messageBytes } = await getSolanaSignInPayload(walletAddress);
+    return messageBytes;
+}
+
+export async function signSolanaNonce(walletAddress: string, signMessage: (message: Uint8Array) => Promise<Uint8Array>): Promise<SolanaSignedMessagePayload> {
+    const { nonce, message, messageBytes } = await getSolanaSignInPayload(walletAddress);
     const signature = await signMessage(messageBytes);
 
-    return bs58.encode(signature);
+    return {
+        nonce,
+        message,
+        signature: bs58.encode(signature)
+    };
 }
 
 export async function loginWithSolanaApi(payload: SolanaLoginPayload | SolanaWalletLoginPayload): Promise<LoginResponse> {
-    const signature = "signature" in payload ? payload.signature : await signSolanaNonce(payload.walletAddress, payload.signMessage);
+    const signedPayload =
+        "signature" in payload
+            ? {
+                  signature: payload.signature,
+                  nonce: payload.nonce,
+                  message: payload.message
+              }
+            : await signSolanaNonce(payload.walletAddress, payload.signMessage);
 
     return apiClient.post<LoginResponse>("/auth/solana/login", {
         walletAddress: payload.walletAddress,
-        signature,
-        walletIcon: payload.walletIcon
+        signature: signedPayload.signature,
+        walletIcon: payload.walletIcon,
+        nonce: signedPayload.nonce,
+        message: signedPayload.message
     });
 }
