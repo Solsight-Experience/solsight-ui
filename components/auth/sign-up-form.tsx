@@ -300,11 +300,27 @@ export default function SignUpForm({ onToggle }: SignUpFormProps) {
                     </div>
                     <span className="text-white/40 text-xs leading-relaxed group-hover:text-white/60 transition-colors">
                         I agree to the{" "}
-                        <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">
+                        <a
+                            href="#terms"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById("terms")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                window.history.replaceState(null, "", "#terms");
+                            }}
+                            className="text-purple-400 hover:text-purple-300 transition-colors"
+                        >
                             Terms of Service
                         </a>{" "}
                         and{" "}
-                        <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">
+                        <a
+                            href="#privacy"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById("privacy")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                window.history.replaceState(null, "", "#privacy");
+                            }}
+                            className="text-purple-400 hover:text-purple-300 transition-colors"
+                        >
                             Privacy Policy
                         </a>
                         . DeFi access is provided as-is; trade responsibly.
