@@ -3,27 +3,9 @@
 import { useState, memo, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { SearchDialog } from "@/components/search/SearchDialog";
-import {
-    SearchIcon,
-    ChevronDown,
-    Bell,
-    BarChart2,
-    Wallet,
-    Settings,
-    LogOut,
-    TrendingUp,
-    Zap,
-    LayoutGrid,
-    Search,
-    Sun,
-    Moon,
-    ShieldCheck,
-    Menu,
-    X
-} from "lucide-react";
+import { SearchIcon, ChevronDown, Bell, BarChart2, Wallet, Settings, LogOut, TrendingUp, Zap, LayoutGrid, Search, ShieldCheck, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LogoutConfirmDialog from "../auth/LogoutConfirmDialog";
 import DisconnectWalletsConfirmDialog from "../auth/DisconnectWalletsConfirmDialog";
@@ -31,7 +13,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import ClusterToggle from "@/components/layout/cluster-toggle";
 
 type AuthUser = NonNullable<ReturnType<typeof useAuth>["user"]>;
 
@@ -63,7 +44,6 @@ function useWindowWidth() {
 export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
-    const { theme, setTheme } = useTheme();
     const isOnline = useOnlineStatus();
 
     const [searchOpen, setSearchOpen] = useState(false);
@@ -150,14 +130,8 @@ export default function Header() {
                     <div className="flex items-center gap-0">
                         <HeaderIcon />
 
-                        {!isSidebarMode && (
-                            <div className="ml-4">
-                                <ClusterToggle />
-                            </div>
-                        )}
-
                         {/* Divider — hidden in sidebar mode */}
-                        {!isSidebarMode && <div className="w-px h-5 bg-white/10 mx-6" />}
+                        {!isSidebarMode && <div className="w-px h-5 bg-white/10 mx-6 ml-4" />}
 
                         {/* Nav links — hidden in sidebar mode, shown inline otherwise */}
                         {!isSidebarMode && <NavLinks iconsOnly={isCompactMode} />}
@@ -170,18 +144,6 @@ export default function Header() {
 
                         {isAuthenticated && (
                             <>
-                                {/* Theme toggle */}
-                                <button
-                                    aria-label="Toggle theme"
-                                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                    className="relative flex items-center justify-center w-[34px] h-[34px]
-                                       bg-white/[0.04] border border-white/[0.09] rounded-lg
-                                       text-white/45 cursor-pointer transition-all duration-150
-                                       hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15"
-                                >
-                                    {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-                                </button>
-
                                 {/* Notification Bell — hide in sidebar mode (shown in sidebar) */}
                                 {!isSidebarMode && (
                                     <Popover open={isPanelOpen} onOpenChange={setPanelOpen}>

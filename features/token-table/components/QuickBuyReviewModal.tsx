@@ -15,6 +15,7 @@ import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
 import type { VersionedTransaction } from "@solana/web3.js";
+import useSettingsStore from "@/stores/settings.store";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -32,8 +33,10 @@ const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", max
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { connectWallet, isConnecting, connected, publicKey } = useWallet();
-    const [slippageBps, setSlippageBps] = useState(50);
-    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(50);
+    const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
+    const setDefaultSlippageBps = useSettingsStore((state) => state.setDefaultSlippageBps);
+    const [slippageBps, setSlippageBps] = useState(defaultSlippageBps);
+    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(defaultSlippageBps);
     const [decimals, setDecimals] = useState(9);
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -45,7 +48,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
 
     useEffect(() => {
         if (!open) {
-            setDebouncedSlippageBps(slippageBps);
+            setSlippageBps(defaultSlippageBps);
+            setDebouncedSlippageBps(defaultSlippageBps);
             return;
         }
 
@@ -56,7 +60,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [open, slippageBps]);
+    }, [defaultSlippageBps, open, slippageBps]);
 
     useEffect(() => {
         if (!open || !token) return;
@@ -269,7 +273,11 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                                 step={10}
                                 showStepper
                                 value={slippageBps}
-                                onChange={(value) => setSlippageBps(value ?? 0)}
+                                onChange={(value) => {
+                                    const nextValue = value ?? 1;
+                                    setSlippageBps(nextValue);
+                                    setDefaultSlippageBps(nextValue);
+                                }}
                             />
                         </div>
 

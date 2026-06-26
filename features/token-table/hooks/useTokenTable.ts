@@ -14,6 +14,7 @@ import { queryKeys } from "@/lib/react-query-keys";
 import { useFavoriteTokens, useToggleFavorite } from "@/features/token/hooks/token.hooks";
 import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";
+import useSettingsStore from "@/stores/settings.store";
 
 const PAGE_SIZE = 20;
 
@@ -57,17 +58,19 @@ export interface TokenTableFilters {
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
-    const [filters, setFilters] = useState<TokenTableFilters>({
+    const defaultQuickBuyAmount = useSettingsStore((state) => state.defaultQuickBuyAmount);
+    const setDefaultQuickBuyAmount = useSettingsStore((state) => state.setDefaultQuickBuyAmount);
+    const [filters, setFilters] = useState<TokenTableFilters>(() => ({
         timeFilter: "1m",
         activeTab: "TRENDING",
-        quickBuyAmount: "0.1",
+        quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
         categorySearch: "",
         selectedCategorySlug: null,
         sortOption: "volumes",
         sortDirection: "none",
         favouriteIds: new Set(),
         filteredData: undefined
-    });
+    }));
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -97,6 +100,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             }));
         }
     }, [isLoggedIn]);
+
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, quickBuyAmount: defaultQuickBuyAmount }));
+    }, [defaultQuickBuyAmount]);
 
     // Mutation for toggling favorites
     const toggleFavoriteMutation = useToggleFavorite();
@@ -330,9 +337,13 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({ ...prev, selectedCategorySlug }));
     }, []);
 
-    const setQuickBuyAmount = useCallback((quickBuyAmount: string) => {
-        setFilters((prev) => ({ ...prev, quickBuyAmount }));
-    }, []);
+    const setQuickBuyAmount = useCallback(
+        (quickBuyAmount: string) => {
+            setDefaultQuickBuyAmount(quickBuyAmount);
+            setFilters((prev) => ({ ...prev, quickBuyAmount }));
+        },
+        [setDefaultQuickBuyAmount]
+    );
 
     const setCategorySearch = useCallback((categorySearch: string) => {
         setFilters((prev) => ({ ...prev, categorySearch }));
@@ -366,7 +377,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({
             timeFilter: "1m",
             activeTab: "TRENDING",
-            quickBuyAmount: "0.1",
+            quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
             categorySearch: "",
             selectedCategorySlug: null,
             sortOption: "volumes",

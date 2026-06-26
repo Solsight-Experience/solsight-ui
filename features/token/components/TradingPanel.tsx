@@ -34,6 +34,7 @@ import { AdvancedStrategySection } from "@/features/swap-config/advanced-strateg
 import type { TokenPair } from "@/features/swap-config/core/types";
 import { LimitOrderService } from "@/features/limit-orders";
 import useClusterStore from "@/stores/cluster.store";
+import useSettingsStore from "@/stores/settings.store";
 import { VersionedTransaction } from "@solana/web3.js";
 
 interface TradingPanelProps {
@@ -382,9 +383,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }, [payMint, receiveMint, payToken, receiveToken, payDecimals, receiveDecimals, payTokenLogo, receiveTokenLogo]);
 
     const { data: swapInfo } = useSwapInfo({ inputMint: payMint, outputMint: receiveMint });
-    const swapConfigCtx = useSwapConfigCtx({ swapInfo, pair: swapPair });
+    const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
+    const swapConfigCtx = useSwapConfigCtx({ swapInfo, pair: swapPair, defaultSlippageBps });
     const swapConfigFragment = useMemo(() => serializeAllSwapConfig(swapConfigStates, swapConfigCtx), [swapConfigStates, swapConfigCtx]);
-    const slippageBps = swapConfigFragment.slippageBps ?? 50;
+    const slippageBps = swapConfigFragment.slippageBps ?? defaultSlippageBps;
     const gaslessFeeToken = swapConfigFragment.gaslessFeeToken;
 
     const formattedQuote = useMemo(() => {
@@ -1092,6 +1094,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     inputMint={payMint || undefined}
                     outputMint={receiveMint || undefined}
                     pair={swapPair}
+                    defaultSlippageBps={defaultSlippageBps}
                 />
             </div>
 
