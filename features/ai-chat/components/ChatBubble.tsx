@@ -99,7 +99,6 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
                                         content: message.content,
                                         data: message.data
                                     }}
-                                    timestamp={message.timestamp}
                                 />
                             </div>
                         )}
