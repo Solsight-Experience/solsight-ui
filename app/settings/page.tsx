@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
-import { Bell, Check, Monitor, Moon, Palette, RadioTower, Settings, Shield, SlidersHorizontal, Sun } from "lucide-react";
+import { Bell, Check, Monitor, Moon, Palette, RadioTower, Settings, SlidersHorizontal, Sun } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { NumbericInput } from "@/components/ui/NumbericInput";
@@ -12,7 +12,7 @@ import useSettingsStore, { DEFAULT_QUICK_BUY_AMOUNT, DEFAULT_SLIPPAGE_BPS } from
 
 type ThemeMode = "light" | "dark" | "system";
 type AccentTheme = "solsight" | "ocean" | "mono";
-type SettingsTab = "network" | "appearance" | "preferences" | "security";
+type SettingsTab = "network" | "appearance" | "preferences";
 
 const NETWORK_OPTIONS: Array<{
     value: Cluster;
@@ -208,10 +208,6 @@ export default function SettingsPage() {
                             <SlidersHorizontal size={14} />
                             Preferences
                         </TabsTrigger>
-                        <TabsTrigger value="security" onClick={() => setActiveTab("security")} className="cursor-pointer">
-                            <Shield size={14} />
-                            Security
-                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="network" className="space-y-4">
@@ -392,29 +388,6 @@ export default function SettingsPage() {
                                         Coming soon: remember interval, overlays, and chart layout.
                                     </p>
                                 </div>
-                            </div>
-                        </section>
-                    </TabsContent>
-
-                    <TabsContent value="security" className="space-y-4">
-                        <section className="rounded-lg border border-[var(--border-faint)] bg-[var(--surface-glass)] p-5 backdrop-blur-xl">
-                            <SectionHeader
-                                icon={<Shield size={17} />}
-                                title="Security"
-                                description="Review wallet and session settings connected to this browser."
-                            />
-
-                            <div className="mt-5 grid gap-3 md:grid-cols-2">
-                                {[
-                                    ["Connected wallets", "Manage wallet connections from the profile and portfolio flows."],
-                                    ["Session", "Sign out from the account menu when you are done on this machine."],
-                                    ["Paymaster", "Gasless support depends on server-side Kora configuration."]
-                                ].map(([title, description]) => (
-                                    <div key={title} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
-                                        <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{title}</h3>
-                                        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">{description}</p>
-                                    </div>
-                                ))}
                             </div>
                         </section>
                     </TabsContent>
