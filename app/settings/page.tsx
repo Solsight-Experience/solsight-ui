@@ -126,7 +126,7 @@ function OptionButton({
             aria-label={ariaLabel}
             aria-pressed={active}
             onClick={onClick}
-            className={`group flex min-h-[112px] w-full flex-col justify-between rounded-lg border p-4 text-left transition-all duration-150 ${
+            className={`group flex min-h-[112px] w-full cursor-pointer flex-col justify-between rounded-lg border p-4 text-left transition-all duration-150 ${
                 active
                     ? "border-violet-500/50 bg-violet-500/10 shadow-[0_0_0_1px_rgba(139,92,246,0.16)]"
                     : "border-[var(--border-subtle)] bg-[var(--surface-card)] hover:border-[var(--border-default)] hover:bg-[var(--surface-btn)]"
@@ -196,19 +196,19 @@ export default function SettingsPage() {
 
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)} className="gap-5">
                     <TabsList className="max-w-full overflow-x-auto border-[var(--border-faint)]">
-                        <TabsTrigger value="network" onClick={() => setActiveTab("network")}>
+                        <TabsTrigger value="network" onClick={() => setActiveTab("network")} className="cursor-pointer">
                             <RadioTower size={14} />
                             Network
                         </TabsTrigger>
-                        <TabsTrigger value="appearance" onClick={() => setActiveTab("appearance")}>
+                        <TabsTrigger value="appearance" onClick={() => setActiveTab("appearance")} className="cursor-pointer">
                             <Palette size={14} />
                             Appearance
                         </TabsTrigger>
-                        <TabsTrigger value="preferences" onClick={() => setActiveTab("preferences")}>
+                        <TabsTrigger value="preferences" onClick={() => setActiveTab("preferences")} className="cursor-pointer">
                             <SlidersHorizontal size={14} />
                             Preferences
                         </TabsTrigger>
-                        <TabsTrigger value="security" onClick={() => setActiveTab("security")}>
+                        <TabsTrigger value="security" onClick={() => setActiveTab("security")} className="cursor-pointer">
                             <Shield size={14} />
                             Security
                         </TabsTrigger>
@@ -330,7 +330,10 @@ export default function SettingsPage() {
 
                                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="settings-quick-buy-amount" className="text-[12px] font-semibold text-[var(--text-muted)]">
+                                            <Label
+                                                htmlFor="settings-quick-buy-amount"
+                                                className="cursor-pointer text-[12px] font-semibold text-[var(--text-muted)]"
+                                            >
                                                 Quick buy amount (SOL)
                                             </Label>
                                             <NumbericInput
@@ -347,7 +350,10 @@ export default function SettingsPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="settings-default-slippage" className="text-[12px] font-semibold text-[var(--text-muted)]">
+                                            <Label
+                                                htmlFor="settings-default-slippage"
+                                                className="cursor-pointer text-[12px] font-semibold text-[var(--text-muted)]"
+                                            >
                                                 Default slippage (bps)
                                             </Label>
                                             <NumbericInput
@@ -367,7 +373,7 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         onClick={resetTradingDefaults}
-                                        className="mt-4 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-btn)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--text-primary)]"
+                                        className="mt-4 cursor-pointer rounded-md border border-[var(--border-subtle)] bg-[var(--surface-btn)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--text-primary)]"
                                     >
                                         Reset to {DEFAULT_QUICK_BUY_AMOUNT} SOL / {DEFAULT_SLIPPAGE_BPS} bps
                                     </button>
