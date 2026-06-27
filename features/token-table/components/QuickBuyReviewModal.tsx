@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -209,14 +209,10 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                         <div className="rounded-lg border border-border p-3">
                             <div className="text-muted-foreground mb-2">Token</div>
                             <div className="flex items-center gap-2">
-                                <Image
-                                    src={token.token.iconUrl || "/icons/sol.png"}
-                                    alt={token.token.ticker}
-                                    width={20}
-                                    height={20}
-                                    className="h-5 w-5 rounded-full"
-                                    unoptimized
-                                />
+                                <Avatar className="h-5 w-5">
+                                    <AvatarImage src={token.token.iconUrl} alt="" />
+                                    <AvatarFallback className="text-[9px]">{token.token.ticker.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
                                 <span className="font-semibold">{token.token.ticker}</span>
                                 <span className="text-muted-foreground">{token.token.name}</span>
                             </div>
