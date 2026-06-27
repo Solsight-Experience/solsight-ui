@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { createIndexedDBStorage } from "@/lib/indexeddb-storage";
 
 export const DEFAULT_QUICK_BUY_AMOUNT = "0.1";
 export const DEFAULT_SLIPPAGE_BPS = 50;
@@ -12,13 +13,7 @@ interface SettingsState {
     resetTradingDefaults: () => void;
 }
 
-const noopStorage: StateStorage = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {}
-};
-
-const storage = createJSONStorage<SettingsState>(() => (typeof window === "undefined" ? noopStorage : localStorage));
+const storage = createJSONStorage<SettingsState>(() => createIndexedDBStorage());
 
 function clampSlippageBps(bps: number): number {
     if (!Number.isFinite(bps)) return DEFAULT_SLIPPAGE_BPS;
