@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { TrendingUp, Zap, Wallet, Loader2, PlugZap, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useStakingWallet } from "../hooks/useStakingWallet";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { useSolBalance } from "../hooks/useDevnetSolBalance";
 import { StakeModal } from "./StakeModal";
 import { UnstakeModal } from "./UnstakeModal";
@@ -18,8 +18,18 @@ import { useIFStaking } from "../hooks/useIFStaking";
 export function StakingPanel() {
     const { resolvedTheme } = useTheme();
     const networkLabel = IF_CONFIG.label;
-    const { connected, publicKey, isConnecting, connect } = useStakingWallet();
-    const { data: solBalanceData, refetch: refetchBalance } = useSolBalance(publicKey ?? undefined);
+    const {
+        connected,
+        publicKey,
+        actionablePublicKey,
+        isReadyForUserAction,
+        isWalletLinkedToUser,
+        isConnecting,
+        connectWallet,
+        signTransaction,
+        ensureWalletReadyForUserAction
+    } = useActionableWallet();
+    const { data: solBalanceData, refetch: refetchBalance } = useSolBalance(actionablePublicKey ?? undefined);
     const queryClient = useQueryClient();
 
     const [stakeOpen, setStakeOpen] = useState(false);
@@ -27,17 +37,23 @@ export function StakingPanel() {
 
     const solBalance = solBalanceData ?? 0;
 
-    const { isLoading: clientLoading, isReady: clientReady, error: programError } = useIFProgram(connected, publicKey);
-    const { data: ifPosition, isLoading: positionLoading, refetch: refetchPosition } = useIFPositions(connected, publicKey);
+    const { isLoading: clientLoading, isReady: clientReady, error: programError } = useIFProgram(isReadyForUserAction, actionablePublicKey);
+    const { data: ifPosition, isLoading: positionLoading, refetch: refetchPosition } = useIFPositions(isReadyForUserAction, actionablePublicKey);
 
     const refetchAll = useCallback(() => {
         refetchPosition();
         refetchBalance();
         // Invalidate all pages of stake history so the list updates immediately
-        queryClient.invalidateQueries({ queryKey: ["if-stake-history", publicKey] });
-    }, [publicKey, queryClient, refetchBalance, refetchPosition]);
+        queryClient.invalidateQueries({ queryKey: ["if-stake-history", actionablePublicKey] });
+    }, [actionablePublicKey, queryClient, refetchBalance, refetchPosition]);
 
-    const { cancelRequestState, handleCancelRequest } = useIFStaking(connected, publicKey, refetchAll);
+    const { cancelRequestState, handleCancelRequest } = useIFStaking(
+        isReadyForUserAction,
+        actionablePublicKey,
+        signTransaction,
+        ensureWalletReadyForUserAction,
+        refetchAll
+    );
     const cancelLoading = cancelRequestState.status === "signing" || cancelRequestState.status === "confirming";
 
     const stakedSol = ifPosition?.estimatedSol ?? 0;
@@ -91,16 +107,22 @@ export function StakingPanel() {
                 <div className="h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent dark:via-white/10" />
 
                 {/* Program loading indicator */}
-                {connected && clientLoading && (
+                {isReadyForUserAction && clientLoading && (
                     <div className="flex items-center gap-2.5 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-4 py-3 text-[12px] text-purple-700 dark:bg-purple-500/5 dark:text-purple-300">
                         <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
                         <span>Connecting to {networkLabel}...</span>
                     </div>
                 )}
-                {connected && programError && !clientLoading && (
+                {isReadyForUserAction && programError && !clientLoading && (
                     <div className="flex items-center gap-2.5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[12px] text-red-700 dark:bg-red-500/5 dark:text-red-300">
                         <span className="flex-shrink-0">⚠️</span>
                         <span className="flex-1">{programError}</span>
+                    </div>
+                )}
+                {connected && !isWalletLinkedToUser && publicKey && (
+                    <div className="flex items-center gap-2.5 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[12px] text-amber-700 dark:bg-amber-500/5 dark:text-amber-300">
+                        <span className="flex-shrink-0">⚠️</span>
+                        <span className="flex-1">This wallet is not connected to your account yet. Connect it before viewing staking balances or staking.</span>
                     </div>
                 )}
 
@@ -163,18 +185,18 @@ export function StakingPanel() {
                 </div>
 
                 {/* Action buttons */}
-                {!connected ? (
+                {!isReadyForUserAction ? (
                     <button
                         className="w-full cursor-pointer rounded-2xl py-4 text-[15px] font-bold tracking-wide text-white transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                         style={{
                             background: "linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)",
                             boxShadow: "0 4px 24px rgba(139,92,246,0.35)"
                         }}
-                        onClick={connect}
+                        onClick={() => connectWallet()}
                         disabled={isConnecting}
                     >
                         <Wallet className="inline h-4 w-4 mr-2 -mt-0.5" />
-                        {isConnecting ? "Connecting..." : "Connect Wallet"}
+                        {isConnecting ? "Connecting..." : connected && !isWalletLinkedToUser ? "Connect Wallet To Account" : "Connect Wallet"}
                     </button>
                 ) : (
                     <div className="flex gap-3">
@@ -218,18 +240,22 @@ export function StakingPanel() {
             <StakeModal
                 open={stakeOpen}
                 onClose={() => setStakeOpen(false)}
-                walletPubkey={publicKey}
+                walletPubkey={actionablePublicKey}
                 solBalance={solBalance}
-                connected={connected}
+                connected={isReadyForUserAction}
+                signTransaction={signTransaction}
+                ensureWalletReadyForUserAction={ensureWalletReadyForUserAction}
                 onSuccess={refetchAll}
             />
             <UnstakeModal
                 open={unstakeOpen}
                 onClose={() => setUnstakeOpen(false)}
-                walletPubkey={publicKey}
+                walletPubkey={actionablePublicKey}
                 ifPosition={ifPosition ?? null}
                 isLoadingPosition={positionLoading}
-                connected={connected}
+                connected={isReadyForUserAction}
+                signTransaction={signTransaction}
+                ensureWalletReadyForUserAction={ensureWalletReadyForUserAction}
                 onSuccess={refetchAll}
             />
         </div>

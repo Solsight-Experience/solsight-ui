@@ -1,32 +1,150 @@
 "use client";
 
+import { useWallet as useSolanaWallet } from "@solana/wallet-adapter-react";
+import type { Transaction, VersionedTransaction } from "@solana/web3.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { WalletService } from "../services/wallet.service";
-import { phantomWallet } from "@/lib/wallet";
 import { getErrorMessage } from "@/lib/error-utils";
 import { toast } from "sonner";
 
-export function useWallet() {
-    const [isConnecting, setIsConnecting] = useState(false);
-    const queryClient = useQueryClient();
+type NativeSolanaProvider = {
+    isPhantom?: boolean;
+    isConnected?: boolean;
+    publicKey?: { toBase58?: () => string; toString?: () => string } | null;
+    connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toBase58?: () => string; toString?: () => string } }>;
+    disconnect?: () => Promise<void>;
+    signTransaction?: <T extends Transaction | VersionedTransaction>(transaction: T) => Promise<T>;
+};
 
-    // Connect to Phantom wallet and register with backend
+function getNativeSolanaProvider(): NativeSolanaProvider | null {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    const walletWindow = window as Window & {
+        phantom?: { solana?: NativeSolanaProvider };
+        solana?: NativeSolanaProvider;
+    };
+
+    return walletWindow.phantom?.solana ?? walletWindow.solana ?? null;
+}
+
+function normalizeWalletIcon(walletName?: string) {
+    const normalized = walletName?.toLowerCase();
+    return normalized === "phantom" ? "phantom" : "custom";
+}
+
+function getAdapterPublicKey(wallet: ReturnType<typeof useSolanaWallet>["wallet"], fallback: string | null) {
+    const adapter = wallet?.adapter as { publicKey?: { toBase58?: () => string; toString?: () => string } } | undefined;
+    return adapter?.publicKey?.toBase58?.() ?? adapter?.publicKey?.toString?.() ?? fallback;
+}
+
+function getAdapterSignTransaction(wallet: ReturnType<typeof useSolanaWallet>["wallet"]) {
+    const adapter = wallet?.adapter as
+        | {
+              signTransaction?: <T extends Transaction | VersionedTransaction>(transaction: T) => Promise<T>;
+          }
+        | undefined;
+
+    if (!adapter?.signTransaction) {
+        return null;
+    }
+
+    return <T extends Transaction | VersionedTransaction>(transaction: T) => adapter.signTransaction!(transaction);
+}
+
+function getNativePublicKey(provider: NativeSolanaProvider | null) {
+    return provider?.publicKey?.toBase58?.() ?? provider?.publicKey?.toString?.() ?? null;
+}
+
+function getSelectedOrPreferredWallet(wallet: ReturnType<typeof useSolanaWallet>["wallet"], wallets: ReturnType<typeof useSolanaWallet>["wallets"]) {
+    if (wallet) {
+        return wallet;
+    }
+
+    return wallets.find((candidate) => candidate.adapter.name === "Phantom") ?? wallets[0] ?? null;
+}
+
+function waitForWalletSelection(wallets: ReturnType<typeof useSolanaWallet>["wallets"], walletName: string, timeoutMs = 1000) {
+    const startedAt = Date.now();
+
+    return new Promise<void>((resolve, reject) => {
+        const poll = () => {
+            const selectedWallet = wallets.find((candidate) => candidate.adapter.name === walletName);
+            if (selectedWallet?.adapter) {
+                resolve();
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                reject(new Error(`Wallet ${walletName} is not ready yet.`));
+                return;
+            }
+
+            window.setTimeout(poll, 25);
+        };
+
+        poll();
+    });
+}
+
+export function useWallet() {
+    const queryClient = useQueryClient();
+    const { connected, connecting, publicKey, wallet, wallets, select, connect, disconnect } = useSolanaWallet();
+    const nativeProvider = getNativeSolanaProvider();
+
+    const publicKeyBase58 = publicKey?.toBase58() ?? getNativePublicKey(nativeProvider);
+    const effectiveConnected = connected || !!publicKeyBase58 || !!nativeProvider?.isConnected;
+    const effectiveSignTransaction = getAdapterSignTransaction(wallet) ?? nativeProvider?.signTransaction ?? null;
+
+    // Connect through the app-level Solana wallet adapter and keep backend wallet linking idempotent.
     const connectWallet = useMutation({
         mutationFn: async () => {
-            setIsConnecting(true);
+            const selectedWallet = getSelectedOrPreferredWallet(wallet, wallets);
 
-            // Connect to Phantom wallet to get public key
-            await phantomWallet.connect();
+            if (!selectedWallet) {
+                if (!nativeProvider?.connect) {
+                    throw new Error("No supported wallet found. Please install Phantom or Solflare.");
+                }
+            }
 
-            if (!phantomWallet.publicKey) {
+            if (!wallet && selectedWallet) {
+                select(selectedWallet.adapter.name);
+                await waitForWalletSelection(wallets, selectedWallet.adapter.name);
+            }
+
+            if (!effectiveConnected) {
+                if (wallet) {
+                    await connect();
+                } else if (nativeProvider?.connect) {
+                    await nativeProvider.connect();
+                } else {
+                    await connect();
+                }
+            }
+
+            const adapterPublicKey = getAdapterPublicKey(wallet ?? selectedWallet ?? null, publicKeyBase58) ?? getNativePublicKey(nativeProvider);
+
+            if (!adapterPublicKey) {
                 throw new Error("Failed to get public key from wallet");
             }
 
-            // Register wallet with backend
-            const walletData = await WalletService.connectWallet(phantomWallet.publicKey, "phantom");
+            const walletName = selectedWallet?.adapter.name ?? (nativeProvider?.isPhantom ? "Phantom" : "wallet");
 
-            return walletData;
+            try {
+                const walletData = await WalletService.connectWallet(adapterPublicKey, walletName, normalizeWalletIcon(walletName));
+                return walletData;
+            } catch (error) {
+                const message = getErrorMessage(error).toLowerCase();
+                if (message.includes("wallet already exists")) {
+                    return {
+                        address: adapterPublicKey,
+                        name: walletName,
+                        icon: normalizeWalletIcon(walletName)
+                    };
+                }
+                throw error;
+            }
         },
         onSuccess: () => {
             toast.success("Wallet connected successfully!");
@@ -35,19 +153,16 @@ export function useWallet() {
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, "Failed to connect wallet"));
-        },
-        onSettled: () => {
-            setIsConnecting(false);
         }
     });
 
     // Disconnect wallet
     const disconnectWallet = useMutation({
         mutationFn: async () => {
-            if (phantomWallet.publicKey) {
-                await WalletService.disconnectWallet(phantomWallet.publicKey);
+            if (publicKeyBase58) {
+                await WalletService.disconnectWallet(publicKeyBase58);
             }
-            await phantomWallet.disconnect();
+            await disconnect();
         },
         onSuccess: () => {
             toast.success("Wallet disconnected");
@@ -62,10 +177,11 @@ export function useWallet() {
     return {
         connectWallet: connectWallet.mutate,
         disconnectWallet: disconnectWallet.mutate,
-        isConnecting: isConnecting || connectWallet.isPending,
+        isConnecting: connecting || connectWallet.isPending,
         isDisconnecting: disconnectWallet.isPending,
-        connected: phantomWallet.connected,
-        publicKey: phantomWallet.publicKey
+        connected: effectiveConnected,
+        publicKey: publicKeyBase58,
+        signTransaction: effectiveSignTransaction
     };
 }
 
