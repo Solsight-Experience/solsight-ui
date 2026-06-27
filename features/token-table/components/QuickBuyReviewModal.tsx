@@ -10,11 +10,10 @@ import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { DecimalFormatter } from "@/lib/number-formatters";
-import { useWallet } from "@/features/wallets/hooks/useWallet";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
-import type { VersionedTransaction } from "@solana/web3.js";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -23,15 +22,10 @@ interface QuickBuyReviewModalProps {
     amountSol: string;
 }
 
-type PhantomProvider = {
-    isPhantom?: boolean;
-    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
-};
-
 const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
-    const { connectWallet, isConnecting, connected, publicKey } = useWallet();
+    const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
     const [slippageBps, setSlippageBps] = useState(50);
     const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(50);
     const [decimals, setDecimals] = useState(9);
@@ -163,16 +157,21 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
     const handleConfirm = async () => {
         if (!quote?.rawQuote || !token) return;
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!ensureWalletReadyForUserAction("buy this token")) {
+            if (!isConnecting) {
+                toast.info("Please connect your wallet.");
+            }
             return;
         }
 
-        if (!connected || !publicKey) {
-            if (isConnecting) return;
-            connectWallet();
-            toast.info("Please connect your wallet.");
+        if (!signTransaction) {
+            toast.error("Connected wallet cannot sign transactions.");
+            return;
+        }
+
+        const walletPublicKey = publicKey;
+        if (!walletPublicKey) {
+            toast.error("Wallet address is unavailable.");
             return;
         }
 
@@ -182,8 +181,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         try {
             const result = await executeJupiterSwap({
                 quoteResponse: quote.rawQuote,
-                userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx)
+                userPublicKey: walletPublicKey,
+                signTransaction: (tx) => signTransaction(tx)
             });
             setSignature(result.signature);
             toast.success("Swap submitted!");
