@@ -36,16 +36,16 @@ export interface UpdateWalletAlertDto {
     condition?: WalletAlertCondition;
 }
 
-// ── Zalo ──────────────────────────────────────────────────────────────────
+// ── Telegram ──────────────────────────────────────────────────────────────
 
-export interface ZaloSubscriptionStatus {
+export interface TelegramSubscriptionStatus {
     isVerified: boolean;
     verificationToken?: string;
     tokenExpiresAt?: string;
     verifiedAt?: string;
 }
 
-export interface GenerateZaloTokenResponse {
+export interface GenerateTelegramTokenResponse {
     verificationToken: string;
     tokenExpiresAt: string;
     instructions: string;
