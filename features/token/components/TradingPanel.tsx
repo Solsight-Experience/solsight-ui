@@ -9,8 +9,8 @@ import { useTokenUIStore } from "../stores/token.stores";
 import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
-import { Check, ChevronDown, Copy, Loader2, AlertTriangle } from "lucide-react";
-import { useWallet } from "@/features/wallets/hooks/useWallet";
+import { Check, ChevronDown, Copy, Loader2, AlertTriangle, Wallet } from "lucide-react";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
@@ -39,11 +39,6 @@ import { VersionedTransaction } from "@solana/web3.js";
 interface TradingPanelProps {
     token: TokenDetail;
 }
-
-type PhantomProvider = {
-    isPhantom?: boolean;
-    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
-};
 
 type Base58PublicKey = {
     toBase58: () => string;
@@ -103,7 +98,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
-    const { connectWallet, isConnecting, connected, publicKey } = useWallet();
+    const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useActionableWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
@@ -629,16 +624,21 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!ensureWalletReadyForUserAction("submit this swap")) {
+            if (!isConnecting) {
+                toast.info("Please connect your wallet.");
+            }
             return;
         }
 
-        if (!connected || !publicKey) {
-            if (isConnecting) return;
-            connectWallet();
-            toast.info("Please connect your wallet.");
+        if (!signTransaction) {
+            toast.error("Connected wallet cannot sign transactions.");
+            return;
+        }
+
+        const walletPublicKey = publicKey;
+        if (!walletPublicKey) {
+            toast.error("Wallet address is unavailable.");
             return;
         }
 
@@ -647,8 +647,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         try {
             const { signature } = await executeJupiterSwap({
                 quoteResponse: quoteState.rawQuote,
-                userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx),
+                userPublicKey: walletPublicKey,
+                signTransaction: (tx) => signTransaction(tx),
                 gaslessFeeToken
             });
 
@@ -680,16 +680,21 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!ensureWalletReadyForUserAction("create this limit order")) {
+            if (!isConnecting) {
+                toast.info("Please connect your wallet.");
+            }
             return;
         }
 
-        if (!connected || !publicKey) {
-            if (isConnecting) return;
-            connectWallet();
-            toast.info("Please connect your wallet.");
+        if (!signTransaction) {
+            toast.error("Connected wallet cannot sign transactions.");
+            return;
+        }
+
+        const walletPublicKey = publicKey;
+        if (!walletPublicKey) {
+            toast.error("Wallet address is unavailable.");
             return;
         }
 
@@ -708,7 +713,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 throw new Error("Invalid amounts");
             }
 
-            const walletAddress = resolveWalletAddress(publicKey);
+            const walletAddress = resolveWalletAddress(walletPublicKey);
             if (!walletAddress) {
                 throw new Error("Wallet address not available");
             }
@@ -731,7 +736,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             // Step 2: Sign transaction
             const txBuffer = Buffer.from(createResponse.transaction, "base64");
             const transaction = VersionedTransaction.deserialize(txBuffer);
-            const signedTx = await provider.signTransaction(transaction);
+            const signedTx = await signTransaction(transaction);
             const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
 
             // Step 3: Execute
@@ -1191,6 +1196,43 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     </button>
                 ))}
             </div>
+
+            {(!connected || !isWalletLinkedToUser) && (
+                <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-btn)]/70 p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 rounded-full bg-cyan-500/10 p-2 text-cyan-500">
+                            <Wallet className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="text-sm font-semibold text-[var(--text-primary)]">
+                                {!connected ? "Connect a wallet to start trading" : "Connect this wallet to your account"}
+                            </div>
+                            <div className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
+                                {!connected
+                                    ? "You need to connect a Solana wallet before you can fetch quotes, sign transactions, and trade this token."
+                                    : "This wallet is open in your extension, but it is not linked to your SolSight account yet. Connect it to continue trading."}
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={() => connectWallet()}
+                                disabled={isConnecting}
+                                className="mt-3 h-9 bg-cyan-600 px-4 text-sm font-semibold text-white hover:bg-cyan-700"
+                            >
+                                {isConnecting ? (
+                                    <span className="inline-flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Connecting...
+                                    </span>
+                                ) : !connected ? (
+                                    "Connect Wallet"
+                                ) : (
+                                    "Connect Wallet To Account"
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Button
                 className={`w-full font-bold py-6 text-lg transition-all duration-200 ${

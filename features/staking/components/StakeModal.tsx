@@ -9,6 +9,7 @@ import { Loader2, Info, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
 import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
 import { useIFProgram } from "../hooks/useIFProgram";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface StakeModalProps {
     open: boolean;
@@ -16,6 +17,8 @@ interface StakeModalProps {
     walletPubkey: string | null;
     solBalance: number;
     connected: boolean;
+    signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
+    ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
     onSuccess?: () => void;
 }
 
@@ -30,11 +33,20 @@ const STATUS_LABELS: Record<IFStakeStatus, string> = {
 
 const STAKE_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
-export function StakeModal({ open, onClose, walletPubkey, solBalance, connected, onSuccess }: StakeModalProps) {
+export function StakeModal({
+    open,
+    onClose,
+    walletPubkey,
+    solBalance,
+    connected,
+    signTransaction,
+    ensureWalletReadyForUserAction,
+    onSuccess
+}: StakeModalProps) {
     const { resolvedTheme } = useTheme();
     const [amount, setAmount] = useState("");
     const networkLabel = IF_CONFIG.label;
-    const { stakeState, handleStake } = useIFStaking(connected, walletPubkey, onSuccess);
+    const { stakeState, handleStake } = useIFStaking(connected, walletPubkey, signTransaction, ensureWalletReadyForUserAction, onSuccess);
     const { isLoading: clientLoading, isReady: clientReady } = useIFProgram(connected, walletPubkey);
 
     const loading = stakeState.status !== "idle" && stakeState.status !== "done" && stakeState.status !== "error";

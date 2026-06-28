@@ -21,9 +21,10 @@ interface IFStakeState {
 const INIT_STATE: IFStakeState = { status: "idle", signature: null, error: null };
 
 type StakingWalletProvider = {
-    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
     network?: string;
 };
+
+type SignTransactionFn = (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 
 type WindowWithSolana = Window &
     typeof globalThis & {
@@ -105,12 +106,16 @@ function parseError(err: unknown): { message: string; isRejected: boolean } {
 
 // ─── Core: API build → wallet sign → send ─────────────────────────────────────
 // The backend owns transaction construction; the browser only signs with the user's wallet.
-async function buildSignSend(walletPubkey: string, action: StakingTransactionAction, amountLamports?: bigint): Promise<string> {
+async function buildSignSend(
+    walletPubkey: string,
+    action: StakingTransactionAction,
+    signTransaction: SignTransactionFn,
+    amountLamports?: bigint
+): Promise<string> {
     const conn = getStakingConnection();
     const provider = getWalletProvider();
-    if (!provider) throw new Error("Wallet provider not found.");
 
-    const providerNetwork = normalizeWalletNetwork(provider.network);
+    const providerNetwork = normalizeWalletNetwork(provider?.network);
     if (providerNetwork && providerNetwork !== IF_CONFIG.network) {
         throw new Error(`Wallet is on ${providerNetwork}, but staking is configured for ${IF_CONFIG.network}.`);
     }
@@ -121,7 +126,7 @@ async function buildSignSend(walletPubkey: string, action: StakingTransactionAct
         amountLamports: amountLamports?.toString()
     });
     const vtx = VersionedTransaction.deserialize(base64ToBytes(built.transaction));
-    const signed = await provider.signTransaction(vtx);
+    const signed = await signTransaction(vtx);
     // Transaction ID = base58 of first signature (derived before send for "already processed" handling)
     const txSig = bs58.encode(signed.signatures[0]);
     try {
@@ -160,29 +165,43 @@ async function buildSignSend(walletPubkey: string, action: StakingTransactionAct
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
-export function useIFStaking(connected: boolean, walletPubkey: string | null, onSuccess?: () => void) {
+export function useIFStaking(
+    connected: boolean,
+    walletPubkey: string | null,
+    signTransaction: SignTransactionFn | null,
+    ensureWalletReadyForUserAction: ((actionLabel?: string) => boolean) | undefined,
+    onSuccess?: () => void
+) {
     const [stakeState, setStakeState] = useState<IFStakeState>(INIT_STATE);
     const [requestUnstakeState, setRequestUnstakeState] = useState<IFStakeState>(INIT_STATE);
     const [unstakeState, setUnstakeState] = useState<IFStakeState>(INIT_STATE);
     const [cancelRequestState, setCancelRequestState] = useState<IFStakeState>(INIT_STATE);
 
-    const checkWallet = useCallback(() => {
-        if (!IF_CONFIG.isEnabled) {
-            toast.error(IF_CONFIG.unavailableReason ?? `${IF_CONFIG.label} staking is unavailable.`);
-            return false;
-        }
+    const checkWallet = useCallback(
+        (actionLabel = "continue") => {
+            if (!IF_CONFIG.isEnabled) {
+                toast.error(IF_CONFIG.unavailableReason ?? `${IF_CONFIG.label} staking is unavailable.`);
+                return false;
+            }
 
-        if (!connected || !walletPubkey) {
-            toast.error("Wallet not connected. Please connect and try again.");
-            return false;
-        }
-        const selectedCluster = useClusterStore.getState().cluster;
-        if (selectedCluster !== IF_CONFIG.network) {
-            toast.error(`Switch the app cluster to ${IF_CONFIG.label} before staking.`);
-            return false;
-        }
-        return true;
-    }, [connected, walletPubkey]);
+            if (!ensureWalletReadyForUserAction?.(actionLabel)) {
+                return false;
+            }
+
+            if (!connected || !walletPubkey || !signTransaction) {
+                toast.error("Wallet not connected. Please connect and try again.");
+                return false;
+            }
+
+            const selectedCluster = useClusterStore.getState().cluster;
+            if (selectedCluster !== IF_CONFIG.network) {
+                toast.error(`Switch the app cluster to ${IF_CONFIG.label} before staking.`);
+                return false;
+            }
+            return true;
+        },
+        [connected, ensureWalletReadyForUserAction, signTransaction, walletPubkey]
+    );
 
     // ── Stake SOL ──────────────────────────────────────────────────────────────
     const handleStake = useCallback(
@@ -192,13 +211,13 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
                 toast.error(`Minimum stake is ${IF_MIN_STAKE_SOL} SOL.`);
                 return false;
             }
-            if (!checkWallet()) return false;
+            if (!checkWallet("stake SOL")) return false;
             setStakeState((s) => ({ ...s, status: "creating" }));
 
             try {
                 setStakeState((s) => ({ ...s, status: "signing" }));
                 const lamports = BigInt(Math.round(amountSol * LAMPORTS_PER_SOL));
-                const txSig = await buildSignSend(walletPubkey!, "stake", lamports);
+                const txSig = await buildSignSend(walletPubkey!, "stake", signTransaction!, lamports);
 
                 setStakeState({ status: "done", signature: txSig, error: null });
                 toast.success(`Successfully staked ${amountSol} SOL!`, {
@@ -218,7 +237,7 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
                 return false;
             }
         },
-        [checkWallet, onSuccess, walletPubkey]
+        [checkWallet, onSuccess, signTransaction, walletPubkey]
     );
 
     // ── Request Unstake (start cooldown) ──────────────────────────────────────
@@ -226,13 +245,13 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
         async (amountSol: number, position: IFPosition) => {
             void position;
             setRequestUnstakeState(INIT_STATE);
-            if (!checkWallet()) return false;
+            if (!checkWallet("request an unstake")) return false;
             setRequestUnstakeState((s) => ({ ...s, status: "creating" }));
 
             try {
                 setRequestUnstakeState((s) => ({ ...s, status: "signing" }));
                 const requestedLamports = BigInt(Math.floor(amountSol * LAMPORTS_PER_SOL));
-                const txSig = await buildSignSend(walletPubkey!, "request-unstake", requestedLamports);
+                const txSig = await buildSignSend(walletPubkey!, "request-unstake", signTransaction!, requestedLamports);
 
                 setRequestUnstakeState({ status: "done", signature: txSig, error: null });
                 toast.success("Unstake request submitted. Wait for the cooldown to complete.", {
@@ -248,18 +267,18 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
                 return false;
             }
         },
-        [checkWallet, onSuccess, walletPubkey]
+        [checkWallet, onSuccess, signTransaction, walletPubkey]
     );
 
     // ── Withdraw after cooldown ────────────────────────────────────────────────
     const handleUnstake = useCallback(async () => {
         setUnstakeState(INIT_STATE);
-        if (!checkWallet()) return false;
+        if (!checkWallet("withdraw your stake")) return false;
         setUnstakeState((s) => ({ ...s, status: "creating" }));
 
         try {
             setUnstakeState((s) => ({ ...s, status: "signing" }));
-            const txSig = await buildSignSend(walletPubkey!, "unstake");
+            const txSig = await buildSignSend(walletPubkey!, "unstake", signTransaction!);
 
             setUnstakeState({ status: "done", signature: txSig, error: null });
             toast.success("SOL successfully withdrawn from Insurance Fund!", {
@@ -278,17 +297,17 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
             else toast.error(message, { duration: 8000 });
             return false;
         }
-    }, [checkWallet, onSuccess, walletPubkey]);
+    }, [checkWallet, onSuccess, signTransaction, walletPubkey]);
 
     // ── Cancel pending unstake request ────────────────────────────────────────
     const handleCancelRequest = useCallback(async () => {
         setCancelRequestState(INIT_STATE);
-        if (!checkWallet()) return false;
+        if (!checkWallet("cancel the unstake request")) return false;
         setCancelRequestState((s) => ({ ...s, status: "creating" }));
 
         try {
             setCancelRequestState((s) => ({ ...s, status: "signing" }));
-            const txSig = await buildSignSend(walletPubkey!, "cancel-request");
+            const txSig = await buildSignSend(walletPubkey!, "cancel-request", signTransaction!);
 
             setCancelRequestState({ status: "done", signature: txSig, error: null });
             toast.success("Unstake request cancelled. Your SOL remains staked.");
@@ -301,7 +320,7 @@ export function useIFStaking(connected: boolean, walletPubkey: string | null, on
             else toast.error(message, { duration: 8000 });
             return false;
         }
-    }, [checkWallet, onSuccess, walletPubkey]);
+    }, [checkWallet, onSuccess, signTransaction, walletPubkey]);
 
     return {
         stakeState,

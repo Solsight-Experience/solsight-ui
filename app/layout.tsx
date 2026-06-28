@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import MockProvider from "@/providers/mock-provider";
 import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
+import { SolanaWalletProvider } from "@/providers/wallet-provider";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
@@ -46,16 +47,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
                     <QueryProvider>
-                        {/* Bọc AuthProvider trước Header */}
-                        <MockProvider>
-                            <AuthProvider>
-                                <SmallScreenModal />
-                                {showHeader && <Header />}
-                                <main>{children}</main>
-                                <ChatGate />
-                                <ThemedToaster />
-                            </AuthProvider>
-                        </MockProvider>
+                        <SolanaWalletProvider>
+                            {/* Bọc AuthProvider trước Header */}
+                            <MockProvider>
+                                <AuthProvider>
+                                    <SmallScreenModal />
+                                    {showHeader && <Header />}
+                                    <main>{children}</main>
+                                    <ChatGate />
+                                    <ThemedToaster />
+                                </AuthProvider>
+                            </MockProvider>
+                        </SolanaWalletProvider>
                     </QueryProvider>
                 </ThemeProvider>
             </body>
