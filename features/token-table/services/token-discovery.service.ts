@@ -31,7 +31,7 @@ export interface GainersLosersResponse {
 }
 
 export type SortBy = "volume_24h" | "txns_24h" | "price_change_24h" | "market_cap" | "holders_change";
-export type TimeFrame = "1h" | "24h" | "7d";
+export type TimeFrame = "5m" | "1h" | "6h" | "24h" | "7d";
 export type GainerLoserType = "gainers" | "losers" | "both";
 
 /**

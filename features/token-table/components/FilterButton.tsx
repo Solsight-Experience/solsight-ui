@@ -13,6 +13,7 @@ export interface FilterOptions {
     sort_order?: SortOrder;
     limit?: number;
     offset?: number;
+    time_frame?: string;
 }
 
 interface FilterButtonProps {
@@ -75,7 +76,8 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                 sort_by: filterOptions?.sort_by,
                 sort_order: filterOptions?.sort_order,
                 limit: filterOptions?.limit,
-                offset: filterOptions?.offset
+                offset: filterOptions?.offset,
+                time_frame: filterOptions?.time_frame
             };
 
             const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
