@@ -38,7 +38,7 @@ const TimeFilterItem = memo<TimeFilterItemProps>(function TimeFilterItem({ value
         <Button
             variant="link"
             onClick={onClick}
-            className={`rounded-none border-b-2 text-neutral-500 ${isActive ? "border-brand-200 text-brand-200" : "border-transparent"}`}
+            className={`rounded-none text-neutral-500 ${isActive ? "underline text-brand-200" : ""}`}
             role="tab"
             aria-selected={isActive}
             aria-label={`Filter by ${value}`}
