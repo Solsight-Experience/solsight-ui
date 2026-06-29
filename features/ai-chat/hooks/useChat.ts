@@ -8,6 +8,7 @@ import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto, ChatPageContext } from "@/types/dto";
 import apiClient from "@/lib/network-requests/api-client";
 import { CHAT_ENDPOINTS } from "@/lib/constants";
+import { useClusterStore } from "@/stores/cluster.store";
 
 const SESSION_ID_KEY = "solsight_chat_session_id";
 
@@ -53,6 +54,7 @@ export function useChat() {
 
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
+    const { cluster } = useClusterStore();
     // Fetch historical messages
     const {
         data,
@@ -163,6 +165,7 @@ export function useChat() {
         setError(null);
         setToolProgressLabel(null);
         socketManager.sendMessage({
+            cluster,
             message: text,
             sessionId: sessionIdRef.current,
             userId: user?.id,

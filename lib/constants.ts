@@ -195,3 +195,11 @@ export const CLUSTER_RPC_URLS: Record<(typeof CLUSTERS)[number], string> = {
     mainnet: "https://api.mainnet-beta.solana.com",
     devnet: "https://api.devnet.solana.com"
 };
+
+export const COMMON_LABELS: Record<string, string> = {
+    so11111111111111111111111111111111111111112: "SOL",
+    epjfwdd5aufqssqem2qxzybapc8g4weggkzwytdt1v: "USDC",
+    es9vmfrzacerjfrf4h2fyd4kconk11mcce8benwnywb: "USDT",
+    dezxaz8z7pnrnrjjz3wxborgixca6v5b1ppb263: "BONK",
+    jupyiwryjfskupiha7hker8vutaefosybkedznsdvcn: "JUP"
+};

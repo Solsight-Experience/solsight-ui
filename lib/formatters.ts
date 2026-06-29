@@ -4,6 +4,7 @@
  */
 
 import { INumberFormatter, CurrencyFormatter, DecimalFormatter, Locale, CompactFormatter } from "@/lib/number-formatters";
+import { COMMON_LABELS } from "@/lib/constants";
 
 /**
  * Percentage formatter with customizable decimal places
@@ -110,6 +111,31 @@ export function formatNumber(value: number): string {
  */
 export function ensureMs(timestamp: number): number {
     return timestamp < 99999999999 ? timestamp * 1000 : timestamp;
+}
+
+/**
+ * Format a token or wallet address, checking COMMON_LABELS first for standard tokens.
+ * Falls back to showing the first 4 and last 4 characters.
+ */
+export function formatAddress(address: string): string {
+    if (!address) return "";
+    const key = address.toLowerCase();
+    if (COMMON_LABELS[key]) return COMMON_LABELS[key];
+    return address.slice(0, 4) + "..." + address.slice(-4);
+}
+
+/**
+ * Format a number or string representation of a number to a compact notation.
+ * Handles small numbers (retaining up to 4 decimal places) and large numbers (K, M, B).
+ */
+export function formatCompactNumber(val: string | number): string {
+    const num = typeof val === "string" ? parseFloat(val) : val;
+    if (isNaN(num)) return String(val);
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + "k";
+    if (num === 0) return "0";
+    return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, "");
 }
 
 // Export formatter instances for direct use
