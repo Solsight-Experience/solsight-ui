@@ -2,10 +2,10 @@ import { memo } from "react";
 import { Button } from "@/components/ui/button";
 
 export enum TimeFilterVariant {
-    "1m" = 60,
-    "5m" = 300, // 60 * 5
-    "30m" = 1800,
-    "1h" = 3600
+    "5m" = 300,
+    "1h" = 3600,
+    "6h" = 21600,
+    "24h" = 86400
 }
 
 export type TimeFilterValue = keyof typeof TimeFilterVariant;
@@ -38,7 +38,7 @@ const TimeFilterItem = memo<TimeFilterItemProps>(function TimeFilterItem({ value
         <Button
             variant="link"
             onClick={onClick}
-            className={`text-neutral-500 ${isActive ? "text-brand-200" : ""}`}
+            className={`rounded-none text-neutral-500 ${isActive ? "underline text-brand-200" : ""}`}
             role="tab"
             aria-selected={isActive}
             aria-label={`Filter by ${value}`}

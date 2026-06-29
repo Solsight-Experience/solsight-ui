@@ -58,7 +58,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
     const [filters, setFilters] = useState<TokenTableFilters>({
-        timeFilter: "1m",
+        timeFilter: "24h",
         activeTab: "TRENDING",
         quickBuyAmount: "0.1",
         categorySearch: "",
@@ -121,18 +121,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         [isLoggedIn, toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
     );
 
-    // Map time filter to API TimeFrame
-    const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => {
-        switch (timeFilter) {
-            case "1h":
-                return "1h";
-            case "1m":
-            case "5m":
-            case "30m":
-            default:
-                return "24h";
-        }
-    };
+    const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => timeFilter;
 
     // Map sort option to API SortBy
     const mapSortOptionToSortBy = (sortOption: SortOption): SortBy => {
@@ -183,7 +172,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 case "TRENDING":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        sort_by: "volume_24h",
+                        sort_by: "txns_24h",
                         limit: PAGE_SIZE,
                         offset
                     });
@@ -191,7 +180,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 case "TOP":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        sort_by: mapSortOptionToSortBy(filters.sortOption),
+                        sort_by: "volume_24h",
                         limit: PAGE_SIZE,
                         offset
                     });
@@ -323,7 +312,13 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 toast.info("Sign in to view your favourite tokens.");
                 return;
             }
-            setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
+            setFilters((prev) => ({
+                ...prev,
+                activeTab,
+                selectedCategorySlug: null,
+                categorySearch: "",
+                filteredData: undefined
+            }));
         },
         [isLoggedIn]
     );
@@ -366,7 +361,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const resetFilters = useCallback(() => {
         setFilters((prev) => ({
-            timeFilter: "1m",
+            timeFilter: "24h",
             activeTab: "TRENDING",
             quickBuyAmount: "0.1",
             categorySearch: "",
