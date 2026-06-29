@@ -12,7 +12,7 @@ export const AddWalletForm: React.FC = () => {
     const [label, setLabel] = useState("");
 
     const { mutate: addWallet, isPending } = useAddWatchedWallet();
-    const setSelectedWalletAddress = useWatchlistStore((s) => s.setSelectedWalletAddress);
+    const setSelectedWallet = useWatchlistStore((s) => s.setSelectedWallet);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,7 +24,7 @@ export const AddWalletForm: React.FC = () => {
             {
                 onSuccess: (wallet) => {
                     toast.success("Wallet added to watchlist");
-                    setSelectedWalletAddress(wallet.walletAddress);
+                    setSelectedWallet(wallet.walletAddress, wallet.network);
                     setAddress("");
                     setLabel("");
                     setIsOpen(false);

@@ -29,6 +29,7 @@ export interface WalletAlert {
 export interface CreateWalletAlertDto {
     alertType: WalletAlertType;
     condition?: WalletAlertCondition;
+    network?: "mainnet" | "devnet";
 }
 
 export interface UpdateWalletAlertDto {
@@ -66,6 +67,7 @@ export interface WatchedWallet {
     walletAddress: string;
     userId: string;
     label?: string;
+    network: "mainnet" | "devnet";
     createdAt: string;
 }
 
@@ -77,6 +79,7 @@ export interface WatchlistResponse {
 export interface AddWatchedWalletDto {
     walletAddress: string;
     label?: string;
+    network?: "mainnet" | "devnet";
 }
 
 export interface UpdateWatchedWalletDto {

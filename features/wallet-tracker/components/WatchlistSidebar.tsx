@@ -16,14 +16,14 @@ const WalletItem: React.FC<{ wallet: WatchedWallet; isSelected: boolean; onSelec
 
     const { mutate: removeWallet, isPending: removing } = useRemoveWatchedWallet();
     const { mutate: updateWallet, isPending: updating } = useUpdateWatchedWallet();
-    const setSelectedWalletAddress = useWatchlistStore((s) => s.setSelectedWalletAddress);
+    const setSelectedWallet = useWatchlistStore((s) => s.setSelectedWallet);
 
     const handleRemove = (e: React.MouseEvent) => {
         e.stopPropagation();
         removeWallet(wallet.walletAddress, {
             onSuccess: () => {
                 toast.success("Wallet removed from watchlist");
-                setSelectedWalletAddress(null);
+                setSelectedWallet(null);
             },
             onError: () => toast.error("Failed to remove wallet")
         });
@@ -113,7 +113,7 @@ const WalletItem: React.FC<{ wallet: WatchedWallet; isSelected: boolean; onSelec
 
 export const WatchlistSidebar: React.FC = () => {
     const { data, isLoading, error } = useWatchlist();
-    const { selectedWalletAddress, setSelectedWalletAddress } = useWatchlistStore();
+    const { selectedWalletAddress, setSelectedWallet } = useWatchlistStore();
 
     return (
         <div className="flex flex-col h-full border-r border-[var(--border-subtle)] bg-[var(--surface-panel)]">
@@ -145,7 +145,7 @@ export const WatchlistSidebar: React.FC = () => {
                         key={wallet.id}
                         wallet={wallet}
                         isSelected={selectedWalletAddress === wallet.walletAddress}
-                        onSelect={() => setSelectedWalletAddress(wallet.walletAddress)}
+                        onSelect={() => setSelectedWallet(wallet.walletAddress, wallet.network)}
                     />
                 ))}
             </div>

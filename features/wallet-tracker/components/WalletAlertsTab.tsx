@@ -36,7 +36,7 @@ const WALLET_ALERT_NUMBER_FORMATTER = new DecimalFormatter({ locale: "en-US", ma
 
 // ── Add Alert Form ────────────────────────────────────────────────────────────
 
-const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = ({ walletAddress, onClose }) => {
+const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devnet"; onClose: () => void }> = ({ walletAddress, network, onClose }) => {
     const [alertType, setAlertType] = useState<WalletAlertType>(WalletAlertType.ANY_SWAP);
     const [tokenMint, setTokenMint] = useState("");
     const [tokenSymbol, setTokenSymbol] = useState("");
@@ -49,7 +49,7 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const dto: CreateWalletAlertDto = { alertType };
+        const dto: CreateWalletAlertDto = { alertType, network };
 
         if (alertType === WalletAlertType.TOKEN_BALANCE_CHANGE) {
             if (!tokenMint.trim()) {
@@ -302,7 +302,7 @@ const AlertRow: React.FC<{ alert: WalletAlert; walletAddress: string }> = ({ ale
 
 // ── Main Tab Component ─────────────────────────────────────────────────────────
 
-export const WalletAlertsTab: React.FC<{ walletAddress: string }> = ({ walletAddress }) => {
+export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainnet" | "devnet" }> = ({ walletAddress, network = "mainnet" }) => {
     const [showForm, setShowForm] = useState(false);
     const [telegramDialogOpen, setTelegramDialogOpen] = useState(false);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -346,7 +346,7 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string }> = ({ walletAdd
                 </button>
             )}
 
-            {showForm && <AddAlertForm walletAddress={walletAddress} onClose={() => setShowForm(false)} />}
+            {showForm && <AddAlertForm walletAddress={walletAddress} network={network} onClose={() => setShowForm(false)} />}
 
             <TelegramBotDialog open={telegramDialogOpen} onOpenChange={setTelegramDialogOpen} />
             <EmailDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} />
