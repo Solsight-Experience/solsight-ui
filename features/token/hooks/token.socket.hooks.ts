@@ -17,7 +17,6 @@ export function useTokenDetailStream(address: string) {
         };
 
         socket.onDomainEvent<TokenDetail>(dto, (data) => {
-            console.log("data", data);
             setDetail(data);
         });
 
