@@ -7,7 +7,7 @@ import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Info, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
-import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
+import { useIFStaking, IFStakeStatus, type StakeActionSuccessPayload } from "../hooks/useIFStaking";
 import { useIFProgram } from "../hooks/useIFProgram";
 import type { VersionedTransaction } from "@solana/web3.js";
 
@@ -19,7 +19,7 @@ interface StakeModalProps {
     connected: boolean;
     signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
     ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
-    onSuccess?: () => void;
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void;
 }
 
 const STATUS_LABELS: Record<IFStakeStatus, string> = {
