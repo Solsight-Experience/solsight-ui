@@ -5,7 +5,6 @@ import React, { useCallback, useState } from "react";
 import { useTheme } from "next-themes";
 import { TrendingUp, Zap, Wallet, Loader2, PlugZap, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { useSolBalance } from "../hooks/useDevnetSolBalance";
 import { StakeModal } from "./StakeModal";
@@ -13,7 +12,8 @@ import { UnstakeModal } from "./UnstakeModal";
 import { IF_CONFIG } from "../constants/program";
 import { useIFPositions } from "../hooks/useIFPositions";
 import { useIFProgram } from "../hooks/useIFProgram";
-import { useIFStaking } from "../hooks/useIFStaking";
+import { useIFStaking, type StakeActionSuccessPayload } from "../hooks/useIFStaking";
+import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
 
 export function StakingPanel() {
     const { resolvedTheme } = useTheme();
@@ -30,7 +30,7 @@ export function StakingPanel() {
         ensureWalletReadyForUserAction
     } = useActionableWallet();
     const { data: solBalanceData, refetch: refetchBalance } = useSolBalance(actionablePublicKey ?? undefined);
-    const queryClient = useQueryClient();
+    const publishHistoryRefresh = useStakeHistoryRefreshStore((state) => state.publishRefresh);
 
     const [stakeOpen, setStakeOpen] = useState(false);
     const [unstakeOpen, setUnstakeOpen] = useState(false);
@@ -40,12 +40,14 @@ export function StakingPanel() {
     const { isLoading: clientLoading, isReady: clientReady, error: programError } = useIFProgram(isReadyForUserAction, actionablePublicKey);
     const { data: ifPosition, isLoading: positionLoading, refetch: refetchPosition } = useIFPositions(isReadyForUserAction, actionablePublicKey);
 
-    const refetchAll = useCallback(() => {
-        refetchPosition();
-        refetchBalance();
-        // Invalidate all pages of stake history so the list updates immediately
-        queryClient.invalidateQueries({ queryKey: ["if-stake-history", actionablePublicKey] });
-    }, [actionablePublicKey, queryClient, refetchBalance, refetchPosition]);
+    const refetchAll = useCallback(
+        (payload?: StakeActionSuccessPayload) => {
+            void refetchPosition();
+            void refetchBalance();
+            publishHistoryRefresh(actionablePublicKey, payload?.signature);
+        },
+        [actionablePublicKey, publishHistoryRefresh, refetchBalance, refetchPosition]
+    );
 
     const { cancelRequestState, handleCancelRequest } = useIFStaking(
         isReadyForUserAction,

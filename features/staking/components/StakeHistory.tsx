@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { History, ExternalLink, ChevronLeft, ChevronRight, ArrowDownToLine, ArrowUpFromLine, Wallet, Copy, Check } from "lucide-react";
 import { useIFStakeHistory, StakeRecord, StakeActionType, StakeRecordStatus } from "../hooks/useIFStakeHistory";
 import { getSolscanTxUrl } from "../constants/program";
+import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
 
 interface StakeHistoryProps {
     walletPubkey: string | null;
@@ -77,11 +78,47 @@ function CopyButton({ text }: { text: string }) {
 
 export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
     const [page, setPage] = useState(1);
-    const { data, isLoading, isError } = useIFStakeHistory(walletPubkey, page, PAGE_SIZE);
+    const { data, isLoading, isError, refetch } = useIFStakeHistory(walletPubkey, page, PAGE_SIZE);
+    const refreshVersion = useStakeHistoryRefreshStore((state) => state.refreshVersion);
+    const refreshedWalletPubkey = useStakeHistoryRefreshStore((state) => state.walletPubkey);
+    const expectedSignature = useStakeHistoryRefreshStore((state) => state.expectedSignature);
 
     const records = data?.records ?? [];
     const total = data?.total ?? 0;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+    useEffect(() => {
+        if (!walletPubkey || refreshedWalletPubkey !== walletPubkey) return;
+
+        let cancelled = false;
+        let timeoutId: number | null = null;
+
+        const pollUntilVisible = async () => {
+            const maxAttempts = expectedSignature ? 6 : 2;
+
+            for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+                const result = await refetch();
+                if (cancelled) return;
+
+                const records = result.data?.records ?? [];
+                if (!expectedSignature || records.some((record) => record.signature === expectedSignature)) {
+                    return;
+                }
+
+                await new Promise<void>((resolve) => {
+                    timeoutId = window.setTimeout(() => resolve(), 1500);
+                });
+                if (cancelled) return;
+            }
+        };
+
+        void pollUntilVisible();
+
+        return () => {
+            cancelled = true;
+            if (timeoutId !== null) window.clearTimeout(timeoutId);
+        };
+    }, [expectedSignature, page, refreshedWalletPubkey, refetch, refreshVersion, walletPubkey]);
 
     return (
         <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(145deg,rgba(20,10,40,0.95)_0%,rgba(10,8,30,0.98)_100%)] dark:shadow-none">
