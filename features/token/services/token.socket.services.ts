@@ -82,8 +82,8 @@ export class TokenSocketManager extends SocketManager {
 
     private withCluster(dto: TokenSubscribeDto | TokenUnsubscribeDto) {
         return {
-            cluster: this.getCluster(),
-            ...dto
+            ...dto,
+            cluster: this.getCluster()
         };
     }
 
