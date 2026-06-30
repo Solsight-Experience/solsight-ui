@@ -56,6 +56,9 @@ function formatDate(iso: string) {
 }
 
 const PAGE_SIZE = 8;
+const HISTORY_REFRESH_INTERVAL_MS = 1500;
+const HISTORY_REFRESH_ATTEMPTS = 2;
+const HISTORY_REFRESH_ATTEMPTS_WITH_SIGNATURE = 6;
 
 function CopyButton({ text }: { text: string }) {
     const [copied, setCopied] = useState(false);
@@ -90,11 +93,16 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
     useEffect(() => {
         if (!walletPubkey || refreshedWalletPubkey !== walletPubkey) return;
 
+        if (page !== 1) {
+            setPage(1);
+            return;
+        }
+
         let cancelled = false;
         let timeoutId: number | null = null;
 
         const pollUntilVisible = async () => {
-            const maxAttempts = expectedSignature ? 6 : 2;
+            const maxAttempts = expectedSignature ? HISTORY_REFRESH_ATTEMPTS_WITH_SIGNATURE : HISTORY_REFRESH_ATTEMPTS;
 
             for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
                 const result = await refetch();
@@ -106,7 +114,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 }
 
                 await new Promise<void>((resolve) => {
-                    timeoutId = window.setTimeout(() => resolve(), 1500);
+                    timeoutId = window.setTimeout(() => resolve(), HISTORY_REFRESH_INTERVAL_MS);
                 });
                 if (cancelled) return;
             }
