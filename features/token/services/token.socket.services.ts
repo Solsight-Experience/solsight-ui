@@ -1,11 +1,14 @@
 import { SocketManager, type EventHandler } from "@/lib/socket-client";
+import type { Cluster } from "@/stores/cluster.store";
 
 export interface TokenSubscribeDto {
+    cluster: Cluster;
     domain: string;
     resource: string;
     interval: string;
 }
 export interface TokenUnsubscribeDto {
+    cluster: Cluster;
     domain: string;
     resource: string;
     interval: string;
@@ -58,8 +61,9 @@ export class TokenSocketManager extends SocketManager {
 
     override disconnect() {
         this.events.forEach((_, key) => {
-            const [domain, resource, interval] = key.split(":");
+            const [domain, cluster, resource, interval] = key.split(":");
             this.socket.emit("token:unsubscribe", {
+                cluster,
                 domain,
                 resource,
                 interval
@@ -68,8 +72,8 @@ export class TokenSocketManager extends SocketManager {
         super.disconnect();
     }
 
-    /** FE & BE dùng CHUNG logic room */
+    /** FE & BE dùng CHUNG logic room: domain:cluster:resource:interval */
     private buildKey(dto: TokenSubscribeDto) {
-        return `${dto.domain}:${dto.resource}:${dto.interval}`;
+        return `${dto.domain}:${dto.cluster}:${dto.resource}:${dto.interval}`;
     }
 }

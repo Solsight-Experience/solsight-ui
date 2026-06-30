@@ -4,13 +4,16 @@ import type { Trade, TradeStreamResponse, TopTrader, Holder, TokenDetail } from 
 import type { ChartInterval } from "@/lib/constants";
 import { CandlestickData, UTCTimestamp } from "lightweight-charts";
 import { normalizeCandlePoint } from "../utils/chart.utils";
+import useClusterStore from "@/stores/cluster.store";
 
 const socket = TokenSocketManager.getInstance();
 
 export function useTokenDetailStream(address: string) {
     const [detail, setDetail] = useState<TokenDetail>();
+    const cluster = useClusterStore((s) => s.cluster);
     useEffect(() => {
         const dto = {
+            cluster,
             domain: "stats",
             resource: address,
             interval: "5s"
@@ -24,7 +27,7 @@ export function useTokenDetailStream(address: string) {
         return () => {
             socket.unsubscribe(dto);
         };
-    }, [address]);
+    }, [address, cluster]);
     return detail;
 }
 
@@ -35,8 +38,10 @@ export function useTradeStream(
     }
 ) {
     const [trades, setTrades] = useState<Trade[]>();
+    const cluster = useClusterStore((s) => s.cluster);
     useEffect(() => {
         const dto = {
+            cluster,
             domain: "trades",
             resource: address,
             interval: "5s"
@@ -49,15 +54,17 @@ export function useTradeStream(
         return () => {
             socket.unsubscribe(dto);
         };
-    }, [address]);
+    }, [address, cluster]);
 
     return trades;
 }
 
 export function useTopTradersStream(address: string) {
     const [topTraders, setTopTraders] = useState<TopTrader[]>();
+    const cluster = useClusterStore((s) => s.cluster);
     useEffect(() => {
         const dto = {
+            cluster,
             domain: "top_traders",
             resource: address,
             interval: "5s"
@@ -70,7 +77,7 @@ export function useTopTradersStream(address: string) {
         return () => {
             socket.unsubscribe(dto);
         };
-    }, [address]);
+    }, [address, cluster]);
     return topTraders;
 }
 
@@ -82,8 +89,10 @@ export interface HolderUpdatePayload {
 
 export function useHoldersStream(address: string) {
     const [holderUpdate, setHolderUpdate] = useState<HolderUpdatePayload>();
+    const cluster = useClusterStore((s) => s.cluster);
     useEffect(() => {
         const dto = {
+            cluster,
             domain: "holders",
             resource: address,
             interval: "5s"
@@ -99,14 +108,16 @@ export function useHoldersStream(address: string) {
         return () => {
             socket.unsubscribe(dto);
         };
-    }, [address]);
+    }, [address, cluster]);
     return holderUpdate;
 }
 
 export function useChartDataStream(address: string, interval: ChartInterval) {
     const [chart, setChart] = useState<CandlestickData>();
+    const cluster = useClusterStore((s) => s.cluster);
     useEffect(() => {
         const priceDto = {
+            cluster,
             domain: "priceOHLC",
             resource: address,
             interval
@@ -123,7 +134,7 @@ export function useChartDataStream(address: string, interval: ChartInterval) {
         return () => {
             socket.unsubscribe(priceDto);
         };
-    }, [address, interval]);
+    }, [address, interval, cluster]);
 
     return chart;
 }
