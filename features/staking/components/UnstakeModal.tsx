@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Clock, AlertCircle, CheckCircle2, ArrowUpFromLine } from "lucide-react";
-import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
+import { useIFStaking, IFStakeStatus, type StakeActionSuccessPayload } from "../hooks/useIFStaking";
 import { IFPosition } from "../hooks/useIFPositions";
 import { IF_MIN_STAKE_SOL, getSolscanTxUrl } from "../constants/program";
 import type { VersionedTransaction } from "@solana/web3.js";
@@ -20,7 +20,7 @@ interface UnstakeModalProps {
     connected: boolean;
     signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
     ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
-    onSuccess?: () => void;
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void;
 }
 
 const REQUEST_LABELS: Record<IFStakeStatus, string> = {

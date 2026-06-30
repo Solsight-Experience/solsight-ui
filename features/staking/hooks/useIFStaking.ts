@@ -12,6 +12,10 @@ import useClusterStore from "@/stores/cluster.store";
 
 export type IFStakeStatus = "idle" | "creating" | "signing" | "confirming" | "done" | "error";
 
+export interface StakeActionSuccessPayload {
+    signature?: string | null;
+}
+
 interface IFStakeState {
     status: IFStakeStatus;
     signature: string | null;
@@ -170,7 +174,7 @@ export function useIFStaking(
     walletPubkey: string | null,
     signTransaction: SignTransactionFn | null,
     ensureWalletReadyForUserAction: ((actionLabel?: string) => boolean) | undefined,
-    onSuccess?: () => void
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void
 ) {
     const [stakeState, setStakeState] = useState<IFStakeState>(INIT_STATE);
     const [requestUnstakeState, setRequestUnstakeState] = useState<IFStakeState>(INIT_STATE);
@@ -227,7 +231,7 @@ export function useIFStaking(
                         onClick: () => window.open(getSolscanTxUrl(txSig), "_blank")
                     }
                 });
-                onSuccess?.();
+                onSuccess?.({ signature: txSig });
                 return true;
             } catch (err) {
                 const { message, isRejected } = parseError(err);
@@ -257,7 +261,7 @@ export function useIFStaking(
                 toast.success("Unstake request submitted. Wait for the cooldown to complete.", {
                     duration: 10000
                 });
-                onSuccess?.();
+                onSuccess?.({ signature: txSig });
                 return true;
             } catch (err) {
                 const { message, isRejected } = parseError(err);
@@ -288,7 +292,7 @@ export function useIFStaking(
                     onClick: () => window.open(getSolscanTxUrl(txSig), "_blank")
                 }
             });
-            onSuccess?.();
+            onSuccess?.({ signature: txSig });
             return true;
         } catch (err) {
             const { message, isRejected } = parseError(err);
@@ -311,7 +315,7 @@ export function useIFStaking(
 
             setCancelRequestState({ status: "done", signature: txSig, error: null });
             toast.success("Unstake request cancelled. Your SOL remains staked.");
-            onSuccess?.();
+            onSuccess?.({ signature: txSig });
             return true;
         } catch (err) {
             const { message, isRejected } = parseError(err);
