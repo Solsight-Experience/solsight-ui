@@ -1,5 +1,5 @@
 import { SocketManager, type EventHandler } from "@/lib/socket-client";
-import type { Cluster } from "@/stores/cluster.store";
+import useClusterStore, { type Cluster } from "@/stores/cluster.store";
 
 export interface TokenSubscribeDto {
     cluster: Cluster;
@@ -16,9 +16,15 @@ export interface TokenUnsubscribeDto {
 
 export class TokenSocketManager extends SocketManager {
     private static instance: TokenSocketManager;
+    private readonly subscriptions = new Map<string, TokenSubscribeDto>();
 
     private constructor() {
         super();
+        this.socket.on("connect", () => {
+            this.subscriptions.forEach((dto) => {
+                this.socket.emit("token:subscribe", this.withCluster(dto));
+            });
+        });
     }
 
     static getInstance() {
@@ -30,13 +36,16 @@ export class TokenSocketManager extends SocketManager {
 
     subscribe(dto: TokenSubscribeDto) {
         this.connect();
-        console.log("Subscribing:", dto);
-        this.socket.emit("token:subscribe", dto);
+        const key = this.buildKey(dto);
+        this.subscriptions.set(key, dto);
+        this.socket.emit("token:subscribe", this.withCluster(dto));
     }
 
     unsubscribe(dto: TokenUnsubscribeDto) {
-        this.socket.emit("token:unsubscribe", dto);
-        this.offKey(this.buildKey(dto));
+        const key = this.buildKey(dto);
+        this.subscriptions.delete(key);
+        this.socket.emit("token:unsubscribe", this.withCluster(dto));
+        this.offKey(key);
     }
 
     onDomainEvent<T = unknown>(dto: TokenSubscribeDto, handler: EventHandler<T>) {
@@ -60,20 +69,25 @@ export class TokenSocketManager extends SocketManager {
     }
 
     override disconnect() {
-        this.events.forEach((_, key) => {
-            const [domain, cluster, resource, interval] = key.split(":");
-            this.socket.emit("token:unsubscribe", {
-                cluster,
-                domain,
-                resource,
-                interval
-            });
+        this.subscriptions.forEach((dto) => {
+            this.socket.emit("token:unsubscribe", this.withCluster(dto));
         });
         super.disconnect();
     }
 
     /** FE & BE dùng CHUNG logic room: domain:cluster:resource:interval */
     private buildKey(dto: TokenSubscribeDto) {
-        return `${dto.domain}:${dto.cluster}:${dto.resource}:${dto.interval}`;
+        return `${dto.domain}:${this.getCluster()}:${dto.resource}:${dto.interval}`;
+    }
+
+    private withCluster(dto: TokenSubscribeDto | TokenUnsubscribeDto) {
+        return {
+            cluster: this.getCluster(),
+            ...dto
+        };
+    }
+
+    private getCluster(): Cluster {
+        return useClusterStore.getState().cluster;
     }
 }

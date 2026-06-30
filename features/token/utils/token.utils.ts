@@ -34,6 +34,14 @@ export const formatTokenAmount = (amount: number, decimals: number = 2): string 
     );
 };
 
+export const calculateTradeUsdValue = (amountToken: number, tokenPriceUsd: number): number => {
+    if (!Number.isFinite(amountToken) || !Number.isFinite(tokenPriceUsd)) {
+        return 0;
+    }
+
+    return amountToken * tokenPriceUsd;
+};
+
 export const formatPercent = (value: number, decimals: number = 2): string => {
     const formatter = new PercentFormatter(decimals);
     return formatter.format(value);
