@@ -63,7 +63,7 @@ export interface StakeHistoryRecord {
 
 export interface StakingHistoryResponse {
     records: StakeHistoryRecord[];
-    total: number;
+    nextCursor: string | null;
 }
 
 export function buildStakingTransaction(request: BuildStakingTransactionRequest): Promise<BuiltStakingTransaction> {
@@ -76,8 +76,8 @@ export function getStakingPosition(wallet: string): Promise<StakingPositionRespo
     });
 }
 
-export function getStakingHistory(wallet: string, page: number, pageSize: number): Promise<StakingHistoryResponse> {
+export function getStakingHistory(wallet: string, before: string | null, pageSize: number): Promise<StakingHistoryResponse> {
     return apiClient.get<StakingHistoryResponse>("/staking/history", {
-        params: { wallet, page, pageSize }
+        params: { wallet, before: before ?? undefined, pageSize }
     });
 }
