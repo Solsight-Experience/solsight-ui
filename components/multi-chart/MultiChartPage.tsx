@@ -6,6 +6,8 @@ import { MultiChartToolbar } from "./MultiChartToolbar";
 import { AddTokenChartModal } from "./AddTokenChartModal";
 import { ChartsGrid } from "./ChartsGrid";
 import type { TokenChartItem } from "@/features/multi-chart/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const MAX_CHARTS = 6;
 const CHARTS_STORAGE_KEY = "solsight_charts";
@@ -24,6 +26,7 @@ export const MultiChartPage: React.FC = () => {
     const [charts, setCharts] = useState<TokenChartItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // Load charts from localStorage on mount
     useEffect(() => {
@@ -79,11 +82,13 @@ export const MultiChartPage: React.FC = () => {
         setCharts((prev) => prev.filter((chart) => chart.id !== id));
     }, []);
 
+    const handleConfirmClearAll = useCallback(() => {
+        setDeleteDialogOpen(true);
+    }, [setDeleteDialogOpen]);
     const handleClearAll = useCallback(() => {
-        if (confirm("Are you sure you want to remove all charts?")) {
-            setCharts([]);
-        }
-    }, []);
+        setCharts([]);
+        setDeleteDialogOpen(false);
+    }, [setDeleteDialogOpen, setCharts]);
 
     const handleReorderCharts = useCallback((reorderedCharts: TokenChartItem[]) => {
         setCharts(reorderedCharts);
@@ -93,7 +98,7 @@ export const MultiChartPage: React.FC = () => {
         <div className="min-h-screen">
             {/* Toolbar */}
             <div className="px-4 sm:px-6 lg:px-8 py-4">
-                <MultiChartToolbar chartCount={charts.length} maxCharts={MAX_CHARTS} onAddChart={() => setIsAddModalOpen(true)} onClearAll={handleClearAll} />
+                <MultiChartToolbar chartCount={charts.length} maxCharts={MAX_CHARTS} onAddChart={() => setIsAddModalOpen(true)} onClearAll={handleConfirmClearAll} />
             </div>
 
             {/* Content Area */}
@@ -140,6 +145,27 @@ export const MultiChartPage: React.FC = () => {
                 maxCharts={MAX_CHARTS}
                 currentCharts={charts.length}
             />
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent className="border-[var(--border-subtle)] bg-[var(--surface-card)]">
+                    <DialogHeader>
+                        <DialogTitle className="text-[var(--text-primary)] text-lg">Delete Wallet</DialogTitle>
+                        <DialogDescription className="text-[var(--text-muted)] text-sm">
+                            Are you sure you want to delete this wallet? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleClearAll}
+                            className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-600/80 dark:hover:bg-red-600"
+                        >
+                            Clear All
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
