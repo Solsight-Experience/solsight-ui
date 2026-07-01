@@ -5,19 +5,26 @@ import { flexRender } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "./EmptyState";
 import { useCategoryTable } from "../hooks/useCategoryTable";
+import type { CategorySortBy, CategorySortOrder } from "../services/token-discovery.service";
 
 interface CategoryTableProps {
     searchQuery?: string;
     onCategorySelect?: (slug: string) => void;
+    marketCapMin?: number | null;
+    marketCapMax?: number | null;
+    volumeMin?: number | null;
+    volumeMax?: number | null;
+    sortBy?: CategorySortBy;
+    sortOrder?: CategorySortOrder;
 }
 
 /**
  * CategoryTable Component
  * Displays category overview data for the Categories tab
  */
-export function CategoryTable({ searchQuery = "", onCategorySelect }: CategoryTableProps) {
+export function CategoryTable({ searchQuery = "", onCategorySelect, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder }: CategoryTableProps) {
     const router = useRouter();
-    const { table, isLoading, error } = useCategoryTable({ searchQuery });
+    const { table, isLoading, error } = useCategoryTable({ searchQuery, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder });
 
     const handleRowClick = (categorySlug: string) => {
         if (onCategorySelect) {

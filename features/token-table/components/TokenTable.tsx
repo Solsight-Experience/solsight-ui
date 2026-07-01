@@ -51,6 +51,8 @@ export default function TokenTable() {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setCategoryFilters,
+        resetCategoryFilters,
         setSelectedCategorySlug,
         resetFilters,
         applyFilterResults,
@@ -121,13 +123,16 @@ export default function TokenTable() {
                         <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
                         <FilterButton
                             key={filters.activeTab}
-                            filterOptions={{ limit: 100, time_frame: filters.timeFilter }}
-                            onReset={() => {
-                                resetFilters();
-                            }}
-                            onApply={(res: TokenFilterResponse) => {
-                                applyFilterResults(res);
-                            }}
+                            isCategory
+                            onReset={resetCategoryFilters}
+                            onApplyCategory={(values) =>
+                                setCategoryFilters({
+                                    categoryMarketCapMin: values.marketCapMin ?? null,
+                                    categoryMarketCapMax: values.marketCapMax ?? null,
+                                    categoryVolumeMin: values.volumeMin ?? null,
+                                    categoryVolumeMax: values.volumeMax ?? null
+                                })
+                            }
                         />
                     </RightPanelFilter>
                 );
@@ -159,7 +164,18 @@ export default function TokenTable() {
 
     const renderContent = () => {
         if (isCategories) {
-            return <CategoryTable searchQuery={filters.categorySearch} onCategorySelect={setSelectedCategorySlug} />;
+            return (
+                <CategoryTable
+                    searchQuery={filters.categorySearch}
+                    onCategorySelect={setSelectedCategorySlug}
+                    marketCapMin={filters.categoryMarketCapMin}
+                    marketCapMax={filters.categoryMarketCapMax}
+                    volumeMin={filters.categoryVolumeMin}
+                    volumeMax={filters.categoryVolumeMax}
+                    sortBy={filters.categorySortBy}
+                    sortOrder={filters.categorySortOrder}
+                />
+            );
         }
         if (error) {
             return <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />;
