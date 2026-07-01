@@ -114,6 +114,7 @@ export interface ChatPageContext {
 }
 
 export interface SendChatMessageDto {
+    cluster: "mainnet" | "devnet";
     message: string;
     sessionId: string;
     userId?: string;
