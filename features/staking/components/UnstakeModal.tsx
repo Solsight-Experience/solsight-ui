@@ -74,6 +74,10 @@ export function UnstakeModal({
     const hasPosition = !!ifPosition && ifPosition.estimatedSol > 0;
     const hasPendingRequest = !!ifPosition && Number(ifPosition.lastWithdrawRequestShares) > 0;
     const canWithdraw = !!ifPosition?.canWithdraw;
+    const shouldStayOnWithdrawStep = unstakeState.status === "done";
+    const showRequestStep = !shouldStayOnWithdrawStep && !isLoadingPosition && hasPosition && !hasPendingRequest;
+    const showCooldownStep = !shouldStayOnWithdrawStep && !isLoadingPosition && hasPendingRequest && !canWithdraw;
+    const showWithdrawStep = !isLoadingPosition && (shouldStayOnWithdrawStep || (hasPendingRequest && canWithdraw));
 
     const cooldownEndsDate = hasPendingRequest && ifPosition!.cooldownEndsAt > 0 ? new Date(ifPosition!.cooldownEndsAt * 1000).toLocaleString("en-US") : null;
 
@@ -158,7 +162,7 @@ export function UnstakeModal({
                     )}
 
                     {/* Step 1: Request Remove (no pending request yet) */}
-                    {!isLoadingPosition && hasPosition && !hasPendingRequest && (
+                    {showRequestStep && (
                         <div className="space-y-3">
                             <div className="flex gap-2.5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-3.5 py-3 text-[12px] text-yellow-700 dark:bg-yellow-500/6 dark:text-yellow-300">
                                 <Clock className="h-4 w-4 flex-shrink-0 mt-0.5 text-yellow-400" />
@@ -233,7 +237,7 @@ export function UnstakeModal({
                     )}
 
                     {/* Step 2: Pending — waiting for cooldown */}
-                    {!isLoadingPosition && hasPendingRequest && !canWithdraw && (
+                    {showCooldownStep && (
                         <div className="space-y-3">
                             <div className="space-y-2 rounded-2xl border border-orange-500/25 bg-orange-500/10 px-4 py-4 dark:bg-orange-500/8">
                                 <div className="flex items-center gap-2">
@@ -256,17 +260,25 @@ export function UnstakeModal({
                     )}
 
                     {/* Step 3: Ready to withdraw */}
-                    {!isLoadingPosition && hasPendingRequest && canWithdraw && (
+                    {showWithdrawStep && (
                         <div className="space-y-3">
                             <div className="space-y-2 rounded-2xl border border-green-500/25 bg-green-500/10 px-4 py-4 dark:bg-green-500/8">
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-400" />
-                                    <p className="text-[13px] font-bold text-green-700 dark:text-green-300">Cooldown complete!</p>
+                                    <p className="text-[13px] font-bold text-green-700 dark:text-green-300">
+                                        {shouldStayOnWithdrawStep ? "Withdraw complete!" : "Cooldown complete!"}
+                                    </p>
                                 </div>
                                 <p className="text-[12px] text-slate-600 dark:text-gray-400">
-                                    You can now withdraw{" "}
-                                    <strong className="text-slate-900 dark:text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> to your
-                                    wallet.
+                                    {shouldStayOnWithdrawStep ? (
+                                        <>Your SOL has been withdrawn to your wallet.</>
+                                    ) : (
+                                        <>
+                                            You can now withdraw{" "}
+                                            <strong className="text-slate-900 dark:text-white">{ifPosition!.lastWithdrawRequestValue.toFixed(6)} SOL</strong> to
+                                            your wallet.
+                                        </>
+                                    )}
                                 </p>
                             </div>
 
