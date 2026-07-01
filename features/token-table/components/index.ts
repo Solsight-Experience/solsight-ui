@@ -22,7 +22,7 @@ export { CategoryTable } from "./CategoryTable";
 export type { TokenTableTabOption } from "./TokenTabs";
 export type { TimeFilterValue } from "./TimeFilters";
 export type { SortOption, SortDirection, SortState } from "./SortPanel";
-export type { FilterFormData, FilterDialogProps } from "./FilterDialog";
+export type { FilterFormData, FilterDialogProps } from "../types/Filterdialog.types";
 export type { FilterOptions } from "./FilterButton";
 
 // Hooks
