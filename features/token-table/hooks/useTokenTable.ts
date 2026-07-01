@@ -90,7 +90,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         favouriteIds: new Set(),
         filteredData: undefined,
         ...DEFAULT_CATEGORY_FILTERS
-    });
+    }));
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
