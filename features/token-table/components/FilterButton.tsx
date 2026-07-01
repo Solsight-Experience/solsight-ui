@@ -1,5 +1,6 @@
 import { memo, useMemo, useState } from "react";
 import { Filter, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTitle, DialogTrigger, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import FilterDialog, { FilterFormData, getFilterRequestBody } from "./FilterDialog";
@@ -16,10 +17,22 @@ export interface FilterOptions {
     time_frame?: string;
 }
 
+export interface CategoryFilterValues {
+    marketCapMin?: number;
+    marketCapMax?: number;
+    volumeMin?: number;
+    volumeMax?: number;
+}
+
 interface FilterButtonProps {
     filterOptions?: FilterOptions;
+    /** When true, Apply maps the form's Market Cap/Volume fields onto the category API instead of calling /tokens/filter. */
+    isCategory?: boolean;
+    /** Which filter fields to show in the dialog. Omit to show every field (default). */
+    visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
     onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
+    onApplyCategory?: (values: CategoryFilterValues) => void;
     onError?: (error: Error) => void;
 }
 
@@ -56,7 +69,15 @@ function countActiveFilters(formData: FilterFormData): number {
     return count;
 }
 
-export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filterOptions, onReset, onApply, onError }) {
+export const FilterButton = memo<FilterButtonProps>(function FilterButton({
+    filterOptions,
+    isCategory,
+    visibleFields,
+    onReset,
+    onApply,
+    onApplyCategory,
+    onError
+}) {
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
@@ -77,6 +98,20 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Category tab has no /tokens/filter equivalent — map the same form
+        // onto the category API's own min/max params instead of calling it.
+        if (isCategory) {
+            onApplyCategory?.({
+                marketCapMin: formData.market_cap_min || undefined,
+                marketCapMax: formData.market_cap_max ?? undefined,
+                volumeMin: formData.volume_24h_min || undefined,
+                volumeMax: formData.volume_24h_max ?? undefined
+            });
+            toast.success("Filters applied successfully");
+            setIsOpen(false);
+            return;
+        }
 
         try {
             const requestBody = getFilterRequestBody(formData);
@@ -170,7 +205,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                                 <p className="text-[12px] text-white/40">Applying filters…</p>
                             </div>
                         ) : (
-                            <FilterDialog formData={formData} onFormChange={handleFormChange} />
+                            <FilterDialog formData={formData} onFormChange={handleFormChange} visibleFields={visibleFields} />
                         )}
                     </div>
 

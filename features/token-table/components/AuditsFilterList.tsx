@@ -35,7 +35,7 @@ const indicatorCheckedMap: Record<AuditColor, string> = {
     orange: "border-orange-400 bg-orange-400"
 };
 
-export function AuditsFilterList({ formData, onFormChange }: FilterListProps) {
+export function AuditsFilterList({ formData, onFormChange, isFieldVisible = () => true }: FilterListProps) {
     const handleCheckboxChange = (field: keyof FilterFormData, checked: boolean) => {
         onFormChange({ [field]: checked });
     };
@@ -77,39 +77,41 @@ export function AuditsFilterList({ formData, onFormChange }: FilterListProps) {
 
     return (
         <div className="py-4 grid grid-cols-2 gap-2.5">
-            {auditItems.map((item) => (
-                <button
-                    key={item.field}
-                    type="button"
-                    data-active={item.checked}
-                    onClick={() => handleCheckboxChange(item.field, !item.checked)}
-                    className={cn(
-                        "relative flex flex-col gap-2 p-3.5 rounded-xl border cursor-pointer text-left",
-                        "transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]",
-                        colorMap[item.color]
-                    )}
-                >
-                    <div className="flex items-start justify-between">
-                        <span className={cn("opacity-80", iconColorMap[item.color])}>{item.icon}</span>
-                        <div
-                            className={cn(
-                                "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200",
-                                item.checked ? indicatorCheckedMap[item.color] : "border-white/20 bg-transparent"
-                            )}
-                        >
-                            {item.checked && (
-                                <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
+            {auditItems
+                .filter((item) => isFieldVisible(item.field))
+                .map((item) => (
+                    <button
+                        key={item.field}
+                        type="button"
+                        data-active={item.checked}
+                        onClick={() => handleCheckboxChange(item.field, !item.checked)}
+                        className={cn(
+                            "relative flex flex-col gap-2 p-3.5 rounded-xl border cursor-pointer text-left",
+                            "transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]",
+                            colorMap[item.color]
+                        )}
+                    >
+                        <div className="flex items-start justify-between">
+                            <span className={cn("opacity-80", iconColorMap[item.color])}>{item.icon}</span>
+                            <div
+                                className={cn(
+                                    "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                                    item.checked ? indicatorCheckedMap[item.color] : "border-white/20 bg-transparent"
+                                )}
+                            >
+                                {item.checked && (
+                                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <p className="text-[12px] font-semibold text-white/90 leading-tight">{item.label}</p>
-                        <p className="text-[10px] text-white/40 mt-0.5 leading-snug">{item.description}</p>
-                    </div>
-                </button>
-            ))}
+                        <div>
+                            <p className="text-[12px] font-semibold text-white/90 leading-tight">{item.label}</p>
+                            <p className="text-[10px] text-white/40 mt-0.5 leading-snug">{item.description}</p>
+                        </div>
+                    </button>
+                ))}
         </div>
     );
 }

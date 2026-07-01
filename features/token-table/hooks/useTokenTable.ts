@@ -8,7 +8,7 @@ import { TokenTableTabOption } from "../components/TokenTabs";
 import { SortOption, SortDirection } from "../components/SortPanel";
 import { createColumns } from "../config/columns";
 import type { TokenTableData } from "../config/types";
-import { TokenDiscoveryService, SortBy, TimeFrame } from "../services/token-discovery.service";
+import { TokenDiscoveryService, SortBy, TimeFrame, CategorySortBy, CategorySortOrder } from "../services/token-discovery.service";
 import { transformTokenOverviews } from "../utils/transform";
 import { queryKeys } from "@/lib/react-query-keys";
 import { useFavoriteTokens, useToggleFavorite } from "@/features/token/hooks/token.hooks";
@@ -53,7 +53,27 @@ export interface TokenTableFilters {
     sortDirection: SortDirection;
     favouriteIds: Set<string>;
     filteredData?: TokenTableData[]; // Store filtered results from API
+    categoryMarketCapMin: number | null;
+    categoryMarketCapMax: number | null;
+    categoryVolumeMin: number | null;
+    categoryVolumeMax: number | null;
+    categorySortBy: CategorySortBy;
+    categorySortOrder: CategorySortOrder;
 }
+
+type CategoryFilterFields = Pick<
+    TokenTableFilters,
+    "categoryMarketCapMin" | "categoryMarketCapMax" | "categoryVolumeMin" | "categoryVolumeMax" | "categorySortBy" | "categorySortOrder"
+>;
+
+const DEFAULT_CATEGORY_FILTERS: CategoryFilterFields = {
+    categoryMarketCapMin: null,
+    categoryMarketCapMax: null,
+    categoryVolumeMin: null,
+    categoryVolumeMax: null,
+    categorySortBy: "market_cap",
+    categorySortOrder: "desc"
+};
 
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
@@ -68,7 +88,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         sortOption: "volumes",
         sortDirection: "none",
         favouriteIds: new Set(),
-        filteredData: undefined
+        filteredData: undefined,
+        ...DEFAULT_CATEGORY_FILTERS
     }));
 
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -323,7 +344,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 activeTab,
                 selectedCategorySlug: null,
                 categorySearch: "",
-                filteredData: undefined
+                filteredData: undefined,
+                ...DEFAULT_CATEGORY_FILTERS
             }));
         },
         [isLoggedIn]
@@ -339,6 +361,14 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const setCategorySearch = useCallback((categorySearch: string) => {
         setFilters((prev) => ({ ...prev, categorySearch }));
+    }, []);
+
+    const setCategoryFilters = useCallback((values: Partial<CategoryFilterFields>) => {
+        setFilters((prev) => ({ ...prev, ...values }));
+    }, []);
+
+    const resetCategoryFilters = useCallback(() => {
+        setFilters((prev) => ({ ...prev, ...DEFAULT_CATEGORY_FILTERS }));
     }, []);
 
     const toggleSort = useCallback((option: SortOption) => {
@@ -377,7 +407,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             // Preserve favouriteIds — they are synced from the server,
             // not a UI filter, and should not be wiped on reset.
             favouriteIds: prev.favouriteIds,
-            filteredData: undefined
+            filteredData: undefined,
+            ...DEFAULT_CATEGORY_FILTERS
         }));
     }, []);
 
@@ -392,6 +423,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setCategoryFilters,
+        resetCategoryFilters,
         setSelectedCategorySlug,
         toggleSort,
         toggleFavourite,
