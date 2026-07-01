@@ -98,7 +98,12 @@ export const MultiChartPage: React.FC = () => {
         <div className="min-h-screen">
             {/* Toolbar */}
             <div className="px-4 sm:px-6 lg:px-8 py-4">
-                <MultiChartToolbar chartCount={charts.length} maxCharts={MAX_CHARTS} onAddChart={() => setIsAddModalOpen(true)} onClearAll={handleConfirmClearAll} />
+                <MultiChartToolbar
+                    chartCount={charts.length}
+                    maxCharts={MAX_CHARTS}
+                    onAddChart={() => setIsAddModalOpen(true)}
+                    onClearAll={handleConfirmClearAll}
+                />
             </div>
 
             {/* Content Area */}
@@ -157,10 +162,7 @@ export const MultiChartPage: React.FC = () => {
                         <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleClearAll}
-                            className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-600/80 dark:hover:bg-red-600"
-                        >
+                        <Button onClick={handleClearAll} className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-600/80 dark:hover:bg-red-600">
                             Clear All
                         </Button>
                     </DialogFooter>
