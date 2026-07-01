@@ -28,7 +28,6 @@ const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", max
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
     const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
-    const setDefaultSlippageBps = useSettingsStore((state) => state.setDefaultSlippageBps);
     const [slippageBps, setSlippageBps] = useState(defaultSlippageBps);
     const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(defaultSlippageBps);
     const [decimals, setDecimals] = useState(9);
@@ -268,11 +267,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                                 step={10}
                                 showStepper
                                 value={slippageBps}
-                                onChange={(value) => {
-                                    const nextValue = value ?? 1;
-                                    setSlippageBps(nextValue);
-                                    setDefaultSlippageBps(nextValue);
-                                }}
+                                onChange={(value) => setSlippageBps(value ?? 0)}
                             />
                         </div>
 
