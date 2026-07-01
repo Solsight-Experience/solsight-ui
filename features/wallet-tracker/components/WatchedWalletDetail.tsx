@@ -624,7 +624,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export const WatchedWalletDetail: React.FC<{ walletAddress: string }> = ({ walletAddress }) => {
+export const WatchedWalletDetail: React.FC<{ walletAddress: string; network?: "mainnet" | "devnet" }> = ({ walletAddress, network = "mainnet" }) => {
     const { activeTab, setActiveTab } = useWatchlistStore();
 
     return (
@@ -674,7 +674,7 @@ export const WatchedWalletDetail: React.FC<{ walletAddress: string }> = ({ walle
                     <ActivityTab walletAddress={walletAddress} />
                 </TabsContent>
                 <TabsContent value="alerts">
-                    <WalletAlertsTab walletAddress={walletAddress} />
+                    <WalletAlertsTab walletAddress={walletAddress} network={network} />
                 </TabsContent>
             </Tabs>
         </div>

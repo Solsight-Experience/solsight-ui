@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Copy, Check, CheckCircle2, Loader2, MessageCircle, Unlink } from "lucide-react";
+import { Copy, Check, CheckCircle2, Loader2, Send, Unlink, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useZaloSubscription, useGenerateZaloToken, useZaloStatus, useDisconnectZalo } from "../hooks/useZaloSubscription";
+import { useTelegramSubscription, useGenerateTelegramToken, useTelegramStatus, useDisconnectTelegram } from "../hooks/useTelegramSubscription";
+
+const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "solsighthcmus_bot";
 
 type Step = "idle" | "pending" | "verified";
 
@@ -50,15 +52,15 @@ function TokenExpiry({ expiresAt }: { expiresAt: string }) {
     return <span className={`text-[11px] tabular-nums ${remaining === "Expired" ? "text-red-400" : "text-white/30"}`}>Expires in {remaining}</span>;
 }
 
-interface ZaloBotDialogProps {
+interface TelegramBotDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export function ZaloBotDialog({ open, onOpenChange }: ZaloBotDialogProps) {
-    const { data: subscription, isLoading: loadingSubscription } = useZaloSubscription();
-    const { mutateAsync: generateToken, isPending: generating } = useGenerateZaloToken();
-    const { mutateAsync: disconnect, isPending: disconnecting } = useDisconnectZalo();
+export function TelegramBotDialog({ open, onOpenChange }: TelegramBotDialogProps) {
+    const { data: subscription, isLoading: loadingSubscription } = useTelegramSubscription();
+    const { mutateAsync: generateToken, isPending: generating } = useGenerateTelegramToken();
+    const { mutateAsync: disconnect, isPending: disconnecting } = useDisconnectTelegram();
 
     const step: Step = (() => {
         if (!subscription) return "idle";
@@ -68,13 +70,11 @@ export function ZaloBotDialog({ open, onOpenChange }: ZaloBotDialogProps) {
     })();
 
     const isPolling = open && step === "pending";
-    const { data: statusPoll } = useZaloStatus(isPolling);
+    const { data: statusPoll } = useTelegramStatus(isPolling);
 
-    // Transition to verified when poll detects it
     useEffect(() => {
         if (statusPoll?.isVerified) {
-            // React Query will update the subscription query cache via invalidation in the hook
-            // Just trigger a refetch by invalidating — handled by onSuccess in useZaloStatus
+            // React Query updates subscription cache via invalidation in useTelegramStatus onSuccess
         }
     }, [statusPoll?.isVerified]);
 
@@ -103,9 +103,9 @@ export function ZaloBotDialog({ open, onOpenChange }: ZaloBotDialogProps) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2.5 text-[14px] font-semibold text-white/90">
                         <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500/15 ring-1 ring-blue-500/25">
-                            <MessageCircle size={13} className="text-blue-400" />
+                            <Send size={13} className="text-blue-400" />
                         </div>
-                        Zalo Bot Notifications
+                        Telegram Bot Notifications
                     </DialogTitle>
                 </DialogHeader>
 
@@ -136,7 +136,7 @@ function IdleState({ onConnect, connecting }: { onConnect: () => void; connectin
     return (
         <div className="flex flex-col gap-5">
             <p className="text-[12px] text-white/50 leading-relaxed">
-                Connect your Zalo account to receive wallet alert notifications directly in your Zalo chat.
+                Connect your Telegram account to receive wallet alert notifications directly in your Telegram chat.
             </p>
             <button
                 onClick={onConnect}
@@ -147,18 +147,20 @@ function IdleState({ onConnect, connecting }: { onConnect: () => void; connectin
                            disabled:opacity-50 disabled:cursor-not-allowed
                            text-[13px] font-semibold transition-all duration-150"
             >
-                {connecting ? <Loader2 className="size-3.5 animate-spin" /> : <MessageCircle className="size-3.5" />}
-                {connecting ? "Generating code..." : "Connect Zalo Bot"}
+                {connecting ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                {connecting ? "Generating code..." : "Connect Telegram Bot"}
             </button>
         </div>
     );
 }
 
 function PendingState({ token, expiresAt, onRefresh, refreshing }: { token: string; expiresAt: string; onRefresh: () => void; refreshing: boolean }) {
+    const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${token}`;
+
     return (
         <div className="flex flex-col gap-4">
             <p className="text-[12px] text-white/50 leading-relaxed">
-                Send this code to the <span className="text-white/80 font-medium">SolSight Zalo OA bot</span> to verify your account.
+                Send this code to the <span className="text-white/80 font-medium">@{TELEGRAM_BOT_USERNAME}</span> bot to verify your account.
             </p>
 
             <div className="flex flex-col items-center gap-3 py-5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -168,6 +170,19 @@ function PendingState({ token, expiresAt, onRefresh, refreshing }: { token: stri
                     <TokenExpiry expiresAt={expiresAt} />
                 </div>
             </div>
+
+            <a
+                href={deepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-xl
+                           bg-blue-500/10 border border-blue-500/20 text-blue-300
+                           hover:bg-blue-500/20 hover:border-blue-500/35
+                           text-[12px] font-medium transition-all duration-150"
+            >
+                <ExternalLink className="size-3.5" />
+                Open in Telegram
+            </a>
 
             <div className="flex items-center gap-2 text-[11px] text-white/30">
                 <Loader2 className="size-3 animate-spin shrink-0" />
@@ -197,12 +212,12 @@ function VerifiedState({ verifiedAt, onDisconnect, disconnecting }: { verifiedAt
             <div className="flex flex-col items-center gap-3 py-6 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
                 <CheckCircle2 className="size-10 text-emerald-400" />
                 <div className="text-center">
-                    <p className="text-[13px] font-semibold text-emerald-300">Zalo Connected</p>
+                    <p className="text-[13px] font-semibold text-emerald-300">Telegram Connected</p>
                     <p className="text-[11px] text-white/30 mt-0.5">Connected on {date}</p>
                 </div>
             </div>
 
-            <p className="text-[12px] text-white/40 text-center">Wallet alert notifications will be sent to your Zalo chat.</p>
+            <p className="text-[12px] text-white/40 text-center">Wallet alert notifications will be sent to your Telegram chat.</p>
 
             <button
                 onClick={onDisconnect}
