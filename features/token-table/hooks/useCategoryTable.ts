@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCoreRowModel, getSortedRowModel, getPaginationRowModel, SortingState, PaginationState, useReactTable } from "@tanstack/react-table";
+import { getCoreRowModel, getPaginationRowModel, PaginationState, useReactTable } from "@tanstack/react-table";
 import { categoryColumns } from "../config/categoryColumns";
 import { TokenDiscoveryService } from "../services/token-discovery.service";
 import { queryKeys } from "@/lib/react-query-keys";
@@ -34,7 +34,6 @@ interface UseCategoryTableOptions {
 
 export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions = {}) {
     const queryClient = useQueryClient();
-    const [sorting, setSorting] = useState<SortingState>([]);
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 7
@@ -131,15 +130,12 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         data,
         columns: categoryColumns,
         state: {
-            sorting,
             pagination
         },
         manualPagination: true,
         pageCount,
         onPaginationChange: setPagination,
-        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel()
     });
 

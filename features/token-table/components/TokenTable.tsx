@@ -118,7 +118,6 @@ export default function TokenTable() {
             case "CATEGORIES":
                 return (
                     <RightPanelFilter>
-                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
                         <FilterButton
                             key={filters.activeTab}
