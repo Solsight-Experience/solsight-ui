@@ -14,6 +14,7 @@ import { queryKeys } from "@/lib/react-query-keys";
 import { useFavoriteTokens, useToggleFavorite } from "@/features/token/hooks/token.hooks";
 import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";
+import useSettingsStore from "@/stores/settings.store";
 
 const PAGE_SIZE = 20;
 
@@ -77,10 +78,11 @@ const DEFAULT_CATEGORY_FILTERS: CategoryFilterFields = {
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
-    const [filters, setFilters] = useState<TokenTableFilters>({
+    const defaultQuickBuyAmount = useSettingsStore((state) => state.defaultQuickBuyAmount);
+    const [filters, setFilters] = useState<TokenTableFilters>(() => ({
         timeFilter: "24h",
         activeTab: "TRENDING",
-        quickBuyAmount: "0.1",
+        quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
         categorySearch: "",
         selectedCategorySlug: null,
         sortOption: "volumes",
@@ -118,6 +120,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             }));
         }
     }, [isLoggedIn]);
+
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, quickBuyAmount: defaultQuickBuyAmount }));
+    }, [defaultQuickBuyAmount]);
 
     // Mutation for toggling favorites
     const toggleFavoriteMutation = useToggleFavorite();
@@ -393,7 +399,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({
             timeFilter: "24h",
             activeTab: "TRENDING",
-            quickBuyAmount: "0.1",
+            quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
             categorySearch: "",
             selectedCategorySlug: null,
             sortOption: "volumes",

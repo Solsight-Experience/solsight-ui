@@ -10,7 +10,7 @@ export class SlippageItem extends PresetCustomItem<number> {
     readonly icon = SlidersHorizontal;
 
     autoValue(ctx: ConfigCtx): number | null {
-        return ctx.swapInfo?.autoSlippageBps ?? 3000;
+        return ctx.defaultSlippageBps ?? ctx.swapInfo?.autoSlippageBps ?? 3000;
     }
 
     format(value: number): string {
