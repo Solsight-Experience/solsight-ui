@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCoreRowModel, getPaginationRowModel, PaginationState, useReactTable } from "@tanstack/react-table";
 import { categoryColumns } from "../config/categoryColumns";
@@ -62,17 +62,20 @@ export function useCategoryTable({
         setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     }, [debouncedSearch, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder]);
 
-    const buildParams = (offset: number) => ({
-        limit: pagination.pageSize,
-        offset,
-        name: debouncedSearch || undefined,
-        market_cap_min: marketCapMin ?? undefined,
-        market_cap_max: marketCapMax ?? undefined,
-        volume_min: volumeMin ?? undefined,
-        volume_max: volumeMax ?? undefined,
-        sort_by: sortBy,
-        sort_order: sortOrder
-    });
+    const buildParams = useCallback(
+        (offset: number) => ({
+            limit: pagination.pageSize,
+            offset,
+            name: debouncedSearch || undefined,
+            market_cap_min: marketCapMin ?? undefined,
+            market_cap_max: marketCapMax ?? undefined,
+            volume_min: volumeMin ?? undefined,
+            volume_max: volumeMax ?? undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder
+        }),
+        [pagination.pageSize, debouncedSearch, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder]
+    );
 
     // Fetch categories from API
     const {
@@ -117,8 +120,20 @@ export function useCategoryTable({
                 queryFn: () => TokenDiscoveryService.getCategories(buildParams(nextOffset))
             });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiData, pagination.pageIndex, pagination.pageSize, debouncedSearch, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder, queryClient]);
+    }, [
+        apiData,
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearch,
+        marketCapMin,
+        marketCapMax,
+        volumeMin,
+        volumeMax,
+        sortBy,
+        sortOrder,
+        queryClient,
+        buildParams
+    ]);
 
     const data = useMemo((): CategoryOverview[] => {
         const rawArray = (apiData?.data ?? []) as CategoryApiItem[];
