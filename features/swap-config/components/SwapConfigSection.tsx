@@ -11,15 +11,17 @@ interface SwapConfigSectionProps extends Omit<SwapConfigSurfaceProps, "ctx"> {
     inputMint: string | undefined;
     outputMint: string | undefined;
     pair: TokenPair | undefined;
+    defaultSlippageBps?: number;
 }
 
-export const SwapConfigSection: React.FC<SwapConfigSectionProps> = ({ states, onItemChange, inputMint, outputMint, pair }) => {
+export const SwapConfigSection: React.FC<SwapConfigSectionProps> = ({ states, onItemChange, inputMint, outputMint, pair, defaultSlippageBps }) => {
     const [open, setOpen] = useState(false);
     const { data: swapInfo } = useSwapInfo({ inputMint, outputMint });
 
     const ctx: ConfigCtx = {
         swapInfo,
         pair,
+        defaultSlippageBps,
         getItemState: <T = unknown,>(id: keyof typeof states) => states[id] as T | undefined
     };
 

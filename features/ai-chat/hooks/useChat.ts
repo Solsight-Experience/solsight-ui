@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import useClusterStore from "@/stores/cluster.store";
 import { phantomWallet } from "@/lib/wallet";
 import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto, ChatPageContext } from "@/types/dto";
@@ -53,6 +54,7 @@ export function useChat() {
 
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
+    const cluster = useClusterStore((s) => s.cluster);
     // Fetch historical messages
     const {
         data,
@@ -163,6 +165,7 @@ export function useChat() {
         setError(null);
         setToolProgressLabel(null);
         socketManager.sendMessage({
+            cluster,
             message: text,
             sessionId: sessionIdRef.current,
             userId: user?.id,

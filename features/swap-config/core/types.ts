@@ -33,6 +33,7 @@ export interface TokenPair {
 export interface ConfigCtx {
     swapInfo: SwapInfoSnapshot | undefined;
     pair: TokenPair | undefined;
+    defaultSlippageBps?: number;
     // Cross-item read access. Implementations get a snapshot of all item states.
     getItemState: <T = unknown>(id: SwapConfigId) => T | undefined;
 }
