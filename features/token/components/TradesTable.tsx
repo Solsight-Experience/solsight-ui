@@ -2,7 +2,7 @@ import React from "react";
 import { ExternalLink } from "lucide-react";
 import useClusterStore, { type Cluster } from "@/stores/cluster.store";
 import { useTrades } from "../hooks/token.hooks";
-import { formatTimeAgo, formatNumber, formatTokenAmount } from "../utils/token.utils";
+import { calculateTradeUsdValue, formatTimeAgo, formatNumber, formatTokenAmount } from "../utils/token.utils";
 import type { Trade } from "../types/token.types";
 
 interface TradesTableProps {
@@ -17,36 +17,40 @@ const getSolscanTxUrl = (txUrl: string, cluster: Cluster) => {
     return url.toString();
 };
 
-const TradeRow: React.FC<Trade & { cluster: Cluster }> = ({ timestamp, type, amount_token, price_usd, trader_address, market_cap, tx_url, cluster }) => (
-    <tr className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)]">
-        <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{formatTimeAgo(timestamp)}</td>
-        <td className="py-3 px-4">
-            <span
-                className={`px-3 py-1 rounded text-xs font-semibold ${type === "BUY" ? "bg-green-500/20 text-green-600 dark:text-green-500" : "bg-red-500/20 text-red-600 dark:text-red-500"}`}
-            >
-                {type}
-            </span>
-        </td>
-        <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatNumber(market_cap)}</td>
-        <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatTokenAmount(amount_token, 2)}</td>
-        <td className="py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">${price_usd.toFixed(2)}</td>
-        <td className="py-3 px-4">
-            <code className="text-xs bg-[var(--surface-btn)] border border-[var(--border-faint)] px-2 py-1 rounded text-[var(--text-muted)]">
-                {trader_address}
-            </code>
-        </td>
-        <td className="py-3 px-4">
-            <a
-                href={getSolscanTxUrl(tx_url, cluster)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
-            >
-                <ExternalLink className="w-4 h-4" />
-            </a>
-        </td>
-    </tr>
-);
+const TradeRow: React.FC<Trade & { cluster: Cluster }> = ({ timestamp, type, amount_token, price_usd, trader_address, market_cap, tx_url, cluster }) => {
+    const tradeUsdValue = calculateTradeUsdValue(amount_token, price_usd);
+
+    return (
+        <tr className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)]">
+            <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{formatTimeAgo(timestamp)}</td>
+            <td className="py-3 px-4">
+                <span
+                    className={`px-3 py-1 rounded text-xs font-semibold ${type === "BUY" ? "bg-green-500/20 text-green-600 dark:text-green-500" : "bg-red-500/20 text-red-600 dark:text-red-500"}`}
+                >
+                    {type}
+                </span>
+            </td>
+            <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatNumber(market_cap)}</td>
+            <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatTokenAmount(amount_token, 2)}</td>
+            <td className="py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">${formatTokenAmount(tradeUsdValue, 2)}</td>
+            <td className="py-3 px-4">
+                <code className="text-xs bg-[var(--surface-btn)] border border-[var(--border-faint)] px-2 py-1 rounded text-[var(--text-muted)]">
+                    {trader_address}
+                </code>
+            </td>
+            <td className="py-3 px-4">
+                <a
+                    href={getSolscanTxUrl(tx_url, cluster)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+                >
+                    <ExternalLink className="w-4 h-4" />
+                </a>
+            </td>
+        </tr>
+    );
+};
 
 export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
     const cluster = useClusterStore((state) => state.cluster);

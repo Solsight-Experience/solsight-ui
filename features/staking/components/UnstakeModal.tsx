@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Clock, AlertCircle, CheckCircle2, ArrowUpFromLine } from "lucide-react";
-import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
+import { useIFStaking, IFStakeStatus, type StakeActionSuccessPayload } from "../hooks/useIFStaking";
 import { IFPosition } from "../hooks/useIFPositions";
 import { IF_MIN_STAKE_SOL, getSolscanTxUrl } from "../constants/program";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface UnstakeModalProps {
     open: boolean;
@@ -17,7 +18,9 @@ interface UnstakeModalProps {
     ifPosition: IFPosition | null;
     isLoadingPosition: boolean;
     connected: boolean;
-    onSuccess?: () => void;
+    signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
+    ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void;
 }
 
 const REQUEST_LABELS: Record<IFStakeStatus, string> = {
@@ -40,9 +43,25 @@ const WITHDRAW_LABELS: Record<IFStakeStatus, string> = {
 
 const UNSTAKE_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
-export function UnstakeModal({ open, onClose, walletPubkey, ifPosition, isLoadingPosition, connected, onSuccess }: UnstakeModalProps) {
+export function UnstakeModal({
+    open,
+    onClose,
+    walletPubkey,
+    ifPosition,
+    isLoadingPosition,
+    connected,
+    signTransaction,
+    ensureWalletReadyForUserAction,
+    onSuccess
+}: UnstakeModalProps) {
     const { resolvedTheme } = useTheme();
-    const { requestUnstakeState, unstakeState, handleRequestUnstake, handleUnstake } = useIFStaking(connected, walletPubkey, onSuccess);
+    const { requestUnstakeState, unstakeState, handleRequestUnstake, handleUnstake } = useIFStaking(
+        connected,
+        walletPubkey,
+        signTransaction,
+        ensureWalletReadyForUserAction,
+        onSuccess
+    );
 
     const [unstakeAmount, setUnstakeAmount] = useState("");
 

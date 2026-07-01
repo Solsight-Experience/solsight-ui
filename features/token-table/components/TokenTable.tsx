@@ -15,7 +15,6 @@ import { TimeFilters } from "./TimeFilters";
 import { FilterButton } from "./FilterButton";
 import { QuickBuyInput } from "./QuickBuyInput";
 import { RightPanelFilter } from "./RightPanelFilter";
-import { SortPanel } from "./SortPanel";
 import { CategorySearch } from "./CategorySearch";
 import { EmptyState } from "./EmptyState";
 import { CategoryTable } from "./CategoryTable";
@@ -53,7 +52,6 @@ export default function TokenTable() {
         setQuickBuyAmount,
         setCategorySearch,
         setSelectedCategorySlug,
-        toggleSort,
         resetFilters,
         applyFilterResults,
         isLoading,
@@ -103,15 +101,9 @@ export default function TokenTable() {
                 return (
                     <RightPanelFilter>
                         <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
-                        <SortPanel
-                            sortState={{
-                                option: filters.sortOption,
-                                direction: filters.sortDirection
-                            }}
-                            onSortChange={toggleSort}
-                        />
                         <FilterButton
-                            filterOptions={{ limit: 100 }}
+                            key={filters.activeTab}
+                            filterOptions={{ limit: 100, time_frame: filters.timeFilter, sort_by: "volume_24h" }}
                             onReset={() => {
                                 resetFilters();
                             }}
@@ -129,7 +121,8 @@ export default function TokenTable() {
                         <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
                         <FilterButton
-                            filterOptions={{ limit: 100 }}
+                            key={filters.activeTab}
+                            filterOptions={{ limit: 100, time_frame: filters.timeFilter }}
                             onReset={() => {
                                 resetFilters();
                             }}
@@ -147,7 +140,8 @@ export default function TokenTable() {
                     <RightPanelFilter>
                         <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <FilterButton
-                            filterOptions={{ limit: 100 }}
+                            key={filters.activeTab}
+                            filterOptions={{ limit: 100, time_frame: filters.timeFilter, sort_by: "txns_24h" }}
                             onReset={() => {
                                 resetFilters();
                             }}
@@ -174,6 +168,9 @@ export default function TokenTable() {
         if (isLoading) return <LoadingSkeleton />;
         if (!hasData && filters.activeTab === "FAVOURITES") {
             return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
+        }
+        if (!hasData && filters.filteredData !== undefined) {
+            return <EmptyState message="No tokens match your filters." />;
         }
         if (hasData) {
             return (

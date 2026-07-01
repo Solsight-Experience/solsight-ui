@@ -17,15 +17,15 @@ enum FilterTabList {
 export interface FilterFormData {
     // Metrics
     age_min_minutes: number;
-    age_max_minutes: number;
+    age_max_minutes: number | null;
     liquidity_min: number;
-    liquidity_max: number;
+    liquidity_max: number | null;
     market_cap_min: number;
-    market_cap_max: number;
+    market_cap_max: number | null;
     volume_24h_min: number;
-    volume_24h_max: number;
+    volume_24h_max: number | null;
     txns_24h_min: number;
-    txns_24h_max: number;
+    txns_24h_max: number | null;
 
     // Audits
     mint_authority_disabled: boolean;
@@ -125,7 +125,7 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
 }
 
 function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormData; onFormChange: (data: Partial<FilterFormData>) => void }) {
-    const handleFieldChange = (field: keyof FilterFormData, value: string | number) => {
+    const handleFieldChange = (field: keyof FilterFormData, value: string | number | null) => {
         onFormChange({ [field]: value });
     };
 
@@ -139,7 +139,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 maxValue={formData.age_max_minutes}
                 onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
                 onMaxChange={(value) => handleFieldChange("age_max_minutes", value)}
-                inputFormatter={new DecimalFormatter()}
+                inputFormatter={new DecimalFormatter({ compact: true })}
             />
             <FilterField
                 label="Liquidity"
@@ -179,7 +179,7 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 maxValue={formData.txns_24h_max}
                 onMinChange={(value) => handleFieldChange("txns_24h_min", value)}
                 onMaxChange={(value) => handleFieldChange("txns_24h_max", value)}
-                inputFormatter={new DecimalFormatter()}
+                inputFormatter={new DecimalFormatter({ compact: true })}
             />
         </div>
     );
@@ -391,7 +391,7 @@ type FilterFieldProps = {
     minValue: number;
     maxValue: number;
     onMinChange: (value: number | string) => void;
-    onMaxChange: (value: number | string) => void;
+    onMaxChange: (value: number | null) => void;
     inputFormatter: INumberFormatter;
 };
 

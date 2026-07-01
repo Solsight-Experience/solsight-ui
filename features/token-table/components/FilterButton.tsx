@@ -13,6 +13,7 @@ export interface FilterOptions {
     sort_order?: SortOrder;
     limit?: number;
     offset?: number;
+    time_frame?: string;
 }
 
 interface FilterButtonProps {
@@ -24,15 +25,15 @@ interface FilterButtonProps {
 
 const getInitialFormData = (): FilterFormData => ({
     age_min_minutes: 0,
-    age_max_minutes: 0,
+    age_max_minutes: null,
     liquidity_min: 0,
-    liquidity_max: 0,
+    liquidity_max: null,
     market_cap_min: 0,
-    market_cap_max: 0,
+    market_cap_max: null,
     volume_24h_min: 0,
-    volume_24h_max: 0,
+    volume_24h_max: null,
     txns_24h_min: 0,
-    txns_24h_max: 0,
+    txns_24h_max: null,
     mint_authority_disabled: false,
     freeze_authority_disabled: false,
     lp_burnt: false,
@@ -83,7 +84,8 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                 sort_by: filterOptions?.sort_by,
                 sort_order: filterOptions?.sort_order,
                 limit: filterOptions?.limit,
-                offset: filterOptions?.offset
+                offset: filterOptions?.offset,
+                time_frame: filterOptions?.time_frame
             };
 
             const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });

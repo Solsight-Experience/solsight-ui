@@ -47,7 +47,7 @@ export class CurrencyFormatter implements INumberFormatter {
      * - Small numbers (<0.01 with 4+ leading zeros): Subscript notation (for example, $0.0₅412 in en-US)
      */
     format(value: number | null, significantDigits: number = this.significantDigits): string {
-        if (value == null || !Number.isFinite(value)) return this.formatZero();
+        if (value == null || !Number.isFinite(value)) return "";
         if (value === 0) return this.formatZero();
 
         const absValue = Math.abs(value);

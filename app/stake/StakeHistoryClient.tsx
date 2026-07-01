@@ -1,10 +1,10 @@
 "use client";
 
 import { StakeHistory } from "@/features/staking/components";
-import { useStakingWallet } from "@/features/staking/hooks/useStakingWallet";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 
 export function StakeHistoryClient() {
-    const { publicKey } = useStakingWallet();
+    const { actionablePublicKey } = useActionableWallet();
 
-    return <StakeHistory walletPubkey={publicKey} />;
+    return <StakeHistory walletPubkey={actionablePublicKey} />;
 }
