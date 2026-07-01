@@ -59,7 +59,6 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
     const defaultQuickBuyAmount = useSettingsStore((state) => state.defaultQuickBuyAmount);
-    const setDefaultQuickBuyAmount = useSettingsStore((state) => state.setDefaultQuickBuyAmount);
     const [filters, setFilters] = useState<TokenTableFilters>(() => ({
         timeFilter: "24h",
         activeTab: "TRENDING",
@@ -334,13 +333,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({ ...prev, selectedCategorySlug }));
     }, []);
 
-    const setQuickBuyAmount = useCallback(
-        (quickBuyAmount: string) => {
-            setDefaultQuickBuyAmount(quickBuyAmount);
-            setFilters((prev) => ({ ...prev, quickBuyAmount }));
-        },
-        [setDefaultQuickBuyAmount]
-    );
+    const setQuickBuyAmount = useCallback((quickBuyAmount: string) => {
+        setFilters((prev) => ({ ...prev, quickBuyAmount }));
+    }, []);
 
     const setCategorySearch = useCallback((categorySearch: string) => {
         setFilters((prev) => ({ ...prev, categorySearch }));
