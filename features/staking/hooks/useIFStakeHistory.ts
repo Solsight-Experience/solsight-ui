@@ -7,14 +7,14 @@ import { getStakingHistory, type StakeActionType, type StakeHistoryRecord, type 
 export type { StakeActionType, StakeRecordStatus };
 export type StakeRecord = StakeHistoryRecord;
 
-export function useIFStakeHistory(walletPubkey: string | null, page: number, pageSize: number) {
+export function useIFStakeHistory(walletPubkey: string | null, before: string | null, pageSize: number) {
     return useQuery<StakingHistoryResponse>({
-        queryKey: ["if-stake-history", walletPubkey, page, pageSize],
+        queryKey: ["if-stake-history", walletPubkey, before, pageSize],
         enabled: !!walletPubkey && IF_CONFIG.isEnabled,
         staleTime: 120_000,
         queryFn: async (): Promise<StakingHistoryResponse> => {
-            if (!walletPubkey) return { records: [], total: 0 };
-            return getStakingHistory(walletPubkey, page, pageSize);
+            if (!walletPubkey) return { records: [], nextCursor: null };
+            return getStakingHistory(walletPubkey, before, pageSize);
         }
     });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { History, ExternalLink, ChevronLeft, ChevronRight, ArrowDownToLine, ArrowUpFromLine, Wallet, Copy, Check } from "lucide-react";
 import { useIFStakeHistory, StakeRecord, StakeActionType, StakeRecordStatus } from "../hooks/useIFStakeHistory";
 import { getSolscanTxUrl } from "../constants/program";
@@ -81,22 +81,40 @@ function CopyButton({ text }: { text: string }) {
 
 export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
     const [page, setPage] = useState(1);
-    const { data, isLoading, isError, refetch } = useIFStakeHistory(walletPubkey, page, PAGE_SIZE);
+    const [cursorStack, setCursorStack] = useState<Array<string | null>>([null]);
+    const [pendingRefreshVersion, setPendingRefreshVersion] = useState<number | null>(null);
+    const lastHandledRefreshVersion = useRef<number | null>(null);
+    const currentCursor = cursorStack[page - 1] ?? null;
+    const { data, isLoading, isError, refetch } = useIFStakeHistory(walletPubkey, currentCursor, PAGE_SIZE);
     const refreshVersion = useStakeHistoryRefreshStore((state) => state.refreshVersion);
     const refreshedWalletPubkey = useStakeHistoryRefreshStore((state) => state.walletPubkey);
     const expectedSignature = useStakeHistoryRefreshStore((state) => state.expectedSignature);
 
     const records = data?.records ?? [];
-    const total = data?.total ?? 0;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const nextCursor = data?.nextCursor ?? null;
+
+    useEffect(() => {
+        setPage(1);
+        setCursorStack([null]);
+        setPendingRefreshVersion(null);
+        lastHandledRefreshVersion.current = null;
+    }, [walletPubkey]);
 
     useEffect(() => {
         if (!walletPubkey || refreshedWalletPubkey !== walletPubkey) return;
+        if (lastHandledRefreshVersion.current === refreshVersion) return;
 
+        lastHandledRefreshVersion.current = refreshVersion;
+        setPendingRefreshVersion(refreshVersion);
+        setCursorStack([null]);
         if (page !== 1) {
             setPage(1);
-            return;
         }
+    }, [page, refreshVersion, refreshedWalletPubkey, walletPubkey]);
+
+    useEffect(() => {
+        if (!walletPubkey || refreshedWalletPubkey !== walletPubkey) return;
+        if (pendingRefreshVersion === null || page !== 1 || currentCursor !== null) return;
 
         let cancelled = false;
         let timeoutId: number | null = null;
@@ -108,8 +126,9 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 const result = await refetch();
                 if (cancelled) return;
 
-                const records = result.data?.records ?? [];
-                if (!expectedSignature || records.some((record) => record.signature === expectedSignature)) {
+                const refreshedRecords = result.data?.records ?? [];
+                if (!expectedSignature || refreshedRecords.some((record) => record.signature === expectedSignature)) {
+                    setPendingRefreshVersion(null);
                     return;
                 }
 
@@ -118,6 +137,8 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 });
                 if (cancelled) return;
             }
+
+            setPendingRefreshVersion(null);
         };
 
         void pollUntilVisible();
@@ -126,7 +147,21 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
             cancelled = true;
             if (timeoutId !== null) window.clearTimeout(timeoutId);
         };
-    }, [expectedSignature, page, refreshedWalletPubkey, refetch, refreshVersion, walletPubkey]);
+    }, [currentCursor, expectedSignature, page, pendingRefreshVersion, refreshedWalletPubkey, refetch, walletPubkey]);
+
+    const handlePreviousPage = () => {
+        setPage((currentPage) => Math.max(1, currentPage - 1));
+    };
+
+    const handleNextPage = () => {
+        if (!nextCursor) return;
+        setCursorStack((currentStack) => {
+            const nextIndex = page;
+            if (currentStack[nextIndex] === nextCursor) return currentStack;
+            return [...currentStack.slice(0, nextIndex), nextCursor];
+        });
+        setPage((currentPage) => currentPage + 1);
+    };
 
     return (
         <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(145deg,rgba(20,10,40,0.95)_0%,rgba(10,8,30,0.98)_100%)] dark:shadow-none">
@@ -134,11 +169,6 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 <div className="flex items-center gap-2.5">
                     <History className="h-4 w-4 text-purple-400" />
                     <h3 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">Stake History</h3>
-                    {total > 0 && (
-                        <span className="rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-[11px] font-semibold text-purple-300">
-                            {total}
-                        </span>
-                    )}
                 </div>
             </div>
 
@@ -243,20 +273,18 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
 
                     {records.length > 0 && (
                         <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3.5 dark:border-white/8">
-                            <p className="text-[12px] text-slate-500 dark:text-gray-600">
-                                Page {page} / {totalPages}
-                            </p>
+                            <p className="text-[12px] text-slate-500 dark:text-gray-600">Page {page}</p>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    onClick={handlePreviousPage}
                                     disabled={page === 1}
                                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/25 dark:hover:text-white"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
                                 <button
-                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                    disabled={page === totalPages}
+                                    onClick={handleNextPage}
+                                    disabled={!nextCursor}
                                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/25 dark:hover:text-white"
                                 >
                                     <ChevronRight className="h-4 w-4" />
