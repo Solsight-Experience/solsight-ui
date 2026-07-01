@@ -10,7 +10,8 @@ import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { transferFormSchema, TransferFormData } from "@/lib/validators";
 import { useTransfer } from "../hooks/useTransfer";
-import { useWallet, useWalletBalance } from "@/features/wallets/hooks/useWallet";
+import { useWalletBalance } from "@/features/wallets/hooks/useWallet";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { Wallet, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatWalletAddress } from "@/lib/formatters";
@@ -18,7 +19,7 @@ import { formatWalletAddress } from "@/lib/formatters";
 const TRANSFER_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 export default function TransferForm() {
-    const { connectWallet, isConnecting, connected, publicKey } = useWallet();
+    const { connectWallet, isConnecting, connected, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
     const { createTransfer, isCreating } = useTransfer();
     const { data: balance, isLoading: balanceLoading } = useWalletBalance(publicKey || undefined);
 
@@ -40,9 +41,14 @@ export default function TransferForm() {
 
     const amount = watch("amount");
 
-    const onSubmit = (data: TransferFormData) => {
-        if (!connected || !publicKey) {
-            toast.error("Please connect your wallet first");
+    const onSubmit = async (data: TransferFormData) => {
+        if (!ensureWalletReadyForUserAction("send this transfer")) {
+            return;
+        }
+
+        const walletPublicKey = publicKey;
+        if (!walletPublicKey) {
+            toast.error("Wallet address is unavailable.");
             return;
         }
 
@@ -52,7 +58,7 @@ export default function TransferForm() {
         }
 
         createTransfer({
-            fromAddress: publicKey,
+            fromAddress: walletPublicKey,
             toAddress: data.recipientAddress,
             amount: data.amount,
             memo: data.memo
@@ -80,7 +86,7 @@ export default function TransferForm() {
                     {!connected ? (
                         <div className="text-center space-y-4">
                             <p className="text-sm text-muted-foreground">Connect your Phantom wallet to start transferring tokens</p>
-                            <Button onClick={handleConnectWallet} disabled={isConnecting} className="w-full">
+                            <Button onClick={() => handleConnectWallet()} disabled={isConnecting} className="w-full">
                                 {isConnecting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

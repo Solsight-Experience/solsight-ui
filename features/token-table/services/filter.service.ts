@@ -23,6 +23,7 @@ export interface TokenFilterParams {
     sort_order?: SortOrder;
     limit?: number;
     offset?: number;
+    time_frame?: string;
 }
 
 class FilterService {
@@ -36,6 +37,7 @@ class FilterService {
         if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
         if (params?.limit) queryParams.append("limit", params.limit.toString());
         if (params?.offset) queryParams.append("offset", params.offset.toString());
+        if (params?.time_frame) queryParams.append("time_frame", params.time_frame);
 
         const url = `/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
