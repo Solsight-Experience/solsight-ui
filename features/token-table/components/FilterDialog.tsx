@@ -16,11 +16,11 @@ enum FilterTabList {
 
 export interface FilterFormData {
     // Metrics
-    age_min_minutes: number;
+    age_min_minutes: number | null;
     age_max_minutes: number | null;
-    liquidity_min: number;
+    liquidity_min: number | null;
     liquidity_max: number | null;
-    market_cap_min: number;
+    market_cap_min: number | null;
     market_cap_max: number | null;
     volume_24h_min: number;
     volume_24h_max: number | null;
@@ -135,8 +135,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 label="Token Age"
                 unit="min"
                 icon={<Flame className="w-3.5 h-3.5" />}
-                minValue={formData.age_min_minutes}
-                maxValue={formData.age_max_minutes}
+                minValue={formData.age_min_minutes ?? 0}
+                maxValue={formData.age_max_minutes ?? 0}
                 onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
                 onMaxChange={(value) => handleFieldChange("age_max_minutes", value)}
                 inputFormatter={new DecimalFormatter({ compact: true })}
@@ -145,8 +145,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 label="Liquidity"
                 unit="USD"
                 icon={<Layers className="w-3.5 h-3.5" />}
-                minValue={formData.liquidity_min}
-                maxValue={formData.liquidity_max}
+                minValue={formData.liquidity_min ?? 0}
+                maxValue={formData.liquidity_max ?? 0}
                 onMinChange={(value) => handleFieldChange("liquidity_min", value)}
                 onMaxChange={(value) => handleFieldChange("liquidity_max", value)}
                 inputFormatter={new CurrencyFormatter(Locale.US)}
@@ -155,8 +155,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 label="Market Cap"
                 unit="USD"
                 icon={<BarChart2 className="w-3.5 h-3.5" />}
-                minValue={formData.market_cap_min}
-                maxValue={formData.market_cap_max}
+                minValue={formData.market_cap_min ?? 0}
+                maxValue={formData.market_cap_max ?? 0}
                 onMinChange={(value) => handleFieldChange("market_cap_min", value)}
                 onMaxChange={(value) => handleFieldChange("market_cap_max", value)}
                 inputFormatter={new CurrencyFormatter()}
@@ -165,8 +165,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 label="Volume 24h"
                 unit="USD"
                 icon={<BarChart2 className="w-3.5 h-3.5" />}
-                minValue={formData.volume_24h_min}
-                maxValue={formData.volume_24h_max}
+                minValue={formData.volume_24h_min ?? 0}
+                maxValue={formData.volume_24h_max ?? 0}
                 onMinChange={(value) => handleFieldChange("volume_24h_min", value)}
                 onMaxChange={(value) => handleFieldChange("volume_24h_max", value)}
                 inputFormatter={new CurrencyFormatter()}
@@ -175,8 +175,8 @@ function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormDat
                 label="Txns 24h"
                 unit="count"
                 icon={<BarChart2 className="w-3.5 h-3.5" />}
-                minValue={formData.txns_24h_min}
-                maxValue={formData.txns_24h_max}
+                minValue={formData.txns_24h_min ?? 0}
+                maxValue={formData.txns_24h_max ?? 0}
                 onMinChange={(value) => handleFieldChange("txns_24h_min", value)}
                 onMaxChange={(value) => handleFieldChange("txns_24h_max", value)}
                 inputFormatter={new DecimalFormatter({ compact: true })}
