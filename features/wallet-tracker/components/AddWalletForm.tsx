@@ -5,6 +5,7 @@ import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAddWatchedWallet } from "../hooks/useWatchlist";
 import { useWatchlistStore } from "../store/watchlistStore";
+import useClusterStore from "@/stores/cluster.store";
 
 export const AddWalletForm: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +13,8 @@ export const AddWalletForm: React.FC = () => {
     const [label, setLabel] = useState("");
 
     const { mutate: addWallet, isPending } = useAddWatchedWallet();
-    const setSelectedWalletAddress = useWatchlistStore((s) => s.setSelectedWalletAddress);
+    const setSelectedWallet = useWatchlistStore((s) => s.setSelectedWallet);
+    const cluster = useClusterStore((s) => s.cluster);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,11 +22,11 @@ export const AddWalletForm: React.FC = () => {
         if (!trimmedAddress) return;
 
         addWallet(
-            { walletAddress: trimmedAddress, label: label.trim() || undefined },
+            { walletAddress: trimmedAddress, label: label.trim() || undefined, network: cluster },
             {
                 onSuccess: (wallet) => {
                     toast.success("Wallet added to watchlist");
-                    setSelectedWalletAddress(wallet.walletAddress);
+                    setSelectedWallet(wallet.walletAddress, wallet.network);
                     setAddress("");
                     setLabel("");
                     setIsOpen(false);
