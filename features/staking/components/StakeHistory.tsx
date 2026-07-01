@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { History, ExternalLink, ChevronLeft, ChevronRight, ArrowDownToLine, ArrowUpFromLine, Wallet, Copy, Check } from "lucide-react";
+import { formatDisplay } from "@/features/swap";
 import { useIFStakeHistory, StakeRecord, StakeActionType, StakeRecordStatus } from "../hooks/useIFStakeHistory";
 import { getSolscanTxUrl } from "../constants/program";
 import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
@@ -207,6 +208,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                         {records.map((r: StakeRecord) => {
                             const action = ACTION_CONFIG[r.actionType];
                             const status = STATUS_CONFIG[r.status];
+                            const formattedAmount = Number(r.amountSol) > 0 ? formatDisplay(r.amountSol, 4) : null;
                             return (
                                 <div
                                     key={r.id}
@@ -223,10 +225,8 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                                     </div>
 
                                     <div className="text-right sm:text-left">
-                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white">
-                                            {Number(r.amountSol) > 0 ? `${Number(r.amountSol).toFixed(4)}` : "—"}
-                                        </p>
-                                        {Number(r.amountSol) > 0 && <p className="text-[11px] text-slate-400 dark:text-gray-600">SOL</p>}
+                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white">{formattedAmount ?? "—"}</p>
+                                        {formattedAmount && <p className="text-[11px] text-slate-400 dark:text-gray-600">SOL</p>}
                                     </div>
 
                                     <div className="hidden sm:flex">

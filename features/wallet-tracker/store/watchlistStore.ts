@@ -5,7 +5,8 @@ type WalletTrackerTab = "positions" | "activity" | "alerts";
 
 interface WatchlistState {
     selectedWalletAddress: string | null;
-    setSelectedWalletAddress: (address: string | null) => void;
+    selectedWalletNetwork: "mainnet" | "devnet";
+    setSelectedWallet: (address: string | null, network?: "mainnet" | "devnet") => void;
 
     activeTab: WalletTrackerTab;
     setActiveTab: (tab: WalletTrackerTab) => void;
@@ -15,7 +16,8 @@ export const useWatchlistStore = create<WatchlistState>()(
     persist(
         (set) => ({
             selectedWalletAddress: null,
-            setSelectedWalletAddress: (address) => set({ selectedWalletAddress: address }),
+            selectedWalletNetwork: "mainnet",
+            setSelectedWallet: (address, network = "mainnet") => set({ selectedWalletAddress: address, selectedWalletNetwork: network }),
 
             activeTab: "positions",
             setActiveTab: (tab) => set({ activeTab: tab })
@@ -24,6 +26,7 @@ export const useWatchlistStore = create<WatchlistState>()(
             name: "watchlist-ui-state",
             partialize: (state) => ({
                 selectedWalletAddress: state.selectedWalletAddress,
+                selectedWalletNetwork: state.selectedWalletNetwork,
                 activeTab: state.activeTab
             })
         }

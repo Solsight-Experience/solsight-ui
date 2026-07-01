@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { CheckCircle2, Loader2, Mail, Unlink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEmailSubscription, useSubmitEmail, useEmailStatus, useDisconnectEmail } from "../hooks/useEmailSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
-type Step = "idle" | "entering" | "pending" | "verified";
+type Step = "idle" | "pending" | "verified";
 
 interface EmailDialogProps {
     open: boolean;
@@ -13,10 +13,10 @@ interface EmailDialogProps {
 }
 
 export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
+    const { user } = useAuth();
     const { data: subscription, isLoading: loadingSubscription } = useEmailSubscription();
     const { mutateAsync: submitEmail, isPending: submitting } = useSubmitEmail();
     const { mutateAsync: disconnect, isPending: disconnecting } = useDisconnectEmail();
-    const [inputEmail, setInputEmail] = useState("");
 
     const step: Step = (() => {
         if (!subscription) return "idle";
@@ -29,16 +29,17 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     useEmailStatus(isPolling);
 
     async function handleSubmit() {
-        if (!inputEmail.trim()) return;
+        const email = user?.email;
+        if (!email) return;
         try {
-            await submitEmail(inputEmail.trim());
+            await submitEmail(email);
         } catch {
             // error handled by toast elsewhere
         }
     }
 
     async function handleResend() {
-        const email = subscription?.email ?? inputEmail.trim();
+        const email = subscription?.email ?? user?.email;
         if (!email) return;
         try {
             await submitEmail(email);
@@ -50,7 +51,6 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     async function handleDisconnect() {
         try {
             await disconnect();
-            setInputEmail("");
         } catch {
             // error handled by toast elsewhere
         }
@@ -86,7 +86,7 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
                     ) : step === "pending" ? (
                         <PendingState email={subscription!.email!} onResend={handleResend} resending={submitting} />
                     ) : (
-                        <EnteringState email={inputEmail} onEmailChange={setInputEmail} onSubmit={handleSubmit} submitting={submitting} />
+                        <IdleState email={user?.email ?? ""} onSubmit={handleSubmit} submitting={submitting} />
                     )}
                 </div>
             </DialogContent>
@@ -94,35 +94,19 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     );
 }
 
-function EnteringState({
-    email,
-    onEmailChange,
-    onSubmit,
-    submitting
-}: {
-    email: string;
-    onEmailChange: (v: string) => void;
-    onSubmit: () => void;
-    submitting: boolean;
-}) {
+function IdleState({ email, onSubmit, submitting }: { email: string; onSubmit: () => void; submitting: boolean }) {
     return (
         <div className="flex flex-col gap-4">
             <p className="text-[12px] text-white/50 leading-relaxed">
-                Enter your email address to receive wallet alert notifications. We&apos;ll send a verification link to confirm.
+                Receive wallet alert notifications via email. We&apos;ll send a verification link to confirm.
             </p>
-            <input
-                type="email"
-                value={email}
-                onChange={(e) => onEmailChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-                placeholder="you@example.com"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.10]
-                           text-[13px] text-white placeholder:text-white/25
-                           focus:outline-none focus:border-violet-500/50 transition-colors"
-            />
+            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                <Mail className="size-3.5 text-white/30 shrink-0" />
+                <span className="text-[13px] text-white/70 truncate">{email}</span>
+            </div>
             <button
                 onClick={onSubmit}
-                disabled={submitting || !email.trim()}
+                disabled={submitting || !email}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl
                            bg-violet-500/15 border border-violet-500/25 text-violet-300
                            hover:bg-violet-500/25 hover:border-violet-500/40

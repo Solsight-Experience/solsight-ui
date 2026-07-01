@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import { Bell, BellOff, Plus, Trash2, AlertTriangle, ArrowRightLeft, Coins, Zap, Loader2, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useWalletAlerts, useCreateWalletAlert, useUpdateWalletAlert, useDeleteWalletAlert } from "../hooks/useWalletAlerts";
-import { useZaloSubscription } from "../hooks/useZaloSubscription";
+import { useTelegramSubscription } from "../hooks/useTelegramSubscription";
 import { useEmailSubscription } from "../hooks/useEmailSubscription";
 import { WalletAlert, WalletAlertType, CreateWalletAlertDto } from "../types/watchlist.types";
-import { ZaloBotDialog } from "./ZaloBotDialog";
+import { TelegramBotDialog } from "./TelegramBotDialog";
 import { EmailDialog } from "./EmailDialog";
 import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
@@ -36,7 +36,7 @@ const WALLET_ALERT_NUMBER_FORMATTER = new DecimalFormatter({ locale: "en-US", ma
 
 // ── Add Alert Form ────────────────────────────────────────────────────────────
 
-const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = ({ walletAddress, onClose }) => {
+const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devnet"; onClose: () => void }> = ({ walletAddress, network, onClose }) => {
     const [alertType, setAlertType] = useState<WalletAlertType>(WalletAlertType.ANY_SWAP);
     const [tokenMint, setTokenMint] = useState("");
     const [tokenSymbol, setTokenSymbol] = useState("");
@@ -49,7 +49,7 @@ const AddAlertForm: React.FC<{ walletAddress: string; onClose: () => void }> = (
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const dto: CreateWalletAlertDto = { alertType };
+        const dto: CreateWalletAlertDto = { alertType, network };
 
         if (alertType === WalletAlertType.TOKEN_BALANCE_CHANGE) {
             if (!tokenMint.trim()) {
@@ -302,15 +302,15 @@ const AlertRow: React.FC<{ alert: WalletAlert; walletAddress: string }> = ({ ale
 
 // ── Main Tab Component ─────────────────────────────────────────────────────────
 
-export const WalletAlertsTab: React.FC<{ walletAddress: string }> = ({ walletAddress }) => {
+export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainnet" | "devnet" }> = ({ walletAddress, network = "mainnet" }) => {
     const [showForm, setShowForm] = useState(false);
-    const [zaloDialogOpen, setZaloDialogOpen] = useState(false);
+    const [telegramDialogOpen, setTelegramDialogOpen] = useState(false);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
     const { data: alerts, isLoading, error } = useWalletAlerts(walletAddress);
-    const { data: zaloSubscription } = useZaloSubscription();
+    const { data: telegramSubscription } = useTelegramSubscription();
     const { data: emailSubscription } = useEmailSubscription();
-    const isZaloConnected = zaloSubscription?.isVerified ?? false;
-    const isZaloLoading = zaloSubscription === undefined;
+    const isTelegramConnected = telegramSubscription?.isVerified ?? false;
+    const isTelegramLoading = telegramSubscription === undefined;
     const isEmailConnected = emailSubscription?.isVerified ?? false;
     const isEmailLoading = emailSubscription === undefined;
 
@@ -346,9 +346,9 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string }> = ({ walletAdd
                 </button>
             )}
 
-            {showForm && <AddAlertForm walletAddress={walletAddress} onClose={() => setShowForm(false)} />}
+            {showForm && <AddAlertForm walletAddress={walletAddress} network={network} onClose={() => setShowForm(false)} />}
 
-            <ZaloBotDialog open={zaloDialogOpen} onOpenChange={setZaloDialogOpen} />
+            <TelegramBotDialog open={telegramDialogOpen} onOpenChange={setTelegramDialogOpen} />
             <EmailDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} />
 
             {alerts && alerts.length > 0 ? (
@@ -367,34 +367,34 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string }> = ({ walletAdd
                 )
             )}
 
-            {/* Zalo Bot section */}
-            {!isZaloLoading && (
+            {/* Telegram Bot section */}
+            {!isTelegramLoading && (
                 <div
                     className={`mt-1 rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors
-          ${isZaloConnected ? "border-green-500/20 bg-green-500/[0.04]" : "border-white/[0.07] bg-white/[0.02]"}`}
+          ${isTelegramConnected ? "border-green-500/20 bg-green-500/[0.04]" : "border-white/[0.07] bg-white/[0.02]"}`}
                 >
                     <div
                         className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0
-            ${isZaloConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-white/[0.06]"}`}
+            ${isTelegramConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-white/[0.06]"}`}
                     >
-                        <MessageCircle className={`size-3.5 ${isZaloConnected ? "text-green-400" : "text-white/30"}`} />
+                        <MessageCircle className={`size-3.5 ${isTelegramConnected ? "text-green-400" : "text-white/30"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-white/80">Zalo Bot</div>
-                        <div className={`text-[11px] ${isZaloConnected ? "text-green-400/80" : "text-white/30"}`}>
-                            {isZaloConnected ? "Connected — alerts will be sent to your Zalo" : "Not connected"}
+                        <div className="text-[12px] font-semibold text-white/80">Telegram Bot</div>
+                        <div className={`text-[11px] ${isTelegramConnected ? "text-green-400/80" : "text-white/30"}`}>
+                            {isTelegramConnected ? "Connected — alerts will be sent to your Telegram" : "Not connected"}
                         </div>
                     </div>
                     <button
-                        onClick={() => setZaloDialogOpen(true)}
+                        onClick={() => setTelegramDialogOpen(true)}
                         className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150
               ${
-                  isZaloConnected
+                  isTelegramConnected
                       ? "text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.08]"
                       : "text-blue-600 dark:text-blue-300 bg-blue-500/15 border border-blue-500/25 hover:bg-blue-500/25"
               }`}
                     >
-                        {isZaloConnected ? "Manage" : "Connect"}
+                        {isTelegramConnected ? "Manage" : "Connect"}
                     </button>
                 </div>
             )}
