@@ -24,9 +24,13 @@ export interface FilterFormData {
 export interface FilterDialogProps {
     formData: FilterFormData;
     onFormChange: (data: Partial<FilterFormData>) => void;
+    /** Which fields to show. Omit to show every field (default). */
+    visibleFields?: (keyof FilterFormData)[];
 }
 
 export interface FilterListProps {
     formData: FilterFormData;
     onFormChange: (data: Partial<FilterFormData>) => void;
+    /** Returns whether a given field should render. Defaults to always-visible when omitted. */
+    isFieldVisible?: (field: keyof FilterFormData) => boolean;
 }

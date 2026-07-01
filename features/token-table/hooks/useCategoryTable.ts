@@ -1,40 +1,43 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCoreRowModel, getSortedRowModel, getPaginationRowModel, SortingState, PaginationState, useReactTable } from "@tanstack/react-table";
+import { getCoreRowModel, getPaginationRowModel, PaginationState, useReactTable } from "@tanstack/react-table";
 import { categoryColumns } from "../config/categoryColumns";
-import { TokenDiscoveryService } from "../services/token-discovery.service";
+import { TokenDiscoveryService, CategorySortBy, CategorySortOrder } from "../services/token-discovery.service";
 import { queryKeys } from "@/lib/react-query-keys";
 import { CategoryOverview } from "../config/types";
 
 interface CategoryApiItem {
-    id?: string;
-    name?: string;
-    slug?: string;
+    id: string;
+    name: string;
     content?: string;
-    description?: string;
-    market_cap?: number;
+    market_cap: number;
     market_cap_change_24h?: number;
     volume_24h?: number;
-    volume?: number;
     top_3_coins_id?: string[];
     top_3_coins?: string[];
-    top_tokens?: string[];
     updated_at?: string;
-}
-
-interface CategoryApiResponse {
-    categories?: CategoryApiItem[];
-    data?: CategoryApiItem[];
-    total?: number;
 }
 
 interface UseCategoryTableOptions {
     searchQuery?: string;
+    marketCapMin?: number | null;
+    marketCapMax?: number | null;
+    volumeMin?: number | null;
+    volumeMax?: number | null;
+    sortBy?: CategorySortBy;
+    sortOrder?: CategorySortOrder;
 }
 
-export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions = {}) {
+export function useCategoryTable({
+    searchQuery = "",
+    marketCapMin,
+    marketCapMax,
+    volumeMin,
+    volumeMax,
+    sortBy = "market_cap",
+    sortOrder = "desc"
+}: UseCategoryTableOptions = {}) {
     const queryClient = useQueryClient();
-    const [sorting, setSorting] = useState<SortingState>([]);
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 7
@@ -54,10 +57,25 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         };
     }, [searchQuery]);
 
-    // Reset pagination khi search thay đổi
+    // Reset pagination khi search hoặc filter/sort thay đổi
     useEffect(() => {
         setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    }, [debouncedSearch]);
+    }, [debouncedSearch, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder]);
+
+    const buildParams = useCallback(
+        (offset: number) => ({
+            limit: pagination.pageSize,
+            offset,
+            name: debouncedSearch || undefined,
+            market_cap_min: marketCapMin ?? undefined,
+            market_cap_max: marketCapMax ?? undefined,
+            volume_min: volumeMin ?? undefined,
+            volume_max: volumeMax ?? undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder
+        }),
+        [pagination.pageSize, debouncedSearch, marketCapMin, marketCapMax, volumeMin, volumeMax, sortBy, sortOrder]
+    );
 
     // Fetch categories from API
     const {
@@ -65,81 +83,90 @@ export function useCategoryTable({ searchQuery = "" }: UseCategoryTableOptions =
         isLoading,
         error
     } = useQuery({
-        queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex, pagination.pageSize, debouncedSearch],
-        queryFn: () =>
-            TokenDiscoveryService.getCategories({
-                limit: pagination.pageSize,
-                offset: pagination.pageIndex * pagination.pageSize,
-                name: debouncedSearch || undefined
-            }),
+        queryKey: [
+            ...queryKeys.tokens.categories(),
+            pagination.pageIndex,
+            pagination.pageSize,
+            debouncedSearch,
+            marketCapMin,
+            marketCapMax,
+            volumeMin,
+            volumeMax,
+            sortBy,
+            sortOrder
+        ],
+        queryFn: () => TokenDiscoveryService.getCategories(buildParams(pagination.pageIndex * pagination.pageSize)),
         staleTime: 30000,
         refetchInterval: 300000
     });
 
     // Prefetch next page
     useEffect(() => {
-        const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
-        if (apiData && rawArray.length >= pagination.pageSize) {
+        if (apiData && apiData.data.length >= pagination.pageSize) {
+            const nextOffset = (pagination.pageIndex + 1) * pagination.pageSize;
             queryClient.prefetchQuery({
-                queryKey: [...queryKeys.tokens.categories(), pagination.pageIndex + 1, pagination.pageSize, debouncedSearch],
-                queryFn: () =>
-                    TokenDiscoveryService.getCategories({
-                        limit: pagination.pageSize,
-                        offset: (pagination.pageIndex + 1) * pagination.pageSize,
-                        name: debouncedSearch || undefined
-                    })
+                queryKey: [
+                    ...queryKeys.tokens.categories(),
+                    pagination.pageIndex + 1,
+                    pagination.pageSize,
+                    debouncedSearch,
+                    marketCapMin,
+                    marketCapMax,
+                    volumeMin,
+                    volumeMax,
+                    sortBy,
+                    sortOrder
+                ],
+                queryFn: () => TokenDiscoveryService.getCategories(buildParams(nextOffset))
             });
         }
-    }, [apiData, pagination.pageIndex, pagination.pageSize, debouncedSearch, queryClient]);
+    }, [
+        apiData,
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearch,
+        marketCapMin,
+        marketCapMax,
+        volumeMin,
+        volumeMax,
+        sortBy,
+        sortOrder,
+        queryClient,
+        buildParams
+    ]);
 
     const data = useMemo((): CategoryOverview[] => {
-        const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
+        const rawArray = (apiData?.data ?? []) as CategoryApiItem[];
 
-        if (!rawArray || rawArray.length === 0) return [];
-
-        return rawArray.map((cat: CategoryApiItem) => ({
-            id: cat.id || "",
-            name: cat.name || "",
-            slug: cat.id || cat.slug || "",
-            content: cat.content || cat.description || "",
-            market_cap: cat.market_cap || 0,
+        return rawArray.map((cat) => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.id,
+            content: cat.content ?? "",
+            market_cap: cat.market_cap,
             market_cap_change_24h: cat.market_cap_change_24h ?? 0,
-            volume_24h: cat.volume_24h ?? cat.volume ?? 0,
-            top_3_coins_id: cat.top_3_coins_id || [],
-            top_3_coins: cat.top_3_coins || cat.top_tokens || [],
-            updated_at: cat.updated_at || ""
+            volume_24h: cat.volume_24h ?? 0,
+            top_3_coins_id: cat.top_3_coins_id ?? [],
+            top_3_coins: cat.top_3_coins ?? [],
+            updated_at: cat.updated_at ?? ""
         }));
     }, [apiData]);
 
     const pageCount = useMemo(() => {
-        const total = (apiData as CategoryApiResponse)?.total || -1;
-        if (total !== -1) {
-            return Math.ceil(total / pagination.pageSize);
-        }
-
-        // If we don't have a total and we get back less than pageSize, we're on the last page
-        const rawArray = Array.isArray(apiData) ? apiData : (apiData as CategoryApiResponse)?.categories || (apiData as CategoryApiResponse)?.data || [];
-        if (rawArray.length < pagination.pageSize) {
-            return pagination.pageIndex + 1;
-        }
-
-        // Default page count if we don't know
-        return -1;
-    }, [apiData, pagination.pageIndex, pagination.pageSize]);
+        if (!apiData) return -1;
+        return Math.ceil(apiData.total / pagination.pageSize);
+    }, [apiData, pagination.pageSize]);
 
     const table = useReactTable({
         data,
         columns: categoryColumns,
         state: {
-            sorting,
             pagination
         },
         manualPagination: true,
         pageCount,
         onPaginationChange: setPagination,
-        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel()
     });
 
