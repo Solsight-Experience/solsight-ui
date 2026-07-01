@@ -181,6 +181,11 @@ export function useIFStaking(
     const [unstakeState, setUnstakeState] = useState<IFStakeState>(INIT_STATE);
     const [cancelRequestState, setCancelRequestState] = useState<IFStakeState>(INIT_STATE);
 
+    const resetStakeState = useCallback(() => setStakeState(INIT_STATE), []);
+    const resetRequestUnstakeState = useCallback(() => setRequestUnstakeState(INIT_STATE), []);
+    const resetUnstakeState = useCallback(() => setUnstakeState(INIT_STATE), []);
+    const resetCancelRequestState = useCallback(() => setCancelRequestState(INIT_STATE), []);
+
     const checkWallet = useCallback(
         (actionLabel = "continue") => {
             if (!IF_CONFIG.isEnabled) {
@@ -331,6 +336,10 @@ export function useIFStaking(
         requestUnstakeState,
         unstakeState,
         cancelRequestState,
+        resetStakeState,
+        resetRequestUnstakeState,
+        resetUnstakeState,
+        resetCancelRequestState,
         handleStake,
         handleRequestUnstake,
         handleUnstake,

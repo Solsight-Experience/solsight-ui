@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NumbericInput } from "@/components/ui/NumbericInput";
@@ -28,7 +28,7 @@ const REQUEST_LABELS: Record<IFStakeStatus, string> = {
     creating: "Processing...",
     signing: "Waiting for signature...",
     confirming: "Confirming on-chain...",
-    done: "Request submitted!",
+    done: "Request Unstake",
     error: "Request Unstake"
 };
 
@@ -37,7 +37,7 @@ const WITHDRAW_LABELS: Record<IFStakeStatus, string> = {
     creating: "Processing...",
     signing: "Waiting for signature...",
     confirming: "Confirming on-chain...",
-    done: "Withdrawn successfully! 🎉",
+    done: "Withdraw SOL",
     error: "Withdraw SOL"
 };
 
@@ -55,7 +55,7 @@ export function UnstakeModal({
     onSuccess
 }: UnstakeModalProps) {
     const { resolvedTheme } = useTheme();
-    const { requestUnstakeState, unstakeState, handleRequestUnstake, handleUnstake } = useIFStaking(
+    const { requestUnstakeState, unstakeState, resetRequestUnstakeState, resetUnstakeState, handleRequestUnstake, handleUnstake } = useIFStaking(
         connected,
         walletPubkey,
         signTransaction,
@@ -82,11 +82,26 @@ export function UnstakeModal({
     const isUnstakeValid = !isNaN(unstakeAmountNum) && unstakeAmountNum >= IF_MIN_STAKE_SOL && unstakeAmountNum <= maxUnstake;
     const isDark = resolvedTheme === "dark";
 
+    useEffect(() => {
+        if (open) {
+            setUnstakeAmount("");
+            resetRequestUnstakeState();
+            resetUnstakeState();
+        }
+    }, [open, resetRequestUnstakeState, resetUnstakeState]);
+
+    const handleClose = () => {
+        setUnstakeAmount("");
+        resetRequestUnstakeState();
+        resetUnstakeState();
+        onClose();
+    };
+
     return (
         <Dialog
             open={open}
             onOpenChange={() => {
-                if (!anyLoading) onClose();
+                if (!anyLoading) handleClose();
             }}
         >
             <DialogContent
@@ -299,7 +314,7 @@ export function UnstakeModal({
                     {/* Cancel button */}
                     <button
                         className="w-full cursor-pointer rounded-2xl border border-slate-200 py-3 text-[13px] font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-white"
-                        onClick={onClose}
+                        onClick={handleClose}
                         disabled={anyLoading}
                     >
                         Close
