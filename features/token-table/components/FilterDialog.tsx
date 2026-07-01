@@ -77,21 +77,42 @@ export default function FilterDialog({ formData, onFormChange }: FilterDialogPro
     );
 }
 
+/**
+ * if min > max, swap them
+ * null / 0 is "no limit"
+ */
+function normalizeMinMax<T extends number | null>(min: T, max: T): [T, T] {
+    if (min != null && max != null && min > 0 && max > 0 && min > max) {
+        return [max, min];
+    }
+    return [min, max];
+}
+
 export function getFilterRequestBody(formData: FilterFormData): TokenFilterRequest {
     const tokenRequest: TokenFilterRequest = {};
 
     // Metrics — each bound is independent; 0 means "not set"
     const metrics: TokenFilterRequest["metrics"] = {};
-    if (formData.volume_24h_min) metrics.volume_24h_min = formData.volume_24h_min;
-    if (formData.volume_24h_max) metrics.volume_24h_max = formData.volume_24h_max;
-    if (formData.txns_24h_min) metrics.txns_24h_min = formData.txns_24h_min;
-    if (formData.txns_24h_max) metrics.txns_24h_max = formData.txns_24h_max;
-    if (formData.liquidity_min) metrics.liquidity_min = formData.liquidity_min;
-    if (formData.liquidity_max) metrics.liquidity_max = formData.liquidity_max;
-    if (formData.market_cap_min) metrics.market_cap_min = formData.market_cap_min;
-    if (formData.market_cap_max) metrics.market_cap_max = formData.market_cap_max;
-    if (formData.age_min_minutes) metrics.age_min_minutes = formData.age_min_minutes;
-    if (formData.age_max_minutes) metrics.age_max_minutes = formData.age_max_minutes;
+
+    const [ageMin, ageMax] = normalizeMinMax(formData.age_min_minutes, formData.age_max_minutes);
+    if (ageMin) metrics.age_min_minutes = ageMin;
+    if (ageMax) metrics.age_max_minutes = ageMax;
+
+    const [liquidityMin, liquidityMax] = normalizeMinMax(formData.liquidity_min, formData.liquidity_max);
+    if (liquidityMin) metrics.liquidity_min = liquidityMin;
+    if (liquidityMax) metrics.liquidity_max = liquidityMax;
+
+    const [marketCapMin, marketCapMax] = normalizeMinMax(formData.market_cap_min, formData.market_cap_max);
+    if (marketCapMin) metrics.market_cap_min = marketCapMin;
+    if (marketCapMax) metrics.market_cap_max = marketCapMax;
+
+    const [volumeMin, volumeMax] = normalizeMinMax(formData.volume_24h_min, formData.volume_24h_max);
+    if (volumeMin) metrics.volume_24h_min = volumeMin;
+    if (volumeMax) metrics.volume_24h_max = volumeMax;
+
+    const [txnsMin, txnsMax] = normalizeMinMax(formData.txns_24h_min, formData.txns_24h_max);
+    if (txnsMin) metrics.txns_24h_min = txnsMin;
+    if (txnsMax) metrics.txns_24h_max = txnsMax;
 
     if (Object.keys(metrics).length > 0) {
         tokenRequest.metrics = metrics;
@@ -396,13 +417,31 @@ type FilterFieldProps = {
 };
 
 function FilterField({ label, unit, icon, minValue, maxValue, onMinChange, onMaxChange, inputFormatter }: FilterFieldProps) {
-    const inputClass = cn(
+    const inputBaseClass = cn(
         "w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-2.5 py-1.5",
-        "text-[12px] font-mono text-white/80 text-right placeholder:text-white/20",
+        "text-[12px] font-mono text-right placeholder:text-white/20",
         "focus:outline-none focus:border-violet-500/50 focus:bg-violet-500/5",
         "transition-all duration-150",
         "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     );
+
+    /**
+     * 0 = not enter yet (default)
+     * When user enter a value (not 0) -> white text.
+     */
+    const getValueTextClass = (value: number) => (value === 0 ? "text-white/20" : "text-white/80");
+
+    /**
+     * When user leave the Min or Max field (blur), if both values are set
+     * and min > max -> swap 2 values on UI.
+     * If 1 of 2 fields is 0 (not enter yet) -> skip, don't compare.
+     */
+    const handleBlurCheckSwap = () => {
+        if (minValue > 0 && maxValue > 0 && minValue > maxValue) {
+            onMinChange(maxValue);
+            onMaxChange(minValue);
+        }
+    };
 
     return (
         <div className="grid grid-cols-[1fr_auto] items-center gap-3 px-1 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
@@ -424,8 +463,9 @@ function FilterField({ label, unit, icon, minValue, maxValue, onMinChange, onMax
                         onChange={(val) => {
                             if (val !== null && !isNaN(val)) onMinChange(val);
                         }}
+                        onBlur={handleBlurCheckSwap}
                         formatter={inputFormatter}
-                        className={inputClass}
+                        className={cn(inputBaseClass, getValueTextClass(minValue))}
                         style={{ width: "90px" }}
                     />
                 </div>
@@ -437,8 +477,9 @@ function FilterField({ label, unit, icon, minValue, maxValue, onMinChange, onMax
                         onChange={(val) => {
                             if (val !== null && !isNaN(val)) onMaxChange(val);
                         }}
+                        onBlur={handleBlurCheckSwap}
                         formatter={inputFormatter}
-                        className={inputClass}
+                        className={cn(inputBaseClass, getValueTextClass(maxValue))}
                         style={{ width: "90px" }}
                     />
                 </div>
