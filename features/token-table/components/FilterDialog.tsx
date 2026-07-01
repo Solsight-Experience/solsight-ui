@@ -38,35 +38,62 @@ export interface FilterFormData {
     categories: string[];
 }
 
+// Which FilterFormData fields belong to which tab — used to hide a whole tab
+// when none of its fields are visible (see visibleFields below).
+const TAB_FIELDS: Record<FilterTabList, (keyof FilterFormData)[]> = {
+    [FilterTabList.METRICS]: [
+        "age_min_minutes",
+        "age_max_minutes",
+        "liquidity_min",
+        "liquidity_max",
+        "market_cap_min",
+        "market_cap_max",
+        "volume_24h_min",
+        "volume_24h_max",
+        "txns_24h_min",
+        "txns_24h_max"
+    ],
+    [FilterTabList.AUDITS]: ["mint_authority_disabled", "freeze_authority_disabled", "lp_burnt", "has_social_links"],
+    [FilterTabList.CATEGORIES]: ["categories"]
+};
+
 export interface FilterDialogProps {
     formData: FilterFormData;
     onFormChange: (data: Partial<FilterFormData>) => void;
+    /** Which fields to show. Omit to show every field (default). */
+    visibleFields?: (keyof FilterFormData)[];
 }
 
-export default function FilterDialog({ formData, onFormChange }: FilterDialogProps) {
-    const tabList = Object.values(FilterTabList);
+export default function FilterDialog({ formData, onFormChange, visibleFields }: FilterDialogProps) {
+    const isFieldVisible = (field: keyof FilterFormData) => !visibleFields || visibleFields.includes(field);
+    const visibleTabs = Object.values(FilterTabList).filter((tab) => TAB_FIELDS[tab].some(isFieldVisible));
+
+    const tabContent: Record<FilterTabList, ReactNode> = {
+        [FilterTabList.METRICS]: <MetricsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
+        [FilterTabList.AUDITS]: <AuditsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
+        [FilterTabList.CATEGORIES]: <CategoriesFilterList formData={formData} onFormChange={onFormChange} />
+    };
+
+    // A single visible tab reads as noise — render its content directly, without the tab strip.
+    if (visibleTabs.length <= 1) {
+        return visibleTabs[0] ? tabContent[visibleTabs[0]] : null;
+    }
 
     return (
-        <Tabs defaultValue={FilterTabList.METRICS}>
+        <Tabs defaultValue={visibleTabs[0]}>
             <TabsList className="w-full">
-                {tabList.map((tab) => (
+                {visibleTabs.map((tab) => (
                     <TabsTrigger key={tab} value={tab}>
                         {tab}
                     </TabsTrigger>
                 ))}
             </TabsList>
 
-            <TabsContent value={FilterTabList.METRICS}>
-                <MetricsFilterList formData={formData} onFormChange={onFormChange} />
-            </TabsContent>
-
-            <TabsContent value={FilterTabList.AUDITS}>
-                <AuditsFilterList formData={formData} onFormChange={onFormChange} />
-            </TabsContent>
-
-            <TabsContent value={FilterTabList.CATEGORIES}>
-                <CategoriesFilterList formData={formData} onFormChange={onFormChange} />
-            </TabsContent>
+            {visibleTabs.map((tab) => (
+                <TabsContent key={tab} value={tab}>
+                    {tabContent[tab]}
+                </TabsContent>
+            ))}
         </Tabs>
     );
 }
@@ -118,83 +145,107 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
     return tokenRequest;
 }
 
-function MetricsFilterList({ formData, onFormChange }: { formData: FilterFormData; onFormChange: (data: Partial<FilterFormData>) => void }) {
+type FieldListProps = {
+    formData: FilterFormData;
+    onFormChange: (data: Partial<FilterFormData>) => void;
+    isFieldVisible: (field: keyof FilterFormData) => boolean;
+};
+
+function MetricsFilterList({ formData, onFormChange, isFieldVisible }: FieldListProps) {
     const handleFieldChange = (field: keyof FilterFormData, value: string | number | null) => {
         onFormChange({ [field]: value });
     };
 
     return (
         <FilterListContainer>
-            <FilterField
-                label="Token Age (sec)"
-                minValue={formData.age_min_minutes}
-                maxValue={formData.age_max_minutes}
-                onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
-                onMaxChange={(value) => handleFieldChange("age_max_minutes", value)}
-                inputFormatter={new DecimalFormatter({ compact: true })}
-            />
-            <FilterField
-                label="Liquidity (USD)"
-                prefix="$"
-                minValue={formData.liquidity_min}
-                maxValue={formData.liquidity_max}
-                onMinChange={(value) => handleFieldChange("liquidity_min", value)}
-                onMaxChange={(value) => handleFieldChange("liquidity_max", value)}
-                inputFormatter={new CurrencyFormatter(Locale.US)}
-            />
-            <FilterField
-                label="Market Cap (USD)"
-                prefix="$"
-                minValue={formData.market_cap_min}
-                maxValue={formData.market_cap_max}
-                onMinChange={(value) => handleFieldChange("market_cap_min", value)}
-                onMaxChange={(value) => handleFieldChange("market_cap_max", value)}
-                inputFormatter={new CurrencyFormatter()}
-            />
-            <FilterField
-                label="Volume (USD)"
-                prefix="$"
-                minValue={formData.volume_24h_min}
-                maxValue={formData.volume_24h_max}
-                onMinChange={(value) => handleFieldChange("volume_24h_min", value)}
-                onMaxChange={(value) => handleFieldChange("volume_24h_max", value)}
-                inputFormatter={new CurrencyFormatter()}
-            />
-            <FilterField
-                label="Txns"
-                minValue={formData.txns_24h_min}
-                maxValue={formData.txns_24h_max}
-                onMinChange={(value) => handleFieldChange("txns_24h_min", value)}
-                onMaxChange={(value) => handleFieldChange("txns_24h_max", value)}
-                inputFormatter={new DecimalFormatter({ compact: true })}
-            />
+            {isFieldVisible("age_min_minutes") && (
+                <FilterField
+                    label="Token Age (sec)"
+                    minValue={formData.age_min_minutes}
+                    maxValue={formData.age_max_minutes}
+                    onMinChange={(value) => handleFieldChange("age_min_minutes", value)}
+                    onMaxChange={(value) => handleFieldChange("age_max_minutes", value)}
+                    inputFormatter={new DecimalFormatter({ compact: true })}
+                />
+            )}
+            {isFieldVisible("liquidity_min") && (
+                <FilterField
+                    label="Liquidity (USD)"
+                    prefix="$"
+                    minValue={formData.liquidity_min}
+                    maxValue={formData.liquidity_max}
+                    onMinChange={(value) => handleFieldChange("liquidity_min", value)}
+                    onMaxChange={(value) => handleFieldChange("liquidity_max", value)}
+                    inputFormatter={new CurrencyFormatter(Locale.US)}
+                />
+            )}
+            {isFieldVisible("market_cap_min") && (
+                <FilterField
+                    label="Market Cap (USD)"
+                    prefix="$"
+                    minValue={formData.market_cap_min}
+                    maxValue={formData.market_cap_max}
+                    onMinChange={(value) => handleFieldChange("market_cap_min", value)}
+                    onMaxChange={(value) => handleFieldChange("market_cap_max", value)}
+                    inputFormatter={new CurrencyFormatter()}
+                />
+            )}
+            {isFieldVisible("volume_24h_min") && (
+                <FilterField
+                    label="Volume (USD)"
+                    prefix="$"
+                    minValue={formData.volume_24h_min}
+                    maxValue={formData.volume_24h_max}
+                    onMinChange={(value) => handleFieldChange("volume_24h_min", value)}
+                    onMaxChange={(value) => handleFieldChange("volume_24h_max", value)}
+                    inputFormatter={new CurrencyFormatter()}
+                />
+            )}
+            {isFieldVisible("txns_24h_min") && (
+                <FilterField
+                    label="Txns"
+                    minValue={formData.txns_24h_min}
+                    maxValue={formData.txns_24h_max}
+                    onMinChange={(value) => handleFieldChange("txns_24h_min", value)}
+                    onMaxChange={(value) => handleFieldChange("txns_24h_max", value)}
+                    inputFormatter={new DecimalFormatter({ compact: true })}
+                />
+            )}
         </FilterListContainer>
     );
 }
 
-function AuditsFilterList({ formData, onFormChange }: { formData: FilterFormData; onFormChange: (data: Partial<FilterFormData>) => void }) {
+function AuditsFilterList({ formData, onFormChange, isFieldVisible }: FieldListProps) {
     const handleCheckboxChange = (field: keyof FilterFormData, checked: boolean) => {
         onFormChange({ [field]: checked });
     };
 
     return (
         <FilterListContainer className="grid grid-cols-1 md:grid-cols-2 px-4">
-            <FilterCheckBoxField
-                label="Mint Auth Disable"
-                checked={formData.mint_authority_disabled}
-                onCheckedChange={(checked) => handleCheckboxChange("mint_authority_disabled", checked)}
-            />
-            <FilterCheckBoxField
-                label="Freezable Disabled"
-                checked={formData.freeze_authority_disabled}
-                onCheckedChange={(checked) => handleCheckboxChange("freeze_authority_disabled", checked)}
-            />
-            <FilterCheckBoxField
-                label="At least 1 Social"
-                checked={formData.has_social_links}
-                onCheckedChange={(checked) => handleCheckboxChange("has_social_links", checked)}
-            />
-            <FilterCheckBoxField label="Burnt" checked={formData.lp_burnt} onCheckedChange={(checked) => handleCheckboxChange("lp_burnt", checked)} />
+            {isFieldVisible("mint_authority_disabled") && (
+                <FilterCheckBoxField
+                    label="Mint Auth Disable"
+                    checked={formData.mint_authority_disabled}
+                    onCheckedChange={(checked) => handleCheckboxChange("mint_authority_disabled", checked)}
+                />
+            )}
+            {isFieldVisible("freeze_authority_disabled") && (
+                <FilterCheckBoxField
+                    label="Freezable Disabled"
+                    checked={formData.freeze_authority_disabled}
+                    onCheckedChange={(checked) => handleCheckboxChange("freeze_authority_disabled", checked)}
+                />
+            )}
+            {isFieldVisible("has_social_links") && (
+                <FilterCheckBoxField
+                    label="At least 1 Social"
+                    checked={formData.has_social_links}
+                    onCheckedChange={(checked) => handleCheckboxChange("has_social_links", checked)}
+                />
+            )}
+            {isFieldVisible("lp_burnt") && (
+                <FilterCheckBoxField label="Burnt" checked={formData.lp_burnt} onCheckedChange={(checked) => handleCheckboxChange("lp_burnt", checked)} />
+            )}
         </FilterListContainer>
     );
 }

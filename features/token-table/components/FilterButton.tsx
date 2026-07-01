@@ -28,6 +28,8 @@ interface FilterButtonProps {
     filterOptions?: FilterOptions;
     /** When true, Apply maps the form's Market Cap/Volume fields onto the category API instead of calling /tokens/filter. */
     isCategory?: boolean;
+    /** Which filter fields to show in the dialog. Omit to show every field (default). */
+    visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
     onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
     onApplyCategory?: (values: CategoryFilterValues) => void;
@@ -52,7 +54,15 @@ const getInitialFormData = (): FilterFormData => ({
     categories: []
 });
 
-export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filterOptions, isCategory, onReset, onApply, onApplyCategory, onError }) {
+export const FilterButton = memo<FilterButtonProps>(function FilterButton({
+    filterOptions,
+    isCategory,
+    visibleFields,
+    onReset,
+    onApply,
+    onApplyCategory,
+    onError
+}) {
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
@@ -139,7 +149,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({ filt
                             <LoadingSpinner size="lg" />
                         </div>
                     ) : (
-                        <FilterDialog formData={formData} onFormChange={handleFormChange} />
+                        <FilterDialog formData={formData} onFormChange={handleFormChange} visibleFields={visibleFields} />
                     )}
                     <DialogFooter>
                         <div className="flex justify-between flex-1">
