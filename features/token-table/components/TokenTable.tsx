@@ -13,6 +13,7 @@ import { TokenFilterResponse } from "@/types/filter";
 import { TokenTabs } from "./TokenTabs";
 import { TimeFilters } from "./TimeFilters";
 import { FilterButton } from "./FilterButton";
+import type { FilterFormData } from "./FilterDialog";
 import { QuickBuyInput } from "./QuickBuyInput";
 import { RightPanelFilter } from "./RightPanelFilter";
 import { CategorySearch } from "./CategorySearch";
@@ -22,6 +23,9 @@ import { CategoryDetailModal } from "./CategoryDetailModal";
 import { useTokenTable } from "../hooks/useTokenTable";
 import type { TokenTableData } from "../config/types";
 import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
+
+// Category API only supports market cap / volume bounds — hide the rest of the shared filter form.
+const CATEGORY_VISIBLE_FILTER_FIELDS: (keyof FilterFormData)[] = ["market_cap_min", "market_cap_max", "volume_24h_min", "volume_24h_max"];
 
 /**
  * TokenTable Component
@@ -51,6 +55,8 @@ export default function TokenTable() {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setCategoryFilters,
+        resetCategoryFilters,
         setSelectedCategorySlug,
         resetFilters,
         applyFilterResults,
@@ -118,17 +124,20 @@ export default function TokenTable() {
             case "CATEGORIES":
                 return (
                     <RightPanelFilter>
-                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
                         <CategorySearch value={filters.categorySearch} onChange={setCategorySearch} />
                         <FilterButton
                             key={filters.activeTab}
-                            filterOptions={{ limit: 100, time_frame: filters.timeFilter }}
-                            onReset={() => {
-                                resetFilters();
-                            }}
-                            onApply={(res: TokenFilterResponse) => {
-                                applyFilterResults(res);
-                            }}
+                            isCategory
+                            visibleFields={CATEGORY_VISIBLE_FILTER_FIELDS}
+                            onReset={resetCategoryFilters}
+                            onApplyCategory={(values) =>
+                                setCategoryFilters({
+                                    categoryMarketCapMin: values.marketCapMin ?? null,
+                                    categoryMarketCapMax: values.marketCapMax ?? null,
+                                    categoryVolumeMin: values.volumeMin ?? null,
+                                    categoryVolumeMax: values.volumeMax ?? null
+                                })
+                            }
                         />
                     </RightPanelFilter>
                 );
@@ -160,7 +169,18 @@ export default function TokenTable() {
 
     const renderContent = () => {
         if (isCategories) {
-            return <CategoryTable searchQuery={filters.categorySearch} onCategorySelect={setSelectedCategorySlug} />;
+            return (
+                <CategoryTable
+                    searchQuery={filters.categorySearch}
+                    onCategorySelect={setSelectedCategorySlug}
+                    marketCapMin={filters.categoryMarketCapMin}
+                    marketCapMax={filters.categoryMarketCapMax}
+                    volumeMin={filters.categoryVolumeMin}
+                    volumeMax={filters.categoryVolumeMax}
+                    sortBy={filters.categorySortBy}
+                    sortOrder={filters.categorySortOrder}
+                />
+            );
         }
         if (error) {
             return <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />;
