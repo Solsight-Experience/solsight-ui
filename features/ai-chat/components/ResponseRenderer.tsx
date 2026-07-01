@@ -191,9 +191,11 @@ export const ResponseRenderer: React.FC<{ response: ResponseRenderable }> = ({ r
             return <TradeAutoAction data={response.data as TradeIntentData} />;
 
         default:
-            // Unrecognized types (e.g. portfolio_activities, portfolio_performance) —
-            // render the LLM text content if available, otherwise render nothing.
-            return response.content ? <p>{response.content}</p> : null;
+            // Unrecognized types (e.g. portfolio_activities, portfolio_performance) do not
+            // have dedicated UI cards/components. Their text content is already rendered
+            // by the ChatBubble parent using MarkdownContent, so we return null here
+            // to avoid rendering the text twice.
+            return null;
     }
 };
 
