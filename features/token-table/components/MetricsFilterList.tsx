@@ -13,7 +13,7 @@ export function MetricsFilterList({ formData, onFormChange, isFieldVisible = () 
             {isFieldVisible("age_min_minutes") && (
                 <FilterField
                     label="Token Age"
-                    unit="min"
+                    unit="sec"
                     icon={<Flame className="w-3.5 h-3.5" />}
                     minValue={formData.age_min_minutes ?? 0}
                     maxValue={formData.age_max_minutes ?? 0}
