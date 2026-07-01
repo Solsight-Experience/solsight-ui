@@ -37,7 +37,7 @@ const WITHDRAW_LABELS: Record<IFStakeStatus, string> = {
     creating: "Processing...",
     signing: "Waiting for signature...",
     confirming: "Confirming on-chain...",
-    done: "Withdraw SOL",
+    done: "Continue to Unstake",
     error: "Withdraw SOL"
 };
 
@@ -99,6 +99,17 @@ export function UnstakeModal({
         resetRequestUnstakeState();
         resetUnstakeState();
         onClose();
+    };
+
+    const handleWithdrawAction = () => {
+        if (unstakeState.status === "done") {
+            setUnstakeAmount("");
+            resetRequestUnstakeState();
+            resetUnstakeState();
+            return;
+        }
+
+        void handleUnstake();
     };
 
     return (
@@ -308,7 +319,7 @@ export function UnstakeModal({
                                     background: !withdrawLoading ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)" : "rgba(255,255,255,0.05)",
                                     boxShadow: !withdrawLoading ? "0 4px 20px rgba(34,197,94,0.25)" : "none"
                                 }}
-                                onClick={handleUnstake}
+                                onClick={handleWithdrawAction}
                                 disabled={withdrawLoading || !walletPubkey}
                             >
                                 {withdrawLoading ? (
