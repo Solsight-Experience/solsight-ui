@@ -55,19 +55,18 @@ export const SwapConfigBar: React.FC<SwapConfigBarProps> = ({ ctx, states, open,
     }
 
     return (
-        <div className="flex items-center gap-3 text-xs text-zinc-400 select-none">
-            <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 text-xs text-(--text-muted) select-none">
+            <div className="flex items-center gap-3 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {itemsToRender.map((node, i) => (
                     <React.Fragment key={i}>{node}</React.Fragment>
                 ))}
             </div>
-            <div className="flex-1" />
             <button
                 type="button"
                 onClick={onToggleOpen}
                 aria-expanded={open}
                 aria-label={open ? "Collapse swap config" : "Expand swap config"}
-                className="p-1 rounded-md hover:bg-zinc-800 cursor-pointer"
+                className="p-1 rounded-md hover:bg-(--surface-btn-hover) cursor-pointer shrink-0"
             >
                 <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
             </button>
