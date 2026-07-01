@@ -1,6 +1,6 @@
 import { Flame, BarChart2, Layers } from "lucide-react";
 import { CurrencyFormatter, DecimalFormatter, Locale } from "@/lib/number-formatters";
-import { FilterFormData, FilterListProps } from "../FilterDialog.types";
+import { FilterFormData, FilterListProps } from "../types/Filterdialog.types";
 import { FilterField } from "./FilterField";
 
 export function MetricsFilterList({ formData, onFormChange }: FilterListProps) {

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { ShieldCheck, Flame, Link2, LockKeyhole } from "lucide-react";
-import { FilterFormData, FilterListProps } from "../FilterDialog.types";
+import { FilterFormData, FilterListProps } from "../types/Filterdialog.types";
 
 type AuditColor = "emerald" | "blue" | "violet" | "orange";
 
