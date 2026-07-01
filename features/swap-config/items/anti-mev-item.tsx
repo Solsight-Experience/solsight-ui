@@ -1,8 +1,9 @@
 "use client";
 
 import { Shield, ShieldCheck, ShieldOff } from "lucide-react";
+import { ExecutorCapability } from "@/features/swap/types";
 import { SegmentedItem } from "../core/control-base-classes";
-import type { SwapRequestFragment } from "../core/types";
+import type { ConfigCtx, SwapRequestFragment } from "../core/types";
 
 type AntiMevOption = "off" | "red" | "sec";
 
@@ -19,6 +20,10 @@ export class AntiMevItem extends SegmentedItem<AntiMevOption> {
 
     getDefaultState() {
         return { value: "red" as AntiMevOption };
+    }
+
+    isVisible(ctx: ConfigCtx): boolean {
+        return ctx.swapInfo?.capabilities?.includes(ExecutorCapability.MevProtection) ?? false;
     }
 
     serialize(state: { value: AntiMevOption }): SwapRequestFragment {
