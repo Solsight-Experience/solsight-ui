@@ -113,7 +113,7 @@ export default function TokenTable() {
                             onReset={() => {
                                 resetFilters();
                             }}
-                            onApply={(res: TokenFilterResponse) => {
+                            onApply={(res: TokenFilterResponse | null) => {
                                 applyFilterResults(res);
                             }}
                         />
@@ -154,7 +154,7 @@ export default function TokenTable() {
                             onReset={() => {
                                 resetFilters();
                             }}
-                            onApply={(res: TokenFilterResponse) => {
+                            onApply={(res: TokenFilterResponse | null) => {
                                 applyFilterResults(res);
                             }}
                         />
