@@ -31,7 +31,7 @@ interface FilterButtonProps {
     /** Which filter fields to show in the dialog. Omit to show every field (default). */
     visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
+    onApply?: (response: TokenFilterResponse | null, formData: FilterFormData) => void;
     onApplyCategory?: (values: CategoryFilterValues) => void;
     onError?: (error: Error) => void;
 }
