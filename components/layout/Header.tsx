@@ -95,34 +95,53 @@ export default function Header() {
     return (
         <>
             <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-[#05050a]/80 border-b border-black/[0.06] dark:border-white/[0.04]">
-                {/* ── Ticker strip ─────────────────────────────────────────── */}
-                <div className="flex items-center h-[26px] border-b border-white/[0.04] overflow-hidden bg-black/30">
-                    <div
-                        className={`flex items-center gap-1 px-3 h-full shrink-0
+                {/* ── Dev Net Banner ─────────────────────────────────────────── */}
+                {process.env.NEXT_PUBLIC_SOLANA_NETWORK === "devnet" && (
+                    <div className="flex items-center h-[22px] bg-violet-600 overflow-hidden">
+                        <div className="flex w-max" style={{ animation: "ticker-scroll 180s linear infinite" }}>
+                            {Array(20)
+                                .fill("DEVELOPMENT ENVIRONMENT")
+                                .map((text, i) => (
+                                    <span
+                                        key={i}
+                                        className="inline-flex items-center px-10 text-[10px] font-bold tracking-[0.15em] text-white uppercase whitespace-nowrap"
+                                    >
+                                        {text}
+                                    </span>
+                                ))}
+                        </div>
+                    </div>
+                )}
+
+                {process.env.NEXT_PUBLIC_SOLANA_NETWORK != "devnet" && (
+                    <div className="flex items-center h-[26px] border-b border-white/[0.04] overflow-hidden bg-black/30">
+                        <div
+                            className={`flex items-center gap-1 px-3 h-full shrink-0
                             text-[9px] font-bold tracking-[0.12em] uppercase
                             border-r ${
                                 isOnline ? "text-violet-400 bg-violet-500/10 border-violet-500/20" : "text-amber-400 bg-amber-500/10 border-amber-500/20"
                             }`}
-                    >
-                        <Zap size={10} />
-                        <span>{isOnline ? "Live" : "..."}</span>
-                    </div>
+                        >
+                            <Zap size={10} />
+                            <span>{isOnline ? "Live" : "..."}</span>
+                        </div>
 
-                    <div className="flex-1 overflow-hidden">
-                        <div className="flex w-max hover:[animation-play-state:paused]" style={{ animation: "ticker-scroll 30s linear infinite" }}>
-                            {[...TICKERS, ...TICKERS].map((t, i) => (
-                                <span key={i} className="inline-flex items-center gap-1.5 px-5 text-[10px] border-r border-white/5">
-                                    <span className="text-white/40 tracking-wide">{t.symbol}</span>
-                                    <span className="text-white/80 font-semibold">{t.price}</span>
-                                    <span className={t.change >= 0 ? "text-emerald-400" : "text-red-400"}>
-                                        {t.change >= 0 ? "+" : ""}
-                                        {t.change}%
+                        <div className="flex-1 overflow-hidden">
+                            <div className="flex w-max hover:[animation-play-state:paused]" style={{ animation: "ticker-scroll 30s linear infinite" }}>
+                                {[...TICKERS, ...TICKERS].map((t, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1.5 px-5 text-[10px] border-r border-white/5">
+                                        <span className="text-white/40 tracking-wide">{t.symbol}</span>
+                                        <span className="text-white/80 font-semibold">{t.price}</span>
+                                        <span className={t.change >= 0 ? "text-emerald-400" : "text-red-400"}>
+                                            {t.change >= 0 ? "+" : ""}
+                                            {t.change}%
+                                        </span>
                                     </span>
-                                </span>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* ── Main Nav Bar ─────────────────────────────────────────── */}
                 <div className="flex items-center justify-between px-6 h-14">
