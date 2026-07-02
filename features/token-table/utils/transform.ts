@@ -77,6 +77,21 @@ function calculateFees(): string {
  * Transform TokenOverview from API to TokenTableData for the table
  */
 export function transformTokenOverview(token: TokenOverview): TokenTableData {
+    const buys24h = token.txns_24h?.buys ?? 0;
+    const sells24h = token.txns_24h?.sells ?? 0;
+    const audit = token.audit ?? {
+        mint_authority_disabled: false,
+        freeze_authority_disabled: false,
+        lp_burnt: false,
+        has_social_links: false,
+        holders_count: 0,
+        unique_wallets_24h: 0,
+        top_10_holders_percent: 100,
+        insider_percent: 100,
+        risk_score: 0
+    };
+    const riskScore = Number(audit.risk_score ?? 0);
+
     return {
         id: token.address,
         token: {
@@ -96,16 +111,16 @@ export function transformTokenOverview(token: TokenOverview): TokenTableData {
         liquidity: token.liquidity,
         volume24h: token.volume_24h,
         transactions: {
-            buyCount: token.txns_24h.buys,
-            sellCount: token.txns_24h.sells,
-            buyVolumn: Math.floor(token.txns_24h.buys * 0.6), // Estimated buy volume
-            sellVolumn: Math.floor(token.txns_24h.sells * 0.4) // Estimated sell volume
+            buyCount: buys24h,
+            sellCount: sells24h,
+            buyVolumn: Math.floor(buys24h * 0.6), // Estimated buy volume
+            sellVolumn: Math.floor(sells24h * 0.4) // Estimated sell volume
         },
         audit: [
             {
                 label: "Risk",
-                value: calculateRiskPercentage(Number(token.audit.risk_score)),
-                trend: Number(token.audit.risk_score) > 70 ? "down" : Number(token.audit.risk_score) > 40 ? "neutral" : "up"
+                value: calculateRiskPercentage(riskScore),
+                trend: riskScore > 70 ? "down" : riskScore > 40 ? "neutral" : "up"
             },
             {
                 label: "Fees",
@@ -114,7 +129,7 @@ export function transformTokenOverview(token: TokenOverview): TokenTableData {
             },
             {
                 label: "Score",
-                value: calculateAuditScore(token.audit),
+                value: calculateAuditScore(audit),
                 trend: "neutral"
             }
         ]
