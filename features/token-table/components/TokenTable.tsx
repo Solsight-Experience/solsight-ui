@@ -57,6 +57,7 @@ export default function TokenTable() {
         setCategorySearch,
         setCategoryFilters,
         resetCategoryFilters,
+        resetFavouritesFilters,
         setSelectedCategorySlug,
         resetFilters,
         applyFilterResults,
@@ -143,6 +144,22 @@ export default function TokenTable() {
                 );
 
             case "FAVOURITES":
+                return (
+                    <RightPanelFilter>
+                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
+                        <FilterButton
+                            key={filters.activeTab}
+                            isFavourites
+                            filterOptions={{ limit: 100 }}
+                            onReset={resetFavouritesFilters}
+                            onApply={(res: TokenFilterResponse) => {
+                                applyFilterResults(res);
+                            }}
+                        />
+                        <QuickBuyInput value={filters.quickBuyAmount} onChange={setQuickBuyAmount} />
+                    </RightPanelFilter>
+                );
+
             case "TRENDING":
             default:
                 return (
@@ -186,11 +203,11 @@ export default function TokenTable() {
             return <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />;
         }
         if (isLoading) return <LoadingSkeleton />;
-        if (!hasData && filters.activeTab === "FAVOURITES") {
-            return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
-        }
         if (!hasData && filters.filteredData !== undefined) {
             return <EmptyState message="No tokens match your filters." />;
+        }
+        if (!hasData && filters.activeTab === "FAVOURITES") {
+            return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
         }
         if (hasData) {
             return (

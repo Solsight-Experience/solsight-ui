@@ -41,6 +41,28 @@ export function useApplyTokenFilter() {
 }
 
 /**
+ * Hook to apply filters scoped to the user's favorited tokens only
+ */
+export function useApplyFavoritesFilter() {
+    return useMutation({
+        mutationFn: ({ body, params }: { body: TokenFilterRequest; params?: TokenFilterParams }) => filterService.filterFavorites(body, params),
+        onSuccess: () => {
+            toast.success("Filters applied successfully");
+        },
+        onError: (error: unknown) => {
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
+                if (resp?.data?.message) {
+                    toast.error(resp.data.message);
+                    return;
+                }
+            }
+            toast.error("Failed to apply filters");
+        }
+    });
+}
+
+/**
  * Hook for search with filters (combines search_query with filter options)
  * Used by SearchDialog to perform search with optional filters
  */

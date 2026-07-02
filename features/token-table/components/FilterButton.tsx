@@ -7,7 +7,7 @@ import FilterDialog, { FilterFormData, getFilterRequestBody } from "./FilterDial
 import { TokenFilterParams } from "../services/filter.service";
 import { TokenFilterResponse, SortBy, SortOrder } from "@/types/filter";
 import { LoadingSpinner } from "@/components/loading";
-import { useApplyTokenFilter } from "../hooks/useTokenFilter";
+import { useApplyTokenFilter, useApplyFavoritesFilter } from "../hooks/useTokenFilter";
 
 export interface FilterOptions {
     sort_by?: SortBy;
@@ -28,6 +28,8 @@ interface FilterButtonProps {
     filterOptions?: FilterOptions;
     /** When true, Apply maps the form's Market Cap/Volume fields onto the category API instead of calling /tokens/filter. */
     isCategory?: boolean;
+    /** When true, Apply calls the favorites-scoped filter endpoint instead of /tokens/filter. */
+    isFavourites?: boolean;
     /** Which filter fields to show in the dialog. Omit to show every field (default). */
     visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
@@ -50,8 +52,7 @@ const getInitialFormData = (): FilterFormData => ({
     mint_authority_disabled: false,
     freeze_authority_disabled: false,
     lp_burnt: false,
-    has_social_links: false,
-    categories: []
+    has_social_links: false
 });
 
 function countActiveFilters(formData: FilterFormData): number {
@@ -65,13 +66,13 @@ function countActiveFilters(formData: FilterFormData): number {
     if (formData.freeze_authority_disabled) count++;
     if (formData.lp_burnt) count++;
     if (formData.has_social_links) count++;
-    if (formData.categories.length > 0) count++;
     return count;
 }
 
 export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     filterOptions,
     isCategory,
+    isFavourites,
     visibleFields,
     onReset,
     onApply,
@@ -82,7 +83,8 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     const [isOpen, setIsOpen] = useState(false);
 
     const tokenFilterMutation = useApplyTokenFilter();
-    const isLoading = tokenFilterMutation.isPending;
+    const favoritesFilterMutation = useApplyFavoritesFilter();
+    const isLoading = tokenFilterMutation.isPending || favoritesFilterMutation.isPending;
 
     const activeCount = useMemo(() => countActiveFilters(formData), [formData]);
     const hasActiveFilters = activeCount > 0;
@@ -131,7 +133,9 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 time_frame: filterOptions?.time_frame
             };
 
-            const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
+            const response = isFavourites
+                ? await favoritesFilterMutation.mutateAsync({ body: requestBody, params })
+                : await tokenFilterMutation.mutateAsync({ body: requestBody, params });
             onApply?.(response, formData);
             setIsOpen(false);
         } catch (error) {
