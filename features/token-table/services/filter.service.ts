@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/network-requests/api-client";
+import { USER_ENDPOINTS } from "@/lib/constants";
 import { TokenFilterRequest, TokenFilterResponse, SortBy, SortOrder } from "@/types/filter";
 
 export interface CategoryOverview {
@@ -26,20 +27,35 @@ export interface TokenFilterParams {
     time_frame?: string;
 }
 
+function buildFilterQueryParams(params?: TokenFilterParams): string {
+    const queryParams = new URLSearchParams();
+
+    if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.offset) queryParams.append("offset", params.offset.toString());
+    if (params?.time_frame) queryParams.append("time_frame", params.time_frame);
+
+    return queryParams.toString();
+}
+
 class FilterService {
     /**
      * Filter tokens with advanced criteria
      */
     async filterTokens(body: TokenFilterRequest, params?: TokenFilterParams): Promise<TokenFilterResponse> {
-        const queryParams = new URLSearchParams();
+        const queryString = buildFilterQueryParams(params);
+        const url = `/tokens/filter${queryString ? `?${queryString}` : ""}`;
 
-        if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
-        if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
-        if (params?.limit) queryParams.append("limit", params.limit.toString());
-        if (params?.offset) queryParams.append("offset", params.offset.toString());
-        if (params?.time_frame) queryParams.append("time_frame", params.time_frame);
+        return apiClient.post<TokenFilterResponse>(url, body);
+    }
 
-        const url = `/tokens/filter${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    /**
+     * Filter within the user's favorited tokens only
+     */
+    async filterFavorites(body: TokenFilterRequest, params?: TokenFilterParams): Promise<TokenFilterResponse> {
+        const queryString = buildFilterQueryParams(params);
+        const url = `${USER_ENDPOINTS.FAVORITES_FILTER}${queryString ? `?${queryString}` : ""}`;
 
         return apiClient.post<TokenFilterResponse>(url, body);
     }

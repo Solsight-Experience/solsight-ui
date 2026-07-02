@@ -99,6 +99,7 @@ export const USER_ENDPOINTS = {
     ME: "/account/me",
     STATS: "/account/me/stats",
     FAVORITES: "/account/me/favorites",
+    FAVORITES_FILTER: "/account/me/favorites/filter",
     FAVORITE_DETAIL: (tokenAddress: string) => `/account/me/favorites/${tokenAddress}`
 } as const;
 

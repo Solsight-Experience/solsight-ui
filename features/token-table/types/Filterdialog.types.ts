@@ -16,9 +16,6 @@ export interface FilterFormData {
     freeze_authority_disabled: boolean;
     lp_burnt: boolean;
     has_social_links: boolean;
-
-    // Categories
-    categories: string[];
 }
 
 export interface FilterDialogProps {

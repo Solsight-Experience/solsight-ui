@@ -258,13 +258,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     // Process and filter data
     const data = useMemo(() => {
-        if (filters.activeTab === "FAVOURITES") {
-            return transformTokenOverviews(favoritesTokens);
-        }
-
         // If we have filtered data from API, use that instead of regular data
         // NOTE: filteredData=[] (empty array) means filter is active but returned no results —
-        // must NOT fall through to apiData, otherwise the full unfiltered list shows instead.
+        // must NOT fall through to apiData/favoritesTokens, otherwise the full unfiltered list shows instead.
         if (filters.filteredData !== undefined) {
             if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
                 return [...filters.filteredData].sort((a, b) => {
@@ -281,6 +277,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 });
             }
             return filters.filteredData;
+        }
+
+        if (filters.activeTab === "FAVOURITES") {
+            return transformTokenOverviews(favoritesTokens);
         }
 
         if (!apiData?.tokens) return [];
@@ -371,6 +371,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setFilters((prev) => ({ ...prev, ...DEFAULT_CATEGORY_FILTERS }));
     }, []);
 
+    // Unlike resetFilters(), this stays on the Favourites tab — it only clears the applied filter.
+    const resetFavouritesFilters = useCallback(() => {
+        setFilters((prev) => ({ ...prev, filteredData: undefined }));
+    }, []);
+
     const toggleSort = useCallback((option: SortOption) => {
         setFilters((prev) => {
             if (prev.sortOption === option) {
@@ -425,6 +430,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setCategorySearch,
         setCategoryFilters,
         resetCategoryFilters,
+        resetFavouritesFilters,
         setSelectedCategorySlug,
         toggleSort,
         toggleFavourite,

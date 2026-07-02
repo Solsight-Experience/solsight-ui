@@ -3,12 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterDialogProps, FilterFormData } from "../types/Filterdialog.types";
 import { MetricsFilterList } from "./MetricsFilterList";
 import { AuditsFilterList } from "./AuditsFilterList";
-import { CategoriesFilterList } from "./CategoriesFilterList";
 
 enum FilterTabList {
     METRICS = "Metrics",
-    AUDITS = "Audits",
-    CATEGORIES = "Categories"
+    AUDITS = "Audits"
 }
 
 // Which FilterFormData fields belong to which tab — used to hide a whole tab
@@ -26,8 +24,7 @@ const TAB_FIELDS: Record<FilterTabList, (keyof FilterFormData)[]> = {
         "txns_24h_min",
         "txns_24h_max"
     ],
-    [FilterTabList.AUDITS]: ["mint_authority_disabled", "freeze_authority_disabled", "lp_burnt", "has_social_links"],
-    [FilterTabList.CATEGORIES]: ["categories"]
+    [FilterTabList.AUDITS]: ["mint_authority_disabled", "freeze_authority_disabled", "lp_burnt", "has_social_links"]
 };
 
 export default function FilterDialog({ formData, onFormChange, visibleFields }: FilterDialogProps) {
@@ -36,8 +33,7 @@ export default function FilterDialog({ formData, onFormChange, visibleFields }: 
 
     const tabContent: Record<FilterTabList, ReactNode> = {
         [FilterTabList.METRICS]: <MetricsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
-        [FilterTabList.AUDITS]: <AuditsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
-        [FilterTabList.CATEGORIES]: <CategoriesFilterList formData={formData} onFormChange={onFormChange} />
+        [FilterTabList.AUDITS]: <AuditsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />
     };
 
     // A single visible tab reads as noise — render its content directly, without the tab strip.

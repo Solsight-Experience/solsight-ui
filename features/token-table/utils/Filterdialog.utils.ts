@@ -61,10 +61,5 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
         tokenRequest.audit_filters = audit_filters;
     }
 
-    // Categories
-    if (formData.categories.length > 0) {
-        tokenRequest.categories = formData.categories;
-    }
-
     return tokenRequest;
 }
