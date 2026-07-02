@@ -22,13 +22,10 @@ type TradeIntentData = {
     amount: string;
     mode?: "buy" | "sell";
     targetMint?: string;
-    timestamp?: number;
     priceImpactPct?: number | null;
     priceImpactSeverity?: "safe" | "warning" | "danger" | "critical";
     slippageBps?: number;
 };
-
-const IS_RECENT_THRESHOLD = 3000;
 
 function formatCompactNumber(val: string | number): string {
     const num = typeof val === "string" ? parseFloat(val) : val;
@@ -73,13 +70,19 @@ const PriceImpactBadge: React.FC<{ severity: TradeIntentData["priceImpactSeverit
 
 const TradeAutoAction: React.FC<{ data: TradeIntentData }> = ({ data }) => {
     const router = useRouter();
+    // Use a ref instead of a timestamp check: fire navigation exactly once on mount.
+    // The timestamp approach was unreliable because LLM processing (6-12s) makes
+    // messages appear "stale" (> IS_RECENT_THRESHOLD) by the time this mounts.
+    const hasTriggeredRef = React.useRef(false);
 
     useEffect(() => {
+        // Guard: only run once per mount. Prevents re-triggering on history re-renders.
+        if (hasTriggeredRef.current) return;
+
         const targetMint = data.targetMint || data.outputMint;
         if (!targetMint) return;
 
-        const isRecent = data.timestamp && Date.now() - data.timestamp < IS_RECENT_THRESHOLD;
-        if (!isRecent) return;
+        hasTriggeredRef.current = true;
 
         useTokenUIStore.getState().setPendingTradeAction({
             mint: targetMint,
@@ -89,7 +92,7 @@ const TradeAutoAction: React.FC<{ data: TradeIntentData }> = ({ data }) => {
         });
 
         router.push(`/token/${targetMint}`);
-    }, [data.outputMint, data.targetMint, data.amount, data.mode, data.timestamp, data.slippageBps, router]);
+    }, [data.amount, data.mode, data.outputMint, data.slippageBps, data.targetMint, router]);
 
     return (
         <div className="relative overflow-hidden group p-4 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-transparent to-indigo-500/10 backdrop-blur-sm shadow-xl shadow-violet-500/5">
@@ -174,7 +177,7 @@ const TradeAutoAction: React.FC<{ data: TradeIntentData }> = ({ data }) => {
     );
 };
 
-export const ResponseRenderer: React.FC<{ response: ResponseRenderable; timestamp?: number }> = ({ response, timestamp }) => {
+export const ResponseRenderer: React.FC<{ response: ResponseRenderable }> = ({ response }) => {
     switch (response.type) {
         case "text":
             return <p>{response.content}</p>;
@@ -185,12 +188,14 @@ export const ResponseRenderer: React.FC<{ response: ResponseRenderable; timestam
         case "navigation":
             return <NavigationCard data={response.data as NavigationData} />;
         case "trade_intent":
-            return <TradeAutoAction data={{ ...(response.data as TradeIntentData), timestamp }} />;
+            return <TradeAutoAction data={response.data as TradeIntentData} />;
 
         default:
-            // Unrecognized types (e.g. portfolio_activities, portfolio_performance) —
-            // render the LLM text content if available, otherwise render nothing.
-            return response.content ? <p>{response.content}</p> : null;
+            // Unrecognized types (e.g. portfolio_activities, portfolio_performance) do not
+            // have dedicated UI cards/components. Their text content is already rendered
+            // by the ChatBubble parent using MarkdownContent, so we return null here
+            // to avoid rendering the text twice.
+            return null;
     }
 };
 

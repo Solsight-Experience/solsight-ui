@@ -267,7 +267,7 @@ export const PositionsTab: React.FC = () => {
                             <div className="flex gap-6 items-center mt-4 sm:mt-0 ml-[4.5rem] sm:ml-0">
                                 <div className="text-right">
                                     <div className="font-mono font-bold text-[var(--text-primary)] text-lg">
-                                        ${wallet.balance_usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ${wallet.summary.total_value_usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                     <div className="text-xs text-violet-500 dark:text-violet-300/70 font-semibold uppercase tracking-wider">
                                         {wallet.balance_sol.toFixed(4)} SOL

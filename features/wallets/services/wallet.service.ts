@@ -5,11 +5,11 @@ import { ApiResponse } from "@/types/api";
 
 export class WalletService {
     // Connect wallet - sends public key to backend for registration
-    static async connectWallet(publicKey: string, walletType: string): Promise<WalletResponseDto> {
+    static async connectWallet(publicKey: string, walletName: string, walletIcon: string): Promise<WalletResponseDto> {
         const response = await apiClient.post<{ success: boolean; wallet: WalletResponseDto }>(PORTFOLIO_ENDPOINTS.WALLETS, {
             address: publicKey,
-            name: walletType === "phantom" ? "Phantom" : walletType,
-            icon: walletType
+            name: walletName,
+            icon: walletIcon
         });
         return response.wallet;
     }

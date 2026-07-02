@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,11 @@ import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { DecimalFormatter } from "@/lib/number-formatters";
-import { useWallet } from "@/features/wallets/hooks/useWallet";
+import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
-import type { VersionedTransaction } from "@solana/web3.js";
+import useSettingsStore from "@/stores/settings.store";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -23,17 +23,13 @@ interface QuickBuyReviewModalProps {
     amountSol: string;
 }
 
-type PhantomProvider = {
-    isPhantom?: boolean;
-    signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
-};
-
 const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
-    const { connectWallet, isConnecting, connected, publicKey } = useWallet();
-    const [slippageBps, setSlippageBps] = useState(50);
-    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(50);
+    const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
+    const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
+    const [slippageBps, setSlippageBps] = useState(defaultSlippageBps);
+    const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(defaultSlippageBps);
     const [decimals, setDecimals] = useState(9);
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -45,7 +41,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
 
     useEffect(() => {
         if (!open) {
-            setDebouncedSlippageBps(slippageBps);
+            setSlippageBps(defaultSlippageBps);
+            setDebouncedSlippageBps(defaultSlippageBps);
             return;
         }
 
@@ -56,7 +53,7 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [open, slippageBps]);
+    }, [defaultSlippageBps, open, slippageBps]);
 
     useEffect(() => {
         if (!open || !token) return;
@@ -163,16 +160,21 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
     const handleConfirm = async () => {
         if (!quote?.rawQuote || !token) return;
 
-        const provider = (window as Window & { solana?: PhantomProvider }).solana;
-        if (!provider?.isPhantom) {
-            toast.error("Phantom wallet not found.");
+        if (!ensureWalletReadyForUserAction("buy this token")) {
+            if (!isConnecting) {
+                toast.info("Please connect your wallet.");
+            }
             return;
         }
 
-        if (!connected || !publicKey) {
-            if (isConnecting) return;
-            connectWallet();
-            toast.info("Please connect your wallet.");
+        if (!signTransaction) {
+            toast.error("Connected wallet cannot sign transactions.");
+            return;
+        }
+
+        const walletPublicKey = publicKey;
+        if (!walletPublicKey) {
+            toast.error("Wallet address is unavailable.");
             return;
         }
 
@@ -182,8 +184,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
         try {
             const result = await executeJupiterSwap({
                 quoteResponse: quote.rawQuote,
-                userPublicKey: publicKey,
-                signTransaction: (tx) => provider.signTransaction(tx)
+                userPublicKey: walletPublicKey,
+                signTransaction: (tx) => signTransaction(tx)
             });
             setSignature(result.signature);
             toast.success("Swap submitted!");
@@ -209,14 +211,10 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                         <div className="rounded-lg border border-border p-3">
                             <div className="text-muted-foreground mb-2">Token</div>
                             <div className="flex items-center gap-2">
-                                <Image
-                                    src={token.token.iconUrl || "/icons/sol.png"}
-                                    alt={token.token.ticker}
-                                    width={20}
-                                    height={20}
-                                    className="h-5 w-5 rounded-full"
-                                    unoptimized
-                                />
+                                <Avatar className="h-5 w-5">
+                                    <AvatarImage src={token.token.iconUrl} alt="" />
+                                    <AvatarFallback className="text-[9px]">{token.token.ticker.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
                                 <span className="font-semibold">{token.token.ticker}</span>
                                 <span className="text-muted-foreground">{token.token.name}</span>
                             </div>

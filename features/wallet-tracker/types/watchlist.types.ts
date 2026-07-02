@@ -29,6 +29,7 @@ export interface WalletAlert {
 export interface CreateWalletAlertDto {
     alertType: WalletAlertType;
     condition?: WalletAlertCondition;
+    network?: "mainnet" | "devnet";
 }
 
 export interface UpdateWalletAlertDto {
@@ -36,16 +37,16 @@ export interface UpdateWalletAlertDto {
     condition?: WalletAlertCondition;
 }
 
-// ── Zalo ──────────────────────────────────────────────────────────────────
+// ── Telegram ──────────────────────────────────────────────────────────────
 
-export interface ZaloSubscriptionStatus {
+export interface TelegramSubscriptionStatus {
     isVerified: boolean;
     verificationToken?: string;
     tokenExpiresAt?: string;
     verifiedAt?: string;
 }
 
-export interface GenerateZaloTokenResponse {
+export interface GenerateTelegramTokenResponse {
     verificationToken: string;
     tokenExpiresAt: string;
     instructions: string;
@@ -66,6 +67,7 @@ export interface WatchedWallet {
     walletAddress: string;
     userId: string;
     label?: string;
+    network: "mainnet" | "devnet";
     createdAt: string;
 }
 
@@ -77,6 +79,7 @@ export interface WatchlistResponse {
 export interface AddWatchedWalletDto {
     walletAddress: string;
     label?: string;
+    network?: "mainnet" | "devnet";
 }
 
 export interface UpdateWatchedWalletDto {

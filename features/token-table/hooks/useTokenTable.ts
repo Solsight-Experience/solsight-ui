@@ -8,12 +8,13 @@ import { TokenTableTabOption } from "../components/TokenTabs";
 import { SortOption, SortDirection } from "../components/SortPanel";
 import { createColumns } from "../config/columns";
 import type { TokenTableData } from "../config/types";
-import { TokenDiscoveryService, SortBy, TimeFrame } from "../services/token-discovery.service";
+import { TokenDiscoveryService, SortBy, TimeFrame, CategorySortBy, CategorySortOrder } from "../services/token-discovery.service";
 import { transformTokenOverviews } from "../utils/transform";
 import { queryKeys } from "@/lib/react-query-keys";
 import { useFavoriteTokens, useToggleFavorite } from "@/features/token/hooks/token.hooks";
 import type { TokenFilterResponse } from "@/types/filter";
 import type { TrendingResponse } from "../services/token-discovery.service";
+import useSettingsStore from "@/stores/settings.store";
 
 const PAGE_SIZE = 20;
 
@@ -52,22 +53,44 @@ export interface TokenTableFilters {
     sortDirection: SortDirection;
     favouriteIds: Set<string>;
     filteredData?: TokenTableData[]; // Store filtered results from API
+    categoryMarketCapMin: number | null;
+    categoryMarketCapMax: number | null;
+    categoryVolumeMin: number | null;
+    categoryVolumeMax: number | null;
+    categorySortBy: CategorySortBy;
+    categorySortOrder: CategorySortOrder;
 }
+
+type CategoryFilterFields = Pick<
+    TokenTableFilters,
+    "categoryMarketCapMin" | "categoryMarketCapMax" | "categoryVolumeMin" | "categoryVolumeMax" | "categorySortBy" | "categorySortOrder"
+>;
+
+const DEFAULT_CATEGORY_FILTERS: CategoryFilterFields = {
+    categoryMarketCapMin: null,
+    categoryMarketCapMax: null,
+    categoryVolumeMin: null,
+    categoryVolumeMax: null,
+    categorySortBy: "market_cap",
+    categorySortOrder: "desc"
+};
 
 export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
     const { user } = useAuth();
     const isLoggedIn = !!user;
-    const [filters, setFilters] = useState<TokenTableFilters>({
-        timeFilter: "1m",
+    const defaultQuickBuyAmount = useSettingsStore((state) => state.defaultQuickBuyAmount);
+    const [filters, setFilters] = useState<TokenTableFilters>(() => ({
+        timeFilter: "24h",
         activeTab: "TRENDING",
-        quickBuyAmount: "0.1",
+        quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
         categorySearch: "",
         selectedCategorySlug: null,
         sortOption: "volumes",
         sortDirection: "none",
         favouriteIds: new Set(),
-        filteredData: undefined
-    });
+        filteredData: undefined,
+        ...DEFAULT_CATEGORY_FILTERS
+    }));
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -98,6 +121,10 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
     }, [isLoggedIn]);
 
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, quickBuyAmount: defaultQuickBuyAmount }));
+    }, [defaultQuickBuyAmount]);
+
     // Mutation for toggling favorites
     const toggleFavoriteMutation = useToggleFavorite();
 
@@ -121,18 +148,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         [isLoggedIn, toggleFavourite, filters.favouriteIds, filters.quickBuyAmount, onQuickBuy]
     );
 
-    // Map time filter to API TimeFrame
-    const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => {
-        switch (timeFilter) {
-            case "1h":
-                return "1h";
-            case "1m":
-            case "5m":
-            case "30m":
-            default:
-                return "24h";
-        }
-    };
+    const mapTimeFilterToTimeFrame = (timeFilter: TimeFilterValue): TimeFrame => timeFilter;
 
     // Map sort option to API SortBy
     const mapSortOptionToSortBy = (sortOption: SortOption): SortBy => {
@@ -183,7 +199,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 case "TRENDING":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        sort_by: "volume_24h",
+                        sort_by: "txns_24h",
                         limit: PAGE_SIZE,
                         offset
                     });
@@ -191,7 +207,7 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 case "TOP":
                     return TokenDiscoveryService.getTrending({
                         time_frame: timeFrame,
-                        sort_by: mapSortOptionToSortBy(filters.sortOption),
+                        sort_by: "volume_24h",
                         limit: PAGE_SIZE,
                         offset
                     });
@@ -247,7 +263,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         }
 
         // If we have filtered data from API, use that instead of regular data
-        if (filters.filteredData && filters.filteredData.length > 0) {
+        // NOTE: filteredData=[] (empty array) means filter is active but returned no results —
+        // must NOT fall through to apiData, otherwise the full unfiltered list shows instead.
+        if (filters.filteredData !== undefined) {
             if (filters.activeTab === "TOP" && filters.sortDirection !== "none") {
                 return [...filters.filteredData].sort((a, b) => {
                     let aValue = 0;
@@ -325,7 +343,14 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
                 toast.info("Sign in to view your favourite tokens.");
                 return;
             }
-            setFilters((prev) => ({ ...prev, activeTab, selectedCategorySlug: null }));
+            setFilters((prev) => ({
+                ...prev,
+                activeTab,
+                selectedCategorySlug: null,
+                categorySearch: "",
+                filteredData: undefined,
+                ...DEFAULT_CATEGORY_FILTERS
+            }));
         },
         [isLoggedIn]
     );
@@ -340,6 +365,14 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const setCategorySearch = useCallback((categorySearch: string) => {
         setFilters((prev) => ({ ...prev, categorySearch }));
+    }, []);
+
+    const setCategoryFilters = useCallback((values: Partial<CategoryFilterFields>) => {
+        setFilters((prev) => ({ ...prev, ...values }));
+    }, []);
+
+    const resetCategoryFilters = useCallback(() => {
+        setFilters((prev) => ({ ...prev, ...DEFAULT_CATEGORY_FILTERS }));
     }, []);
 
     const toggleSort = useCallback((option: SortOption) => {
@@ -368,9 +401,9 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
 
     const resetFilters = useCallback(() => {
         setFilters((prev) => ({
-            timeFilter: "1m",
+            timeFilter: "24h",
             activeTab: "TRENDING",
-            quickBuyAmount: "0.1",
+            quickBuyAmount: useSettingsStore.getState().defaultQuickBuyAmount,
             categorySearch: "",
             selectedCategorySlug: null,
             sortOption: "volumes",
@@ -378,12 +411,13 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
             // Preserve favouriteIds — they are synced from the server,
             // not a UI filter, and should not be wiped on reset.
             favouriteIds: prev.favouriteIds,
-            filteredData: undefined
+            filteredData: undefined,
+            ...DEFAULT_CATEGORY_FILTERS
         }));
     }, []);
 
     const isFavouritesTab = filters.activeTab === "FAVOURITES";
-    const isFilteredResults = filters.filteredData != null && filters.filteredData.length > 0;
+    const isFilteredResults = filters.filteredData != null; // true even when empty — prevents infinite scroll in filter mode
     const canLoadMore = !isFavouritesTab && !isFilteredResults && hasNextPage;
 
     return {
@@ -393,6 +427,8 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         setActiveTab,
         setQuickBuyAmount,
         setCategorySearch,
+        setCategoryFilters,
+        resetCategoryFilters,
         setSelectedCategorySlug,
         toggleSort,
         toggleFavourite,

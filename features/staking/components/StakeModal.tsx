@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NumbericInput } from "@/components/ui/NumbericInput";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { Loader2, Info, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
-import { useIFStaking, IFStakeStatus } from "../hooks/useIFStaking";
+import { useIFStaking, IFStakeStatus, type StakeActionSuccessPayload } from "../hooks/useIFStaking";
 import { useIFProgram } from "../hooks/useIFProgram";
+import type { VersionedTransaction } from "@solana/web3.js";
 
 interface StakeModalProps {
     open: boolean;
@@ -16,7 +17,9 @@ interface StakeModalProps {
     walletPubkey: string | null;
     solBalance: number;
     connected: boolean;
-    onSuccess?: () => void;
+    signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
+    ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void;
 }
 
 const STATUS_LABELS: Record<IFStakeStatus, string> = {
@@ -30,11 +33,20 @@ const STATUS_LABELS: Record<IFStakeStatus, string> = {
 
 const STAKE_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
-export function StakeModal({ open, onClose, walletPubkey, solBalance, connected, onSuccess }: StakeModalProps) {
+export function StakeModal({
+    open,
+    onClose,
+    walletPubkey,
+    solBalance,
+    connected,
+    signTransaction,
+    ensureWalletReadyForUserAction,
+    onSuccess
+}: StakeModalProps) {
     const { resolvedTheme } = useTheme();
     const [amount, setAmount] = useState("");
     const networkLabel = IF_CONFIG.label;
-    const { stakeState, handleStake } = useIFStaking(connected, walletPubkey, onSuccess);
+    const { stakeState, resetStakeState, handleStake } = useIFStaking(connected, walletPubkey, signTransaction, ensureWalletReadyForUserAction, onSuccess);
     const { isLoading: clientLoading, isReady: clientReady } = useIFProgram(connected, walletPubkey);
 
     const loading = stakeState.status !== "idle" && stakeState.status !== "done" && stakeState.status !== "error";
@@ -52,11 +64,24 @@ export function StakeModal({ open, onClose, walletPubkey, solBalance, connected,
     const isValid = !isNaN(amountNum) && amountNum >= IF_MIN_STAKE_SOL && !!walletPubkey && clientReady;
     const isDark = resolvedTheme === "dark";
 
+    useEffect(() => {
+        if (open) {
+            setAmount("");
+            resetStakeState();
+        }
+    }, [open, resetStakeState]);
+
+    const handleClose = () => {
+        setAmount("");
+        resetStakeState();
+        onClose();
+    };
+
     return (
         <Dialog
             open={open}
             onOpenChange={() => {
-                if (!loading) onClose();
+                if (!loading) handleClose();
             }}
         >
             <DialogContent
@@ -170,7 +195,7 @@ export function StakeModal({ open, onClose, walletPubkey, solBalance, connected,
                     <div className="flex gap-3 pt-1">
                         <button
                             className="flex-1 cursor-pointer rounded-2xl border border-slate-200 py-3.5 text-[13px] font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-white"
-                            onClick={onClose}
+                            onClick={handleClose}
                             disabled={loading}
                         >
                             Cancel

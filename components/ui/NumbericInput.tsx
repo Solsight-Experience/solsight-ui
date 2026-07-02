@@ -46,6 +46,12 @@ export type NumbericInputProps = BaseProps &
          * Excess digits are clipped.
          */
         decimals?: number;
+        /**
+         * Visual prefix shown on the left while the input is focused (e.g. "$").
+         * Rendered as a non-interactive overlay; the input gets left-padding to match.
+         * When blurred the formatter's format() already includes the symbol.
+         */
+        prefix?: string;
     };
 
 /**
@@ -61,7 +67,7 @@ export type NumbericInputProps = BaseProps &
  * does not implement it.
  */
 export const NumbericInput = (props: NumbericInputProps) => {
-    const { formatter, showStepper = false, step = 1, min, max, decimals, className, containerClassName, onFocus, disabled, ...rest } = props;
+    const { formatter, showStepper = false, step = 1, min, max, decimals, className, containerClassName, onFocus, disabled, prefix, ...rest } = props;
 
     const mode: "number" | "string" = props.mode ?? "number";
     const numericValue =
@@ -233,6 +239,7 @@ export const NumbericInput = (props: NumbericInputProps) => {
 
     return (
         <div className={cn("relative flex items-center", containerClassName)} data-slot="numberic-input">
+            {prefix && isFocused && <span className="absolute left-2 z-10 text-xs text-white/40 pointer-events-none select-none">{prefix}</span>}
             <Input
                 {...rest}
                 type="text"
@@ -244,7 +251,7 @@ export const NumbericInput = (props: NumbericInputProps) => {
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                className={cn("w-full", showStepper && "pr-8", className)}
+                className={cn("w-full", showStepper && "pr-8", prefix && isFocused && "pl-5", className)}
             />
 
             {showStepper && (

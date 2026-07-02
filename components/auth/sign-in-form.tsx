@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import SocialAuthButtons from "./social-auth-buttons";
+import ForgotPasswordForm from "./forgot-password-form";
 import { loginApi, resendVerificationApi } from "../../features/auth/authservice";
 import { getErrorMessage } from "@/lib/error-utils";
 
@@ -26,6 +27,11 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
     const [isUnverified, setIsUnverified] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+    if (showForgotPassword) {
+        return <ForgotPasswordForm initialEmail={email} onBack={() => setShowForgotPassword(false)} />;
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -186,9 +192,13 @@ export default function SignInForm({ onToggle }: SignInFormProps) {
                         </div>
                         <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">Remember me</span>
                     </label>
-                    <a href="#" className="text-purple-400 text-xs hover:text-purple-300 transition-colors font-medium">
+                    <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-purple-400 text-xs hover:text-purple-300 transition-colors font-medium"
+                    >
                         Forgot password?
-                    </a>
+                    </button>
                 </div>
 
                 {/* Submit */}

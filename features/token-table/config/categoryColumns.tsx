@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownRight, ArrowUpRight, ArrowUpDown } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { CategoryOverview } from "./types";
 import { cn } from "@/lib/utils";
 import { currencyFormatter } from "@/lib/formatters";
@@ -12,17 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export const categoryColumns: ColumnDef<CategoryOverview>[] = [
     {
         accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <button
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="flex items-center gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                >
-                    Category
-                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                </button>
-            );
-        },
+        header: "Category",
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
         size: 180
     },
@@ -49,17 +39,7 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
     },
     {
         accessorKey: "volume_24h",
-        header: ({ column }) => {
-            return (
-                <button
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                >
-                    Volume (24h)
-                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                </button>
-            );
-        },
+        header: () => <span className="block text-right">Volume (24h)</span>,
         cell: ({ row }) => (
             <span className="block text-right font-medium text-purple-400">{currencyFormatter.formatCompact(row.original.volume_24h ?? 0)}</span>
         ),
@@ -67,33 +47,13 @@ export const categoryColumns: ColumnDef<CategoryOverview>[] = [
     },
     {
         accessorKey: "market_cap",
-        header: ({ column }) => {
-            return (
-                <button
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                >
-                    Market Cap
-                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                </button>
-            );
-        },
+        header: () => <span className="block text-right">Market Cap</span>,
         cell: ({ row }) => <span className="block text-right font-semibold text-white">{currencyFormatter.formatCompact(row.original.market_cap)}</span>,
         size: 120
     },
     {
         accessorKey: "market_cap_change_24h",
-        header: ({ column }) => {
-            return (
-                <button
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="flex items-center justify-end w-full gap-1 transition-colors outline-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                >
-                    Market Cap Change (24h)
-                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                </button>
-            );
-        },
+        header: () => <span className="block text-right">Market Cap Change (24h)</span>,
         cell: ({ row }) => {
             const change = row.original.market_cap_change_24h;
             // Guard for null/undefined

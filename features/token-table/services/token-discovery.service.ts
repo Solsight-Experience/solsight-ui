@@ -1,7 +1,6 @@
 import { apiClient } from "@/lib/network-requests/api-client";
 import { TokenOverview } from "@/types/filter";
 import { CategoryOverview } from "../config/types";
-import { CategoriesResponse } from "./filter.service";
 
 /**
  * Types for Discovery & Trending API
@@ -31,8 +30,30 @@ export interface GainersLosersResponse {
 }
 
 export type SortBy = "volume_24h" | "txns_24h" | "price_change_24h" | "market_cap" | "holders_change";
-export type TimeFrame = "1h" | "24h" | "7d";
+export type TimeFrame = "5m" | "1h" | "6h" | "24h" | "7d";
 export type GainerLoserType = "gainers" | "losers" | "both";
+
+export type CategorySortBy = "market_cap" | "volume_24h" | "name";
+export type CategorySortOrder = "asc" | "desc";
+
+export interface CategoryListParams {
+    limit?: number;
+    offset?: number;
+    name?: string;
+    market_cap_min?: number;
+    market_cap_max?: number;
+    volume_min?: number;
+    volume_max?: number;
+    sort_by?: CategorySortBy;
+    sort_order?: CategorySortOrder;
+}
+
+export interface CategoryListResponse {
+    data: CategoryOverview[];
+    total: number;
+    limit: number;
+    offset: number;
+}
 
 /**
  * Token Discovery Service
@@ -71,13 +92,20 @@ export class TokenDiscoveryService {
 
     /**
      * GET /discovery/categories
-     * Get all categories
+     * Get all categories, with category-level filtering & sorting
      */
-    static async getCategories(params?: { limit?: number; offset?: number }): Promise<CategoriesResponse> {
-        return apiClient.get<CategoriesResponse>("/discovery/categories", {
+    static async getCategories(params?: CategoryListParams): Promise<CategoryListResponse> {
+        return apiClient.get<CategoryListResponse>("/discovery/categories", {
             params: {
                 limit: params?.limit || 50,
-                offset: params?.offset || 0
+                offset: params?.offset || 0,
+                ...(params?.name ? { name: params.name } : {}),
+                ...(params?.market_cap_min != null ? { market_cap_min: params.market_cap_min } : {}),
+                ...(params?.market_cap_max != null ? { market_cap_max: params.market_cap_max } : {}),
+                ...(params?.volume_min != null ? { volume_min: params.volume_min } : {}),
+                ...(params?.volume_max != null ? { volume_max: params.volume_max } : {}),
+                ...(params?.sort_by ? { sort_by: params.sort_by } : {}),
+                ...(params?.sort_order ? { sort_order: params.sort_order } : {})
             }
         });
     }
