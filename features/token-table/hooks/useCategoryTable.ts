@@ -40,7 +40,7 @@ export function useCategoryTable({
     const queryClient = useQueryClient();
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 7
+        pageSize: 20
     });
 
     // Debounce search query 300ms trước khi gọi API

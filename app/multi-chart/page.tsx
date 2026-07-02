@@ -1,4 +1,4 @@
-import { MultiChartPage } from "@/components/multi-chart/MultiChartPage";
+import { MultiChartPage } from "@/features/multi-chart/components/MultiChartPage";
 
 export default function Page() {
     return <MultiChartPage />;
