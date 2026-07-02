@@ -78,14 +78,17 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     onApplyCategory,
     onError
 }) {
+    const [appliedFormData, setAppliedFormData] = useState<FilterFormData>(getInitialFormData());
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
     const tokenFilterMutation = useApplyTokenFilter();
     const isLoading = tokenFilterMutation.isPending;
 
-    const activeCount = useMemo(() => countActiveFilters(formData), [formData]);
-    const hasActiveFilters = activeCount > 0;
+    const draftActiveCount = useMemo(() => countActiveFilters(formData), [formData]);
+    const appliedActiveCount = useMemo(() => countActiveFilters(appliedFormData), [appliedFormData]);
+    const hasDraftFilters = draftActiveCount > 0;
+    const hasAppliedFilters = appliedActiveCount > 0;
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -93,6 +96,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
     const handleReset = () => {
         setFormData(getInitialFormData());
+        setAppliedFormData(getInitialFormData());
         onReset?.();
     };
 
@@ -109,6 +113,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 volumeMax: formData.volume_24h_max ?? undefined
             });
             toast.success("Filters applied successfully");
+            setAppliedFormData(formData);
             setIsOpen(false);
             return;
         }
@@ -125,6 +130,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
             const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
             onApply?.(response, formData);
+            setAppliedFormData(formData);
             setIsOpen(false);
         } catch (error) {
             console.error("Filter error:", error);
@@ -137,6 +143,9 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
             open={isOpen}
             onOpenChange={(open) => {
                 if (!open && isLoading) return;
+                if (!open) {
+                    setFormData(appliedFormData);
+                }
                 setIsOpen(open);
             }}
         >
@@ -151,12 +160,12 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-violet-400" />
                     <span>Filters</span>
-                    {hasActiveFilters && (
+                    {hasAppliedFilters && (
                         <span
                             className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full
                                         bg-violet-500 text-white text-[10px] font-bold leading-none"
                         >
-                            {activeCount}
+                            {appliedActiveCount}
                         </span>
                     )}
                 </Button>
@@ -177,17 +186,17 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                         <div>
                             <DialogTitle className="text-[15px] font-semibold text-white leading-none">Token Filters</DialogTitle>
                             <p className="text-[11px] text-white/35 mt-1">
-                                {hasActiveFilters ? `${activeCount} filter${activeCount > 1 ? "s" : ""} active` : "No filters applied"}
+                                {hasDraftFilters ? `${draftActiveCount} filter${draftActiveCount > 1 ? "s" : ""} active` : "No filters applied"}
                             </p>
                         </div>
                     </div>
 
-                    {hasActiveFilters && (
+                    {hasDraftFilters && (
                         <span
                             className="flex items-center gap-1 px-2.5 py-1 rounded-full
                                         bg-violet-500/15 border border-violet-500/30 text-[11px] font-semibold text-violet-300"
                         >
-                            {activeCount} active
+                            {draftActiveCount} active
                         </span>
                     )}
                 </div>
@@ -217,7 +226,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                     type="button"
                                     variant="secondary"
                                     onClick={handleReset}
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || (!hasDraftFilters && !hasAppliedFilters)}
                                     aria-label="Reset filters"
                                     className="gap-2 text-[12px] border border-white/[0.07] bg-white/[0.04]
                                                hover:bg-white/[0.07] text-white/60 hover:text-white/80
@@ -228,7 +237,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || !hasDraftFilters}
                                     className="flex-1 gap-2 text-[12px] font-semibold
                                                bg-violet-600 hover:bg-violet-500 text-white
                                                border border-violet-500/50

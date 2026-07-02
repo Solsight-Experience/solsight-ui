@@ -13,6 +13,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import useClusterStore from "@/stores/cluster.store";
 
 type AuthUser = NonNullable<ReturnType<typeof useAuth>["user"]>;
 
@@ -45,6 +46,7 @@ export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
     const isOnline = useOnlineStatus();
+    const cluster = useClusterStore((state) => state.cluster);
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -96,7 +98,7 @@ export default function Header() {
         <>
             <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-[#05050a]/80 border-b border-black/[0.06] dark:border-white/[0.04]">
                 {/* ── Dev Net Banner ─────────────────────────────────────────── */}
-                {process.env.NEXT_PUBLIC_SOLANA_NETWORK === "devnet" && (
+                {cluster === "devnet" && (
                     <div className="flex items-center h-[22px] bg-violet-600 overflow-hidden">
                         <div className="flex w-max" style={{ animation: "ticker-scroll 180s linear infinite" }}>
                             {Array(20)
@@ -113,7 +115,7 @@ export default function Header() {
                     </div>
                 )}
 
-                {process.env.NEXT_PUBLIC_SOLANA_NETWORK != "devnet" && (
+                {cluster !== "devnet" && (
                     <div className="flex items-center h-[26px] border-b border-white/[0.04] overflow-hidden bg-black/30">
                         <div
                             className={`flex items-center gap-1 px-3 h-full shrink-0
