@@ -37,11 +37,20 @@ export interface ExecuteSwapResult {
     signature: string;
 }
 
+export enum ExecutorCapability {
+    Gasless = "gasless",
+    MevProtection = "mevProtection"
+}
+
+export type ExecutorKey = "jupiter" | "solsight";
+
 export interface SwapInfoResponse {
     autoPriorityFeeLamports: number;
     autoTipLamports: number;
     autoSlippageBps: number | null;
     maxAutoFeeLamports: number;
+    executorKey: ExecutorKey;
+    capabilities: ExecutorCapability[];
     gaslessEnabled: boolean;
     gaslessSupportedTokens: string[];
     payerPubkey: string | null;

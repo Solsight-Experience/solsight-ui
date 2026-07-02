@@ -158,24 +158,32 @@ export const createColumns = (
         id: "action",
         header: "",
         enableHiding: false,
-        cell: ({ row }) => (
-            <div className="flex justify-end">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onQuickBuy?.(row.original);
-                    }}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg
-                               bg-violet-500/10 border border-violet-500/20 text-violet-300
-                               text-[11px] font-semibold tracking-wide
-                               hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200
-                               transition-all duration-150 cursor-pointer whitespace-nowrap"
-                >
-                    <Zap size={10} className="shrink-0" />
-                    Buy {quickBuyAmount} SOL
-                </button>
-            </div>
-        )
+        cell: ({ row }) => {
+            const isDisabled = !quickBuyAmount || Number(quickBuyAmount) <= 0;
+            return (
+                <div className="flex justify-end">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDisabled) {
+                                onQuickBuy?.(row.original);
+                            }
+                        }}
+                        disabled={isDisabled}
+                        className={cn(
+                            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg",
+                            "border text-[11px] font-semibold tracking-wide whitespace-nowrap transition-all duration-150",
+                            isDisabled
+                                ? "bg-violet-500/5 border-violet-500/10 text-violet-300/40 cursor-not-allowed"
+                                : "bg-violet-500/10 border-violet-500/20 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200 cursor-pointer"
+                        )}
+                    >
+                        <Zap size={10} className="shrink-0" />
+                        Buy {quickBuyAmount || "0"} SOL
+                    </button>
+                </div>
+            );
+        }
     }
 ];
 
