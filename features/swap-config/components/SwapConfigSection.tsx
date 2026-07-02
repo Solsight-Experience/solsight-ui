@@ -5,6 +5,7 @@ import { useSwapInfo } from "@/features/swap/hooks/use-swap-info";
 import type { TokenPair, ConfigCtx } from "../core/types";
 import { SwapConfigBar } from "./SwapConfigBar";
 import { SwapConfigPanel } from "./SwapConfigPanel";
+import { SwapConfigPresets } from "./SwapConfigPresets";
 import type { SwapConfigSurfaceProps } from "./types";
 
 interface SwapConfigSectionProps extends Omit<SwapConfigSurfaceProps, "ctx"> {
@@ -26,10 +27,11 @@ export const SwapConfigSection: React.FC<SwapConfigSectionProps> = ({ states, on
     };
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-2">
+            <SwapConfigPresets liveItems={states} />
             <SwapConfigBar ctx={ctx} states={states} onItemChange={onItemChange} open={open} onToggleOpen={() => setOpen((o) => !o)} />
             {open && (
-                <div className="border-t border-zinc-800 mt-2 pt-3">
+                <div className="border-t border-(--border-subtle) mt-2 pt-3">
                     <SwapConfigPanel ctx={ctx} states={states} onItemChange={onItemChange} />
                 </div>
             )}
