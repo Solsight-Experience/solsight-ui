@@ -3,9 +3,9 @@
 import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
 import Image from "next/image";
-const SignInForm = nextDynamic(() => import("@/components/auth/sign-in-form"), { ssr: false });
-const SignUpForm = nextDynamic(() => import("@/components/auth/sign-up-form"), { ssr: false });
-import AuthBackground from "@/components/auth/auth-background";
+const SignInForm = nextDynamic(() => import("@/features/auth/components/sign-in-form"), { ssr: false });
+const SignUpForm = nextDynamic(() => import("@/features/auth/components/sign-up-form"), { ssr: false });
+import AuthBackground from "@/features/auth/components/auth-background";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,7 +34,7 @@ import {
     FileText,
     ShieldCheck
 } from "lucide-react";
-import { LegalDocument } from "@/components/legal/LegalDocument";
+import { LegalDocument } from "@/features/auth/components/LegalDocument";
 import { scrollToSection } from "@/lib/scroll-to-section";
 import { privacyContent } from "@/lib/legal/privacy-policy";
 import { tosContent } from "@/lib/legal/tos";

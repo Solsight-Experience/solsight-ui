@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { Button } from "../ui/button";
+import { Button } from "../../../components/ui/button";
 import { LogOut, Unplug, X } from "lucide-react";
 
 interface LogoutConfirmDialogProps {

@@ -190,7 +190,11 @@ export default function SocialAuthButtons() {
     return (
         <div className="space-y-3">
             {/* Google Sign-In Button */}
-            <div ref={googleButtonRef} className="w-full flex items-center justify-center" style={{ minHeight: "44px" }} />
+            <div
+                ref={googleButtonRef}
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border font-semibold text-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed border-[rgba(171,159,242,0.2)] bg-[rgba(171,159,242,0.1)] text-white hover:bg-[rgba(171,159,242,0.18)] hover:border-[rgba(171,159,242,0.4)] hover:shadow-[0_0_20px_rgba(171,159,242,0.2)] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_12px_rgba(171,159,242,0.05)] cursor-pointer"
+                style={{ minHeight: "44px" }}
+            />
 
             {/* Phantom Sign-In Button */}
             <Button

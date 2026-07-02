@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "../ui/button";
+import { Button } from "../../../components/ui/button";
 import { Unplug, X, AlertCircle } from "lucide-react";
 import { WalletService } from "@/features/wallets/services/wallet.service";
 import { WalletResponseDto } from "@/types/dto";

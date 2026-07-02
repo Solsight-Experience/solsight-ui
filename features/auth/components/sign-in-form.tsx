@@ -6,7 +6,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import SocialAuthButtons from "./social-auth-buttons";
 import ForgotPasswordForm from "./forgot-password-form";
-import { loginApi, resendVerificationApi } from "../../features/auth/authservice";
+import { loginApi, resendVerificationApi } from "../authservice";
 import { getErrorMessage } from "@/lib/error-utils";
 
 interface SignInFormProps {
