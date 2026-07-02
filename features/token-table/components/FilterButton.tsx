@@ -33,7 +33,7 @@ interface FilterButtonProps {
     /** Which filter fields to show in the dialog. Omit to show every field (default). */
     visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
-    onApply?: (response: TokenFilterResponse, formData: FilterFormData) => void;
+    onApply?: (response: TokenFilterResponse | null, formData: FilterFormData) => void;
     onApplyCategory?: (values: CategoryFilterValues) => void;
     onError?: (error: Error) => void;
 }
@@ -117,6 +117,14 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
         try {
             const requestBody = getFilterRequestBody(formData);
+
+            if (Object.keys(requestBody).length === 0) {
+                // If the user hasn't specified any actual filters, we don't call the API.
+                onApply?.(null, formData);
+                setIsOpen(false);
+                return;
+            }
+
             const params: TokenFilterParams = {
                 sort_by: filterOptions?.sort_by,
                 sort_order: filterOptions?.sort_order,
