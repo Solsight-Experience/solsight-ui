@@ -86,7 +86,7 @@ export const SearchDialog = ({ isOpen, onCloseAction }: SearchDialogProps) => {
         performSearchRef.current = performSearch;
     });
 
-    const handleFilterApply = (_response: TokenFilterResponse, formData: FilterFormData) => {
+    const handleFilterApply = (_response: TokenFilterResponse | null, formData: FilterFormData) => {
         setFilterFormData(formData);
         // The immediate search effect below handles triggering the combined filter+search
     };

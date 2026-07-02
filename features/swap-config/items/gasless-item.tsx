@@ -5,6 +5,7 @@ import { Fuel } from "lucide-react";
 import { DropdownItem } from "../core/control-base-classes";
 import type { ConfigCtx, SwapRequestFragment } from "../core/types";
 import { TokenIcon } from "@/components/ui/token-icon";
+import { ExecutorCapability } from "@/features/swap/types";
 
 type GaslessOption = "sol" | "quote" | "receive";
 
@@ -18,7 +19,7 @@ export class GaslessItem extends DropdownItem<GaslessOption> {
     }
 
     isVisible(ctx: ConfigCtx): boolean {
-        return ctx.swapInfo?.gaslessEnabled ?? false;
+        return ctx.swapInfo?.capabilities?.includes(ExecutorCapability.Gasless) ?? false;
     }
 
     getOptions(ctx: ConfigCtx): ReadonlyArray<{ id: GaslessOption; label: string; node?: React.ReactNode }> {
