@@ -23,6 +23,7 @@ import { CategoryDetailModal } from "./CategoryDetailModal";
 import { useTokenTable } from "../hooks/useTokenTable";
 import type { TokenTableData } from "../config/types";
 import { QuickBuyReviewModal } from "./QuickBuyReviewModal";
+import { Button } from "@/components/ui/button";
 
 // Category API only supports market cap / volume bounds — hide the rest of the shared filter form.
 const CATEGORY_VISIBLE_FILTER_FIELDS: (keyof FilterFormData)[] = ["market_cap_min", "market_cap_max", "volume_24h_min", "volume_24h_max"];
@@ -183,14 +184,56 @@ export default function TokenTable() {
             );
         }
         if (error) {
-            return <EmptyState message={`Error loading tokens: ${error instanceof Error ? error.message : "Unknown error"}`} />;
+            return (
+                <EmptyState
+                    title="Failed to Load Tokens"
+                    message={error instanceof Error ? error.message : "An unexpected error occurred while fetching tokens."}
+                    type="error"
+                    action={
+                        <Button
+                            onClick={() => refetch()}
+                            className="px-4 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 text-xs font-semibold text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-150 cursor-pointer"
+                        >
+                            Try Again
+                        </Button>
+                    }
+                />
+            );
         }
         if (isLoading) return <LoadingSkeleton />;
         if (!hasData && filters.activeTab === "FAVOURITES") {
-            return <EmptyState message="No favourite tokens yet — click the star on any token to save it here." />;
+            return (
+                <EmptyState
+                    title="No Favorite Tokens"
+                    message="Keep track of tokens you care about by clicking the star icon next to any token in the market table."
+                    type="favorites"
+                    action={
+                        <Button
+                            onClick={() => setActiveTab("TRENDING")}
+                            className="px-4 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 text-xs font-semibold text-violet-300 hover:border-violet-500/50 hover:bg-violet-500/20 hover:text-violet-200 transition-all duration-150 shadow-[0_0_15px_rgba(139,92,246,0.1)] hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] cursor-pointer"
+                        >
+                            Explore Trending
+                        </Button>
+                    }
+                />
+            );
         }
         if (!hasData && filters.filteredData !== undefined) {
-            return <EmptyState message="No tokens match your filters." />;
+            return (
+                <EmptyState
+                    title="No Matching Tokens"
+                    message="We couldn't find any tokens matching your current filter criteria."
+                    type="filters"
+                    action={
+                        <Button
+                            onClick={() => resetFilters()}
+                            className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/80 hover:border-white/20 hover:bg-white/10 hover:text-white transition-all duration-150 cursor-pointer"
+                        >
+                            Reset Filters
+                        </Button>
+                    }
+                />
+            );
         }
         if (hasData) {
             return (
