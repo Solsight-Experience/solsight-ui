@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tag, X } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading";
@@ -26,7 +26,7 @@ export function CategoryFilterList({ formData, onFormChange }: FilterListProps) 
         name: debouncedSearch || undefined
     });
 
-    const categories = data?.pages.flatMap((page) => page.data) ?? [];
+    const categories = useMemo(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
 
     useEffect(() => {
         if (categories.length === 0) return;
@@ -41,8 +41,7 @@ export function CategoryFilterList({ formData, onFormChange }: FilterListProps) 
             }
             return changed ? next : prev;
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+    }, [categories]);
 
     const handleCategoryToggle = (id: string, checked: boolean) => {
         if (id === "all") {
