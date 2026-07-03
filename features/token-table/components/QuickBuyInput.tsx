@@ -26,8 +26,9 @@ export const QuickBuyInput = memo<QuickBuyInputProps>(function QuickBuyInput({ v
                 decimals={9}
                 formatter={formatter}
                 value={value}
+                min={0.1}
                 onChange={onChange}
-                placeholder="0.1"
+                placeholder="0"
                 className="w-16 border-none focus-visible:ring-0 focus-visible:border-none font-bold text-center text-brand-200 p-0 placeholder:text-brand-200"
                 aria-label={`Quick buy amount in ${currency}`}
             />
