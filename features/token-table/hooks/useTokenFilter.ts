@@ -1,8 +1,9 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { filterService, TokenFilterParams } from "../services/filter.service";
-import { TokenFilterRequest } from "@/types/filter";
+import { TokenFilterRequest, SortOrder } from "@/types/filter";
+import { queryKeys } from "@/lib/react-query-keys";
 import { toast } from "sonner";
 
 /**
@@ -15,6 +16,24 @@ export function useCategories() {
         queryFn: () => filterService.getCategories(),
         staleTime: Infinity,
         gcTime: Infinity
+    });
+}
+
+const CATEGORY_NAMES_PAGE_SIZE = 20;
+
+/**
+ * Hook to search categories by name for the Category filter tab, paginated
+ */
+export function useCategoryNames({ name, sortOrder = "asc" }: { name?: string; sortOrder?: SortOrder } = {}) {
+    return useInfiniteQuery({
+        queryKey: queryKeys.tokens.categoryNames({ name, sortOrder }),
+        queryFn: ({ pageParam }) => filterService.getCategoryNames({ name, sort_order: sortOrder, limit: CATEGORY_NAMES_PAGE_SIZE, offset: pageParam }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            const loaded = allPages.reduce((sum, page) => sum + page.data.length, 0);
+            return loaded < lastPage.total ? loaded : undefined;
+        },
+        staleTime: 60_000
     });
 }
 

@@ -19,6 +19,25 @@ export interface CategoriesResponse {
     categories: CategoryOverview[];
 }
 
+export interface CategoryNameOption {
+    id: string;
+    name: string;
+}
+
+export interface CategoryNamesResponse {
+    data: CategoryNameOption[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
+export interface CategoryNamesParams {
+    name?: string;
+    sort_order?: SortOrder;
+    limit?: number;
+    offset?: number;
+}
+
 export interface TokenFilterParams {
     sort_by?: SortBy;
     sort_order?: SortOrder;
@@ -65,6 +84,20 @@ class FilterService {
      */
     async getCategories(): Promise<CategoriesResponse> {
         return apiClient.get<CategoriesResponse>("/discovery/categories");
+    }
+
+    /**
+     * Search categories by name, paginated — used by the Category filter tab
+     */
+    async getCategoryNames(params?: CategoryNamesParams): Promise<CategoryNamesResponse> {
+        return apiClient.get<CategoryNamesResponse>("/discovery/categories/names", {
+            params: {
+                limit: params?.limit ?? 20,
+                offset: params?.offset ?? 0,
+                ...(params?.name ? { name: params.name } : {}),
+                ...(params?.sort_order ? { sort_order: params.sort_order } : {})
+            }
+        });
     }
 }
 

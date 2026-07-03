@@ -52,7 +52,8 @@ const getInitialFormData = (): FilterFormData => ({
     mint_authority_disabled: false,
     freeze_authority_disabled: false,
     lp_burnt: false,
-    has_social_links: false
+    has_social_links: false,
+    categories: []
 });
 
 function countActiveFilters(formData: FilterFormData): number {
@@ -66,6 +67,7 @@ function countActiveFilters(formData: FilterFormData): number {
     if (formData.freeze_authority_disabled) count++;
     if (formData.lp_burnt) count++;
     if (formData.has_social_links) count++;
+    if (formData.categories.length > 0) count++;
     return count;
 }
 
@@ -80,6 +82,10 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     onError
 }) {
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
+    // Snapshot of the form as it was last successfully applied (or the pristine default).
+    // Used to tell "apply" apart from "no-op" — e.g. clearing categories back to "All"
+    // still needs Apply enabled so a previously-applied category filter can be cleared.
+    const [appliedFormData, setAppliedFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
     const tokenFilterMutation = useApplyTokenFilter();
@@ -88,6 +94,8 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
     const activeCount = useMemo(() => countActiveFilters(formData), [formData]);
     const hasActiveFilters = activeCount > 0;
+    const isDirty = useMemo(() => JSON.stringify(formData) !== JSON.stringify(appliedFormData), [formData, appliedFormData]);
+    const canApply = hasActiveFilters || isDirty;
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -95,6 +103,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
     const handleReset = () => {
         setFormData(getInitialFormData());
+        setAppliedFormData(getInitialFormData());
         onReset?.();
     };
 
@@ -110,6 +119,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 volumeMin: formData.volume_24h_min || undefined,
                 volumeMax: formData.volume_24h_max ?? undefined
             });
+            setAppliedFormData(formData);
             toast.success("Filters applied successfully");
             setIsOpen(false);
             return;
@@ -129,6 +139,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 ? await favoritesFilterMutation.mutateAsync({ body: requestBody, params })
                 : await tokenFilterMutation.mutateAsync({ body: requestBody, params });
             onApply?.(response, formData);
+            setAppliedFormData(formData);
             setIsOpen(false);
         } catch (error) {
             console.error("Filter error:", error);
@@ -221,7 +232,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                     type="button"
                                     variant="secondary"
                                     onClick={handleReset}
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || (!hasActiveFilters && !isDirty)}
                                     aria-label="Reset filters"
                                     className="gap-2 text-[12px] border border-white/[0.07] bg-white/[0.04]
                                                hover:bg-white/[0.07] text-white/60 hover:text-white/80
@@ -232,7 +243,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || !canApply}
                                     className="flex-1 gap-2 text-[12px] font-semibold
                                                bg-violet-600 hover:bg-violet-500 text-white
                                                border border-violet-500/50
