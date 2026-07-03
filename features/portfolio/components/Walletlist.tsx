@@ -109,7 +109,7 @@ export const WalletList: React.FC = () => {
                                     <div className="flex items-baseline gap-1.5 mt-0.5">
                                         <span className="text-[13px] font-semibold text-[var(--text-primary)]">{wallet.balance_sol.toFixed(4)} SOL</span>
                                         <span className="text-[11px] text-[var(--text-muted)]">
-                                            ${wallet.balance_usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                            ${wallet.summary.total_value_usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                                         </span>
                                     </div>
                                     <span className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
