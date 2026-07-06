@@ -159,7 +159,7 @@ const Sep = () => <div style={{ width: 1, height: 20, background: "rgba(255,255,
 
 export const TokenChart: React.FC<TokenChartProps> = ({ tokenAddress, isMulti, enablePriceRuler = false, onRulerPriceChange }) => {
     const { chartInterval, orderType, limitPrice } = useTokenUIStore();
-    const effectiveInterval = isMulti ? "4h" : chartInterval;
+    const effectiveInterval = isMulti ? "5m" : chartInterval;
     const { initPoints, newPoint } = useChartData(tokenAddress, effectiveInterval);
 
     const containerRef = useRef<HTMLDivElement>(null);
