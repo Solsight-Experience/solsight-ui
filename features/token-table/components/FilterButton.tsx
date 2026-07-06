@@ -7,7 +7,7 @@ import FilterDialog, { FilterFormData, getFilterRequestBody } from "./FilterDial
 import { TokenFilterParams } from "../services/filter.service";
 import { TokenFilterResponse, SortBy, SortOrder } from "@/types/filter";
 import { LoadingSpinner } from "@/components/loading";
-import { useApplyTokenFilter } from "../hooks/useTokenFilter";
+import { useApplyTokenFilter, useApplyFavoritesFilter } from "../hooks/useTokenFilter";
 
 export interface FilterOptions {
     sort_by?: SortBy;
@@ -28,6 +28,8 @@ interface FilterButtonProps {
     filterOptions?: FilterOptions;
     /** When true, Apply maps the form's Market Cap/Volume fields onto the category API instead of calling /tokens/filter. */
     isCategory?: boolean;
+    /** When true, Apply calls the favorites-scoped filter endpoint instead of /tokens/filter. */
+    isFavourites?: boolean;
     /** Which filter fields to show in the dialog. Omit to show every field (default). */
     visibleFields?: (keyof FilterFormData)[];
     onReset?: () => void;
@@ -72,6 +74,7 @@ function countActiveFilters(formData: FilterFormData): number {
 export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     filterOptions,
     isCategory,
+    isFavourites,
     visibleFields,
     onReset,
     onApply,
@@ -79,13 +82,20 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
     onError
 }) {
     const [formData, setFormData] = useState<FilterFormData>(getInitialFormData());
+    // Snapshot of the form as it was last successfully applied (or the pristine default).
+    // Used to tell "apply" apart from "no-op" — e.g. clearing categories back to "All"
+    // still needs Apply enabled so a previously-applied category filter can be cleared.
+    const [appliedFormData, setAppliedFormData] = useState<FilterFormData>(getInitialFormData());
     const [isOpen, setIsOpen] = useState(false);
 
     const tokenFilterMutation = useApplyTokenFilter();
-    const isLoading = tokenFilterMutation.isPending;
+    const favoritesFilterMutation = useApplyFavoritesFilter();
+    const isLoading = tokenFilterMutation.isPending || favoritesFilterMutation.isPending;
 
     const activeCount = useMemo(() => countActiveFilters(formData), [formData]);
     const hasActiveFilters = activeCount > 0;
+    const isDirty = useMemo(() => JSON.stringify(formData) !== JSON.stringify(appliedFormData), [formData, appliedFormData]);
+    const canApply = hasActiveFilters || isDirty;
 
     const handleFormChange = (data: Partial<FilterFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }));
@@ -93,6 +103,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
 
     const handleReset = () => {
         setFormData(getInitialFormData());
+        setAppliedFormData(getInitialFormData());
         onReset?.();
     };
 
@@ -108,6 +119,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 volumeMin: formData.volume_24h_min || undefined,
                 volumeMax: formData.volume_24h_max ?? undefined
             });
+            setAppliedFormData(formData);
             toast.success("Filters applied successfully");
             setIsOpen(false);
             return;
@@ -131,8 +143,11 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                 time_frame: filterOptions?.time_frame
             };
 
-            const response = await tokenFilterMutation.mutateAsync({ body: requestBody, params });
+            const response = isFavourites
+                ? await favoritesFilterMutation.mutateAsync({ body: requestBody, params })
+                : await tokenFilterMutation.mutateAsync({ body: requestBody, params });
             onApply?.(response, formData);
+            setAppliedFormData(formData);
             setIsOpen(false);
         } catch (error) {
             console.error("Filter error:", error);
@@ -225,7 +240,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                     type="button"
                                     variant="secondary"
                                     onClick={handleReset}
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || (!hasActiveFilters && !isDirty)}
                                     aria-label="Reset filters"
                                     className="gap-2 text-[12px] border border-white/[0.07] bg-white/[0.04]
                                                hover:bg-white/[0.07] text-white/60 hover:text-white/80
@@ -236,7 +251,7 @@ export const FilterButton = memo<FilterButtonProps>(function FilterButton({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isLoading || !hasActiveFilters}
+                                    disabled={isLoading || !canApply}
                                     className="flex-1 gap-2 text-[12px] font-semibold
                                                bg-violet-600 hover:bg-violet-500 text-white
                                                border border-violet-500/50

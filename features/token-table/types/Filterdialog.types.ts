@@ -17,7 +17,7 @@ export interface FilterFormData {
     lp_burnt: boolean;
     has_social_links: boolean;
 
-    // Categories
+    // Category
     categories: string[];
 }
 
