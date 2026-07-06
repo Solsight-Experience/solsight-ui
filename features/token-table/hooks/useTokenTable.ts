@@ -313,7 +313,11 @@ export function useTokenTable(onQuickBuy?: (token: TokenTableData) => void) {
         return transformedData;
     }, [apiData, filters, favoritesTokens]);
 
-    const applyFilterResults = useCallback((filterResponse: TokenFilterResponse) => {
+    const applyFilterResults = useCallback((filterResponse: TokenFilterResponse | null) => {
+        if (!filterResponse) {
+            setFilters((prev) => ({ ...prev, filteredData: undefined }));
+            return;
+        }
         const transformedFilteredData = transformTokenOverviews(filterResponse.tokens);
         setFilters((prev) => ({ ...prev, filteredData: transformedFilteredData }));
     }, []);

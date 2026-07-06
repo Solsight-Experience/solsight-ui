@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTokenDetail } from "@/features/token/hooks/token.hooks";
 import { TokenHeader, TokenChart, TradingPanel, TokenTabs, AISummaryButton, AISummaryPanel } from "@/features/token/components";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useTokenUIStore } from "@/features/token/stores/token.stores";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 export default function TokenDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const tokenAddress = params?.token_address as string;
     const [isAISummaryOpen, setIsAISummaryOpen] = useState(false);
     const [enablePriceRuler, setEnablePriceRuler] = useState(false);
@@ -48,10 +51,33 @@ export default function TokenDetailPage() {
 
     if (error || !token) {
         return (
-            <div className="min-h-screen text-[var(--text-primary)] flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">Token Not Found</h1>
-                    <p className="text-[var(--text-muted)]">The token you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.</p>
+            <div className="min-h-[calc(100vh-65px)] bg-[var(--surface-page)] text-[var(--text-primary)] flex items-center justify-center px-4 relative overflow-hidden">
+                <div className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-violet-600/5 blur-[120px] animate-float-orb pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-fuchsia-600/5 blur-[120px] animate-float-orb-2 pointer-events-none" />
+                <div className="relative max-w-md w-full bg-transparent rounded-2xl p-8 sm:p-10 flex flex-col items-center text-center animate-fade-in">
+                    <div className="relative w-36 h-36 mx-auto mb-6 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-violet-500/10 rounded-full blur-xl animate-neon-pulse" />
+                        <div
+                            className="absolute w-32 h-32 rounded-full border border-violet-500/15 animate-ping opacity-25"
+                            style={{ animationDuration: "3s" }}
+                        />
+                        <div className="absolute w-24 h-24 rounded-full border border-violet-500/10" />
+                        <div className="absolute">
+                            <Search className="w-14 h-14 text-violet-400 drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]" strokeWidth={1.5} />
+                        </div>
+                    </div>
+
+                    <h1 className="text-xl font-bold text-white/90 mb-2">Token Not Found</h1>
+                    <p className="text-xs text-white/50 leading-relaxed mb-6">
+                        The requested token contract doesn&apos;t exist, isn&apos;t indexed, or could not be loaded from the network.
+                    </p>
+
+                    <Button
+                        onClick={() => router.push("/")}
+                        className="bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.2)] cursor-pointer"
+                    >
+                        Back to Home
+                    </Button>
                 </div>
             </div>
         );

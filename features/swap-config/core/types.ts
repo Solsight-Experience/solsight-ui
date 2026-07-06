@@ -1,3 +1,5 @@
+import type { ExecutorCapability, ExecutorKey } from "@/features/swap/types";
+
 export type SwapConfigId = "slippage" | "priorityFee" | "tipFee" | "maxAutoFee" | "antiMev" | "gasless";
 
 export interface Validation {
@@ -16,6 +18,8 @@ export interface SwapInfoSnapshot {
     autoTipLamports: number;
     autoSlippageBps: number | null;
     maxAutoFeeLamports: number;
+    executorKey: ExecutorKey;
+    capabilities: ExecutorCapability[];
     gaslessEnabled: boolean;
     gaslessSupportedTokens: string[];
     payerPubkey: string | null;

@@ -38,13 +38,19 @@ export function CategoryTable({ searchQuery = "", onCategorySelect, marketCapMin
     const hasData = table.getRowModel().rows.length > 0;
 
     if (error) {
-        return <EmptyState message={`Error loading categories: ${error instanceof Error ? error.message : "Unknown error"}`} />;
+        return (
+            <EmptyState
+                title="Failed to Load Categories"
+                message={error instanceof Error ? error.message : "An unexpected error occurred while fetching categories."}
+                type="error"
+            />
+        );
     }
     if (isLoading) {
         return <EmptyState message="Loading categories..." emptyStateForLoading={true} />;
     }
     if (!hasData) {
-        return <EmptyState message="No categories found" />;
+        return <EmptyState title="No Categories Found" message="No token categories match your search filters." type="filters" />;
     }
 
     return (
