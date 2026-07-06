@@ -1160,10 +1160,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         </div>
                     )}
                     {quoteState.loading && <div className="mt-2 text-xs text-yellow-400 font-medium">Fetching quote...</div>}
-                    {quoteState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {quoteState.error}</div>}
+                    {quoteState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold break-words">✕ {quoteState.error}</div>}
 
-                    {validation.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {validation.error}</div>}
-                    {swapState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold">✕ {swapState.error}</div>}
+                    {validation.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold break-words">✕ {validation.error}</div>}
+                    {swapState.error && <div className="mt-2 text-xs text-red-500 dark:text-red-400 font-semibold break-words">✕ {swapState.error}</div>}
                     {swapState.signature && (
                         <div className="mt-2 text-xs text-green-600 dark:text-green-400">
                             Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}
@@ -1175,8 +1175,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             {/* Error/Success messages for Limit Order (since they were moved out of the Quote Summary) */}
             {orderType === "limit" && (
                 <div className="mb-4 text-sm space-y-2">
-                    {validation.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold">✕ {validation.error}</div>}
-                    {swapState.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold">✕ {swapState.error}</div>}
+                    {validation.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold break-words">✕ {validation.error}</div>}
+                    {swapState.error && <div className="text-xs text-red-500 dark:text-red-400 font-semibold break-words">✕ {swapState.error}</div>}
                     {swapState.signature && (
                         <div className="text-xs text-green-600 dark:text-green-400">
                             Order submitted: {swapState.signature.slice(0, 4)}...{swapState.signature.slice(-4)}

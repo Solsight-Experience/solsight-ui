@@ -271,8 +271,8 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                             />
                         </div>
 
-                        <div className="min-h-[1.25rem]">
-                            <p className={`text-xs truncate ${statusClassName}`}>{statusMessage ?? "\u00A0"}</p>
+                        <div>
+                            <p className={`text-xs break-words ${statusClassName}`}>{statusMessage ?? "\u00A0"}</p>
                         </div>
                     </div>
                 ) : (
