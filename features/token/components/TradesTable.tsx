@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import useClusterStore, { type Cluster } from "@/stores/cluster.store";
 import { useTrades } from "../hooks/token.hooks";
 import { calculateTradeUsdValue, formatTimeAgo, formatNumber, formatTokenAmount } from "../utils/token.utils";
@@ -17,11 +18,54 @@ const getSolscanTxUrl = (txUrl: string, cluster: Cluster) => {
     return url.toString();
 };
 
-const TradeRow: React.FC<Trade & { cluster: Cluster }> = ({ timestamp, type, amount_token, price_usd, trader_address, market_cap, tx_url, cluster }) => {
+const tradeRowVariants: Variants = {
+    hidden: {
+        opacity: 0,
+        y: -10,
+        scale: 0.995
+    },
+    visible: (index: number) => ({
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: {
+            delay: Math.min(index, 8) * 0.025,
+            type: "spring",
+            stiffness: 380,
+            damping: 30
+        }
+    }),
+    exit: {
+        opacity: 0,
+        x: -8,
+        transition: { duration: 0.15 }
+    }
+};
+
+const TradeRow: React.FC<Trade & { cluster: Cluster; index: number; reduceMotion: boolean }> = ({
+    timestamp,
+    type,
+    amount_token,
+    price_usd,
+    trader_address,
+    market_cap,
+    tx_url,
+    cluster,
+    index,
+    reduceMotion
+}) => {
     const tradeUsdValue = calculateTradeUsdValue(amount_token, price_usd);
 
     return (
-        <tr className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)]">
+        <motion.tr
+            layout={reduceMotion ? false : "position"}
+            variants={tradeRowVariants}
+            custom={index}
+            initial={reduceMotion ? false : "hidden"}
+            animate={reduceMotion ? undefined : "visible"}
+            exit={reduceMotion ? undefined : "exit"}
+            className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)] transition-colors"
+        >
             <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{formatTimeAgo(timestamp)}</td>
             <td className="py-3 px-4">
                 <span
@@ -48,12 +92,13 @@ const TradeRow: React.FC<Trade & { cluster: Cluster }> = ({ timestamp, type, amo
                     <ExternalLink className="w-4 h-4" />
                 </a>
             </td>
-        </tr>
+        </motion.tr>
     );
 };
 
 export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
     const cluster = useClusterStore((state) => state.cluster);
+    const shouldReduceMotion = useReducedMotion() ?? false;
     const { data: tradesData, isLoading } = useTrades(tokenAddress, { limit: 50 });
 
     if (isLoading) {
@@ -85,9 +130,11 @@ export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {tradesData.trades.map((trade) => (
-                        <TradeRow key={trade.tx_hash} cluster={cluster} {...trade} />
-                    ))}
+                    <AnimatePresence initial={!shouldReduceMotion}>
+                        {tradesData.trades.map((trade, index) => (
+                            <TradeRow key={trade.tx_hash} cluster={cluster} index={index} reduceMotion={shouldReduceMotion} {...trade} />
+                        ))}
+                    </AnimatePresence>
                 </tbody>
             </table>
         </div>

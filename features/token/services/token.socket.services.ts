@@ -50,6 +50,7 @@ export class TokenSocketManager extends SocketManager {
 
     onDomainEvent<T = unknown>(dto: TokenSubscribeDto, handler: EventHandler<T>) {
         const key = this.buildKey(dto);
+        this.offKey(key);
         this.subscribe(dto);
 
         const wrapped = (payload: { room: string; data: T }) => {
