@@ -58,6 +58,7 @@ export default function TokenTable() {
         setCategorySearch,
         setCategoryFilters,
         resetCategoryFilters,
+        resetFavouritesFilters,
         setSelectedCategorySlug,
         resetFilters,
         applyFilterResults,
@@ -144,6 +145,22 @@ export default function TokenTable() {
                 );
 
             case "FAVOURITES":
+                return (
+                    <RightPanelFilter>
+                        <TimeFilters activeFilter={filters.timeFilter} onFilterChange={setTimeFilter} />
+                        <FilterButton
+                            key={filters.activeTab}
+                            isFavourites
+                            filterOptions={{ limit: 100 }}
+                            onReset={resetFavouritesFilters}
+                            onApply={(res: TokenFilterResponse | null) => {
+                                applyFilterResults(res);
+                            }}
+                        />
+                        <QuickBuyInput value={filters.quickBuyAmount} onChange={setQuickBuyAmount} />
+                    </RightPanelFilter>
+                );
+
             case "TRENDING":
             default:
                 return (
@@ -201,6 +218,9 @@ export default function TokenTable() {
             );
         }
         if (isLoading) return <LoadingSkeleton />;
+        if (!hasData && filters.filteredData !== undefined) {
+            return <EmptyState message="No tokens match your filters." />;
+        }
         if (!hasData && filters.activeTab === "FAVOURITES") {
             return (
                 <EmptyState
@@ -213,23 +233,6 @@ export default function TokenTable() {
                             className="px-4 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 text-xs font-semibold text-violet-300 hover:border-violet-500/50 hover:bg-violet-500/20 hover:text-violet-200 transition-all duration-150 shadow-[0_0_15px_rgba(139,92,246,0.1)] hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] cursor-pointer"
                         >
                             Explore Trending
-                        </Button>
-                    }
-                />
-            );
-        }
-        if (!hasData && filters.filteredData !== undefined) {
-            return (
-                <EmptyState
-                    title="No Matching Tokens"
-                    message="We couldn't find any tokens matching your current filter criteria."
-                    type="filters"
-                    action={
-                        <Button
-                            onClick={() => resetFilters()}
-                            className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/80 hover:border-white/20 hover:bg-white/10 hover:text-white transition-all duration-150 cursor-pointer"
-                        >
-                            Reset Filters
                         </Button>
                     }
                 />

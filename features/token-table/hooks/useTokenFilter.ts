@@ -1,8 +1,9 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { filterService, TokenFilterParams } from "../services/filter.service";
-import { TokenFilterRequest } from "@/types/filter";
+import { TokenFilterRequest, SortOrder } from "@/types/filter";
+import { queryKeys } from "@/lib/react-query-keys";
 import { toast } from "sonner";
 
 /**
@@ -18,12 +19,52 @@ export function useCategories() {
     });
 }
 
+const CATEGORY_NAMES_PAGE_SIZE = 20;
+
+/**
+ * Hook to search categories by name for the Category filter tab, paginated
+ */
+export function useCategoryNames({ name, sortOrder = "asc" }: { name?: string; sortOrder?: SortOrder } = {}) {
+    return useInfiniteQuery({
+        queryKey: queryKeys.tokens.categoryNames({ name, sortOrder }),
+        queryFn: ({ pageParam }) => filterService.getCategoryNames({ name, sort_order: sortOrder, limit: CATEGORY_NAMES_PAGE_SIZE, offset: pageParam }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            const loaded = allPages.reduce((sum, page) => sum + page.data.length, 0);
+            return loaded < lastPage.total ? loaded : undefined;
+        },
+        staleTime: 60_000
+    });
+}
+
 /**
  * Hook to apply token filters
  */
 export function useApplyTokenFilter() {
     return useMutation({
         mutationFn: ({ body, params }: { body: TokenFilterRequest; params?: TokenFilterParams }) => filterService.filterTokens(body, params),
+        onSuccess: () => {
+            toast.success("Filters applied successfully");
+        },
+        onError: (error: unknown) => {
+            if (error && typeof error === "object" && "response" in error) {
+                const resp = (error as { response?: { data?: { message?: string } } }).response;
+                if (resp?.data?.message) {
+                    toast.error(resp.data.message);
+                    return;
+                }
+            }
+            toast.error("Failed to apply filters");
+        }
+    });
+}
+
+/**
+ * Hook to apply filters scoped to the user's favorited tokens only
+ */
+export function useApplyFavoritesFilter() {
+    return useMutation({
+        mutationFn: ({ body, params }: { body: TokenFilterRequest; params?: TokenFilterParams }) => filterService.filterFavorites(body, params),
         onSuccess: () => {
             toast.success("Filters applied successfully");
         },
