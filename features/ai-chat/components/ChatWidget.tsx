@@ -162,6 +162,7 @@ export const ChatWidget: React.FC = () => {
                         toolProgressLabel={toolProgressLabel}
                         error={error}
                         errorCode={errorCode}
+                        quotaResetsAt={quota?.resetsAt}
                         onBuyCredits={() => setIsPurchaseModalOpen(true)}
                         sendMessage={sendMessage}
                         fetchNextPage={fetchNextPage}

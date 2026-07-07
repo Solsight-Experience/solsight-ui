@@ -97,6 +97,7 @@ interface ChatWindowProps {
     toolProgressLabel: string | null;
     error: string | null;
     errorCode?: string | null;
+    quotaResetsAt?: string | null;
     onBuyCredits?: () => void;
     sendMessage: (text: string) => void;
     fetchNextPage?: () => void;
@@ -111,6 +112,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     toolProgressLabel,
     error,
     errorCode,
+    quotaResetsAt,
     onBuyCredits,
     sendMessage,
     fetchNextPage,
@@ -133,6 +135,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     });
 
     const virtualItems = virtualizer.getVirtualItems();
+
+    const resetTimeLabel = quotaResetsAt ? new Date(quotaResetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null;
 
     const adjustTextareaHeight = () => {
         if (!textareaRef.current) return;
@@ -268,7 +272,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     {error && errorCode === "quota_exceeded" && (
                         <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
                             <Coins className="w-4 h-4 shrink-0" />
-                            <span className="flex-1">You&apos;ve used today&apos;s free AI chats. Buy credits to keep chatting.</span>
+                            <span className="flex-1">
+                                You&apos;ve used today&apos;s free AI chats. Buy credits to keep chatting.
+                                {resetTimeLabel && <span className="block text-violet-300/70 mt-0.5">Free chats reset at {resetTimeLabel}.</span>}
+                            </span>
                             <Button
                                 size="sm"
                                 onClick={onBuyCredits}
