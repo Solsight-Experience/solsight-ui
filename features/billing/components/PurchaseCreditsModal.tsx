@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Coins, AlertCircle, CheckCircle2 } from "lucide-react";
 import useClusterStore from "@/stores/cluster.store";
@@ -103,18 +104,20 @@ export function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsModalProp
                         )}
 
                         {packages?.map((pkg) => (
-                            <button
+                            <Button
                                 key={pkg.code}
+                                type="button"
+                                variant="ghost"
                                 onClick={() => handleSelect(pkg)}
                                 disabled={loading}
-                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left transition-colors hover:border-purple-500/40 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5"
+                                className="h-auto w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left transition-colors hover:border-purple-500/40 hover:bg-slate-50 disabled:cursor-not-allowed dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/5"
                             >
                                 <div>
                                     <p className="text-[15px] font-bold text-slate-900 dark:text-white">{pkg.credits} credits</p>
                                     <p className="text-[11px] text-slate-500 dark:text-gray-400">One-time purchase · never expires</p>
                                 </div>
                                 <p className="text-[15px] font-bold text-purple-400">{formatSol(pkg.lamports)} SOL</p>
-                            </button>
+                            </Button>
                         ))}
                     </div>
 
@@ -142,13 +145,15 @@ export function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsModalProp
                         Paying on {cluster === "devnet" ? "Devnet" : "Mainnet"} · switch network in Settings if needed
                     </p>
 
-                    <button
-                        className="w-full cursor-pointer rounded-2xl border border-slate-200 py-3 text-[13px] font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-white"
+                    <Button
+                        type="button"
+                        variant="ghost"
                         onClick={handleClose}
                         disabled={loading}
+                        className="h-auto w-full rounded-2xl border border-slate-200 bg-transparent py-3 text-[13px] font-semibold text-slate-600 transition-all hover:border-slate-300 hover:bg-transparent hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-gray-400 dark:hover:border-white/20 dark:hover:bg-transparent dark:hover:text-white"
                     >
                         {state.status === "done" ? "Close" : "Cancel"}
-                    </button>
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

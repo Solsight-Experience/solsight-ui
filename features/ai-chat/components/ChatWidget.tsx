@@ -104,16 +104,17 @@ export const ChatWidget: React.FC = () => {
                                 </span>
                             </div>
                             {quota ? (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => setIsPurchaseModalOpen(true)}
-                                    className="text-xs font-medium leading-none mt-1 text-muted-foreground hover:text-violet-400 transition-colors"
+                                    className="h-auto w-auto p-0 justify-start bg-transparent hover:bg-transparent text-xs font-medium leading-none mt-1 text-muted-foreground hover:text-violet-400 transition-colors"
                                 >
                                     {freeRemaining && freeRemaining > 0
                                         ? `${freeRemaining}/${quota.freeLimit} free chats left today`
                                         : quota.paidCredits > 0
                                           ? `${quota.paidCredits} use${quota.paidCredits === 1 ? "" : "s"} left`
                                           : "No uses left · Buy credits"}
-                                </button>
+                                </Button>
                             ) : (
                                 <p className="text-xs text-muted-foreground leading-none mt-1">Powered by OpenAI · Online</p>
                             )}
