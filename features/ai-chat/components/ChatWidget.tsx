@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useChat } from "../hooks/useChat";
 import { useAuth } from "@/contexts/AuthContext";
+import { PurchaseCreditsModal } from "@/features/billing/components/PurchaseCreditsModal";
+import { useQuota } from "@/features/billing/hooks/useQuota";
 
 const PulseRing: React.FC = () => (
     <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
@@ -19,8 +21,22 @@ export const ChatWidget: React.FC = () => {
     const { isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    const { messages, isTyping, isHistoryLoading, toolProgressLabel, error, sendMessage, clearMessages, fetchNextPage, hasNextPage, isFetchingNextPage } =
-        useChat();
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const {
+        messages,
+        isTyping,
+        isHistoryLoading,
+        toolProgressLabel,
+        error,
+        errorCode,
+        sendMessage,
+        clearMessages,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage
+    } = useChat();
+    const { data: quota } = useQuota();
+    const freeRemaining = quota ? Math.max(quota.freeLimit - quota.freeUsed, 0) : null;
 
     if (!isAuthenticated) return null;
 
@@ -82,12 +98,25 @@ export const ChatWidget: React.FC = () => {
                         <div>
                             <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-sm tracking-tight">Solsight AI</span>
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-full">
+                                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-full">
                                     <Sparkles className="w-2.5 h-2.5" />
                                     AI
                                 </span>
                             </div>
-                            <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Powered by OpenAI · Online</p>
+                            {quota ? (
+                                <button
+                                    onClick={() => setIsPurchaseModalOpen(true)}
+                                    className="text-xs font-medium leading-none mt-1 text-muted-foreground hover:text-violet-400 transition-colors"
+                                >
+                                    {freeRemaining && freeRemaining > 0
+                                        ? `${freeRemaining}/${quota.freeLimit} free chats left today`
+                                        : quota.paidCredits > 0
+                                          ? `${quota.paidCredits} use${quota.paidCredits === 1 ? "" : "s"} left`
+                                          : "No uses left · Buy credits"}
+                                </button>
+                            ) : (
+                                <p className="text-xs text-muted-foreground leading-none mt-1">Powered by OpenAI · Online</p>
+                            )}
                         </div>
                     </div>
 
@@ -131,6 +160,8 @@ export const ChatWidget: React.FC = () => {
                         isHistoryLoading={isHistoryLoading}
                         toolProgressLabel={toolProgressLabel}
                         error={error}
+                        errorCode={errorCode}
+                        onBuyCredits={() => setIsPurchaseModalOpen(true)}
                         sendMessage={sendMessage}
                         fetchNextPage={fetchNextPage}
                         hasNextPage={hasNextPage}
@@ -138,6 +169,8 @@ export const ChatWidget: React.FC = () => {
                     />
                 </div>
             </div>
+
+            <PurchaseCreditsModal open={isPurchaseModalOpen} onClose={() => setIsPurchaseModalOpen(false)} />
 
             <Button
                 variant="ghost"

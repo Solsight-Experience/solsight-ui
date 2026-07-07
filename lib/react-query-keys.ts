@@ -23,5 +23,11 @@ export const queryKeys = {
         categoryNames: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "category-names", params] as const,
         categoryDetail: (slug: string, params?: Record<string, unknown>) => [...queryKeys.tokens.all, "category", slug, params] as const,
         gainersLosers: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "gainers-losers", params] as const
+    },
+    billing: {
+        all: ["billing"] as const,
+        quota: () => [...queryKeys.billing.all, "quota"] as const,
+        packages: () => [...queryKeys.billing.all, "packages"] as const,
+        orders: (page?: number) => [...queryKeys.billing.all, "orders", page] as const
     }
 };

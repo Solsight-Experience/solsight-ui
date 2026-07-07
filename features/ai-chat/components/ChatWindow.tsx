@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 
-import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle } from "lucide-react";
+import { ArrowDown, Send, Bot, CircleDollarSign, LineChart, ArrowLeftRight, Loader2, AlertCircle, Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -96,6 +96,8 @@ interface ChatWindowProps {
     isHistoryLoading?: boolean;
     toolProgressLabel: string | null;
     error: string | null;
+    errorCode?: string | null;
+    onBuyCredits?: () => void;
     sendMessage: (text: string) => void;
     fetchNextPage?: () => void;
     hasNextPage?: boolean;
@@ -108,6 +110,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     isHistoryLoading,
     toolProgressLabel,
     error,
+    errorCode,
+    onBuyCredits,
     sendMessage,
     fetchNextPage,
     hasNextPage,
@@ -261,7 +265,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         </div>
                     )}
 
-                    {error && (
+                    {error && errorCode === "quota_exceeded" && (
+                        <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                            <Coins className="w-4 h-4 shrink-0" />
+                            <span className="flex-1">You&apos;ve used today&apos;s free AI chats. Buy credits to keep chatting.</span>
+                            <Button
+                                size="sm"
+                                onClick={onBuyCredits}
+                                className="shrink-0 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-[11px] font-semibold hover:brightness-110"
+                            >
+                                Buy credits
+                            </Button>
+                        </div>
+                    )}
+
+                    {error && errorCode !== "quota_exceeded" && (
                         <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
                             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                             <span className="flex-1">{error}</span>
