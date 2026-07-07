@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
 import { Check, ChevronDown, Copy, Loader2, AlertTriangle, Wallet } from "lucide-react";
 import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
-import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
+import { portfolioKeys, usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
     executeJupiterSwap,
@@ -96,6 +97,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         pendingSlippageAction,
         setPendingSlippageAction
     } = useTokenUIStore();
+    const queryClient = useQueryClient();
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
@@ -653,6 +655,62 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 signTransaction: (tx) => signTransaction(tx),
                 gaslessFeeToken
             });
+            // Optimistic balance update
+            try {
+                const payValue = parseInputNumber(payAmount);
+                const receiveValue = parseInputNumber(receiveAmount);
+                const isPaySol = payMint === COMMON_TOKENS.SOL.mint;
+                const isReceiveSol = receiveMint === COMMON_TOKENS.SOL.mint;
+                // Update positions
+                queryClient.setQueryData(
+                    portfolioKeys.positions(selectedWalletAddress, { sort_by: "value", show_zero_balance: true }),
+                    (
+                        old: { positions?: Array<{ token: { address: string }; balance: number; [key: string]: unknown }>; [key: string]: unknown } | undefined
+                    ) => {
+                        if (!old) return old;
+                        const newPositions = [...(old.positions || [])] as Array<{ token: { address: string }; balance: number; [key: string]: unknown }>;
+                        // Update pay token balance
+                        const payIndex = newPositions.findIndex((p) => p.token.address === payMint);
+                        if (payIndex >= 0) {
+                            newPositions[payIndex] = {
+                                ...newPositions[payIndex],
+                                balance: Math.max(0, newPositions[payIndex].balance - payValue)
+                            };
+                        }
+                        // Update receive token balance
+                        const receiveIndex = newPositions.findIndex((p) => p.token.address === receiveMint);
+                        if (receiveIndex >= 0) {
+                            newPositions[receiveIndex] = {
+                                ...newPositions[receiveIndex],
+                                balance: newPositions[receiveIndex].balance + receiveValue
+                            };
+                        }
+
+                        return { ...old, positions: newPositions };
+                    }
+                );
+                // Update wallet balance if pay or receive token is SOL
+                if (isPaySol || isReceiveSol) {
+                    queryClient.setQueryData(
+                        portfolioKeys.wallets(),
+                        (old: { wallets?: Array<{ address: string; balance_sol?: number; [key: string]: unknown }>; [key: string]: unknown } | undefined) => {
+                            if (!old) return old;
+                            const newWallets = [...(old.wallets || [])] as Array<{ address: string; balance_sol?: number; [key: string]: unknown }>;
+                            const wIndex = newWallets.findIndex((w) => w.address === selectedWalletAddress);
+                            // Update wallet balance
+                            if (wIndex >= 0) {
+                                let oldSol = newWallets[wIndex].balance_sol || 0;
+                                if (isPaySol) oldSol = Math.max(0, oldSol - payValue);
+                                if (isReceiveSol) oldSol = oldSol + receiveValue;
+                                newWallets[wIndex] = { ...newWallets[wIndex], balance_sol: oldSol };
+                            }
+                            return { ...old, wallets: newWallets };
+                        }
+                    );
+                }
+            } catch (e) {
+                console.error("Optimistic update failed", e);
+            }
 
             setSwapState({ loading: false, error: null, signature });
             await refreshBalancesAfterSwap();
