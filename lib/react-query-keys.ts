@@ -20,6 +20,7 @@ export const queryKeys = {
         trending: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "trending", params] as const,
         newListings: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "new-listings", params] as const,
         categories: () => [...queryKeys.tokens.all, "categories"] as const,
+        categoryNames: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "category-names", params] as const,
         categoryDetail: (slug: string, params?: Record<string, unknown>) => [...queryKeys.tokens.all, "category", slug, params] as const,
         gainersLosers: (params?: Record<string, unknown>) => [...queryKeys.tokens.all, "gainers-losers", params] as const
     }
