@@ -11,10 +11,12 @@ import { BillingService } from "../services/billing.service";
 // blockhash đã hết hạn, bỏ qua lặng lẽ — user bấm mua lại sẽ tạo order mới.
 export function usePaymentRecovery() {
     const queryClient = useQueryClient();
-    const pending = usePendingPaymentStore((s) => s.pending);
-    const clearPending = usePendingPaymentStore((s) => s.clearPending);
 
     useEffect(() => {
+        // Đọc trực tiếp từ store thay vì subscribe qua hook, để effect chỉ chạy 1 lần
+        // khi app load và recover payment đã persist từ phiên trước — không re-run khi
+        // usePurchaseCredits set pending cho lượt mua hiện tại (nó đã tự submit rồi).
+        const { pending, clearPending } = usePendingPaymentStore.getState();
         if (!pending) return;
 
         BillingService.submitPayment(pending.orderId, pending.signedTransactionBase64)
@@ -25,7 +27,5 @@ export function usePaymentRecovery() {
             .finally(() => {
                 clearPending();
             });
-        // Chỉ chạy 1 lần khi app load.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [queryClient]);
 }
