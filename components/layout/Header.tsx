@@ -13,6 +13,8 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { NotificationBadge, NotificationPanel } from "@/features/notifications/components";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useIsMac } from "@/hooks/useIsMac";
+import { useSearchShortcut } from "@/hooks/useSearchShortcut";
 
 type AuthUser = NonNullable<ReturnType<typeof useAuth>["user"]>;
 
@@ -45,6 +47,7 @@ export default function Header() {
     const { isAuthenticated, user, logout } = useAuth();
     const { unreadCount, isPanelOpen, setPanelOpen } = useNotifications();
     const isOnline = useOnlineStatus();
+    const isMac = useIsMac();
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -58,6 +61,10 @@ export default function Header() {
 
     const handleOpen = useCallback(() => setSearchOpen(true), []);
     const handleDialogChange = useCallback((open: boolean) => setSearchOpen(open), []);
+    const handleToggleSearch = useCallback(() => setSearchOpen((v) => !v), []);
+
+    // Global ⌘K / Ctrl+K shortcut to open/close search
+    useSearchShortcut(handleToggleSearch);
 
     // removed unused handleDisConnectWallets (was opening disconnect dialog)
 
@@ -140,7 +147,7 @@ export default function Header() {
                     {/* Right: actions */}
                     <div className="flex items-center gap-2">
                         {/* Search — always visible; compact = icon only */}
-                        {!isSidebarMode && <SearchBox onActivate={handleOpen} compact={isCompactMode} />}
+                        {!isSidebarMode && <SearchBox onActivate={handleOpen} compact={isCompactMode} isMac={isMac} />}
 
                         {isAuthenticated && (
                             <>
@@ -227,6 +234,7 @@ export default function Header() {
                 setPanelOpen={setPanelOpen}
                 onSearchOpen={handleOpen}
                 onLogout={() => setConfirmLogoutOpen(true)}
+                isMac={isMac}
             />
         </>
     );
@@ -247,9 +255,10 @@ interface SidebarProps {
     setPanelOpen: (v: boolean) => void;
     onSearchOpen: () => void;
     onLogout: () => void;
+    isMac: boolean;
 }
 
-function Sidebar({ id, open, onClose, isAuthenticated, user, onSearchOpen, onLogout }: SidebarProps) {
+function Sidebar({ id, open, onClose, isAuthenticated, user, onSearchOpen, onLogout, isMac }: SidebarProps) {
     const sidebarRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -314,7 +323,12 @@ function Sidebar({ id, open, onClose, isAuthenticated, user, onSearchOpen, onLog
                     >
                         <SearchIcon size={13} className="shrink-0" />
                         <span className="flex-1">Search token or pool…</span>
-                        <kbd className="text-[0.625rem] text-[var(--text-disabled)] border border-[var(--border-subtle)] rounded px-1.5 py-[1px]">⌘K</kbd>
+                        <kbd
+                            suppressHydrationWarning
+                            className="text-[0.6875rem] font-semibold tracking-wide text-[var(--text-secondary)] bg-[var(--surface-overlay)] border border-[var(--border-default)] rounded-md px-1.5 py-0.5"
+                        >
+                            {isMac ? "⌘K" : "Ctrl+K"}
+                        </kbd>
                     </button>
                 </div>
 
@@ -463,8 +477,9 @@ const NavLinks = memo(function NavLinks({ iconsOnly }: NavLinksProps) {
 interface SearchBoxProps {
     onActivate: () => void;
     compact: boolean;
+    isMac: boolean;
 }
-const SearchBox = memo(function SearchBox({ onActivate, compact }: SearchBoxProps) {
+const SearchBox = memo(function SearchBox({ onActivate, compact, isMac }: SearchBoxProps) {
     if (compact) {
         return (
             <button
@@ -494,7 +509,12 @@ const SearchBox = memo(function SearchBox({ onActivate, compact }: SearchBoxProp
         >
             <SearchIcon size={13} className="text-white/25 shrink-0" />
             <span className="flex-1 text-[11.5px] text-white/30">Search token or pool...</span>
-            <kbd className="text-[9px] text-white/20 border border-white/10 rounded px-1.5 py-[1px]">⌘K</kbd>
+            <kbd
+                suppressHydrationWarning
+                className="text-[10px] font-semibold tracking-wide text-white/60 bg-white/[0.07] border border-white/15 rounded-md px-1.5 py-0.5"
+            >
+                {isMac ? "⌘K" : "Ctrl+K"}
+            </kbd>
         </button>
     );
 });
