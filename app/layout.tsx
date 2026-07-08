@@ -12,10 +12,12 @@ import MockProvider from "@/providers/mock-provider";
 import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 import { SolanaWalletProvider } from "@/providers/wallet-provider";
+import { usePaymentRecovery } from "@/features/billing/hooks/usePaymentRecovery";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 function ChatGate() {
+    usePaymentRecovery();
     const { isAuthenticated } = useAuth();
     if (!isAuthenticated) return null;
     return <ChatWidget />;
