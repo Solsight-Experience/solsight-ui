@@ -360,7 +360,7 @@ function Sidebar({ id, open, onClose, isAuthenticated, user, onSearchOpen, onLog
                 <div className="border-t border-[var(--border-subtle)] p-4">
                     {isAuthenticated ? (
                         <div className="flex flex-col gap-1">
-                            <p className="text-[0.70rem] text-[var(--text-muted)] mb-2 truncate">{user?.email || "user@solsight.io"}</p>
+                            <p className="text-[0.70rem] text-[var(--text-muted)] mb-2 truncate">{user?.email || user?.username || "user@solsight.io"}</p>
                             <SidebarAction href="/notifications" icon={<Bell size={14} />} label="Notifications" onClose={onClose} />
                             <SidebarAction href="/settings" icon={<Settings size={14} />} label="Settings" onClose={onClose} />
                             <button
@@ -579,7 +579,7 @@ function UserDropdown({ user, open, onToggle, onClose, onLogout }: UserDropdownP
                     className="text-[11.5px] font-semibold text-white/75 tracking-wide
                                max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
                 >
-                    {user?.email?.split("@")[0] || "Trader"}
+                    {user?.username || user?.email?.split("@")[0] || "Trader"}
                 </span>
                 <ChevronDown size={13} className={`text-white/30 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
             </button>
@@ -594,7 +594,7 @@ function UserDropdown({ user, open, onToggle, onClose, onLogout }: UserDropdownP
                             shadow-[var(--shadow-dropdown)]"
                     >
                         <div className="px-3.5 py-3 bg-purple-500/[0.06]">
-                            <p className="text-[11px] text-white/50 truncate">{user?.email || "user@solsight.io"}</p>
+                            <p className="text-[11px] text-white/50 truncate">{user?.email || user?.username || "user@solsight.io"}</p>
                         </div>
                         <div className="h-px bg-white/[0.07] my-0.5" />
                         <DropdownItem href="/portfolio" icon={<BarChart2 size={14} />} label="Portfolio" />
