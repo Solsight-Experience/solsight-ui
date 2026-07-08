@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownRight, ArrowUpRight, Star, Zap } from "lucide-react";
-import Sparkline from "../components/Sparkline";
+import SparklineCell from "../components/SparklineCell";
 import TokenCell from "../components/TokenCell";
 import { TokenTableData } from "./types";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ export const createColumns = (
         header: "",
         enableSorting: false,
         enableHiding: false,
-        cell: ({ row }) => <Sparkline points={row.original.token.priceHistory} />
+        cell: ({ row }) => <SparklineCell tokenAddress={row.original.id} />
     },
     {
         accessorKey: "marketCap.value",
