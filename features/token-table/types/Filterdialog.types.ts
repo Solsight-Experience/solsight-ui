@@ -11,12 +11,6 @@ export interface FilterFormData {
     txns_24h_min: number;
     txns_24h_max: number | null;
 
-    // Audits
-    mint_authority_disabled: boolean;
-    freeze_authority_disabled: boolean;
-    lp_burnt: boolean;
-    has_social_links: boolean;
-
     // Category
     categories: string[];
 }
