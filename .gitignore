@@ -54,3 +54,4 @@ AGENTS.md
 .artifacts/
 .opencode/
 playwright-report/
+package-lock.json
