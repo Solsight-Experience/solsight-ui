@@ -9,7 +9,8 @@ import apiClient from "@/lib/network-requests/api-client";
 interface User {
     id: string;
     name?: string;
-    email: string;
+    email?: string | null;
+    username: string;
     avatar?: string;
 }
 
