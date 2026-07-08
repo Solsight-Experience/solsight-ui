@@ -6,8 +6,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LoadingSpinner } from "@/components/loading";
 import { compactFormatter } from "@/lib/formatters";
 import { createHoldersColumns } from "../config/holders.columns";
+import { TokenSocketManager } from "../services/token.socket.services";
 
 const PAGE_SIZE = 20;
+
+function SocketStatusDot({ connected }: { connected: boolean }) {
+    return (
+        <div className="flex items-center gap-1.5 text-xs">
+            <div className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-amber-500"}`} />
+            <span className={connected ? "text-(--text-muted)" : "text-amber-400"}>{connected ? "Live" : "Reconnecting…"}</span>
+        </div>
+    );
+}
 
 const HoldersSummary: React.FC<{
     loadedCount: number;
@@ -40,10 +50,24 @@ interface HoldersTableProps {
 }
 
 export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenSymbol }) => {
-    const { data: holdersData, isLoading } = useHolders(tokenAddress, { limit: 100 });
+    const { data: holdersData, isLoading, isError } = useHolders(tokenAddress, { limit: 100 });
     const { holdersTableColumns } = useTokenUIStore();
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const [socketConnected, setSocketConnected] = useState(true);
+
+    useEffect(() => {
+        const socket = TokenSocketManager.getInstance().getSocket();
+        const onConnect = () => setSocketConnected(true);
+        const onDisconnect = () => setSocketConnected(false);
+        setSocketConnected(socket.connected);
+        socket.on("connect", onConnect);
+        socket.on("disconnect", onDisconnect);
+        return () => {
+            socket.off("connect", onConnect);
+            socket.off("disconnect", onDisconnect);
+        };
+    }, []);
 
     const allHolders = holdersData?.holders ?? [];
     const visibleHolders = allHolders.slice(0, visibleCount);
@@ -86,6 +110,10 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenS
         );
     }
 
+    if (isError) {
+        return <div className="text-center py-8 text-(--text-muted)">Failed to load holders — retry</div>;
+    }
+
     if (!holdersData?.holders || holdersData.holders.length === 0) {
         return <div className="text-center py-8 text-(--text-muted)">No holder data available</div>;
     }
@@ -97,6 +125,9 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenS
     return (
         <div className="flex flex-col w-full h-full overflow-hidden">
             <HoldersSummary loadedCount={allHolders.length} total={totalHolders} top10Percent={top10Percent} top20Percent={top20Percent} />
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-(--border-subtle)">
+                <SocketStatusDot connected={socketConnected} />
+            </div>
             <div className="flex-1 overflow-auto w-full relative group scrollbar-thin pb-4">
                 <Table className="whitespace-nowrap min-w-250">
                     <TableHeader className="sticky top-0 z-20 bg-(--surface-card) backdrop-blur-md text-xs text-(--text-muted) border-b border-(--border-subtle) shadow-sm">

@@ -14,7 +14,7 @@ export const fundingColumn: ColumnDef<Holder> = {
         return funding_label ? (
             <div className="flex flex-col">
                 <FundingIcon label={funding_label} />
-                <span className="text-(--text-muted) text-[10px]">{durationFormatter.format(first_tx_time)} • ≡ 0.01 • 1</span>
+                <span className="text-(--text-muted) text-[10px]">{durationFormatter.format(first_tx_time)}</span>
             </div>
         ) : (
             <span className="text-(--text-muted)">—</span>

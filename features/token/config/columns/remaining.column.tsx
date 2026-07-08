@@ -8,12 +8,13 @@ export const remainingColumn: ColumnDef<Holder> = {
     header: "Remaining",
     cell: ({ row }) => {
         const { remaining_usd, balance_percent } = row.original;
+        const pct = Number.isFinite(balance_percent) ? balance_percent : 0;
         return (
             <div className="flex items-center gap-2">
                 <span className="text-(--text-primary)">{currencyFormatter.format(remaining_usd)}</span>
-                <span className="text-green-400 text-xs">{balance_percent.toFixed(3)}%</span>
+                <span className="text-green-400 text-xs">{pct.toFixed(3)}%</span>
                 <div className="w-8 h-1 bg-(--surface-btn) rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(balance_percent * 10, 100)}%` }} />
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(pct * 10, 100)}%` }} />
                 </div>
             </div>
         );
