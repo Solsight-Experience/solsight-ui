@@ -74,8 +74,7 @@ function renderModal() {
                     },
                     liquidity: 100,
                     volume24h: 100,
-                    transactions: { buyCount: 1, sellCount: 1, buyVolumn: 1, sellVolumn: 1 },
-                    audit: []
+                    transactions: { buyCount: 1, sellCount: 1, buyVolumn: 1, sellVolumn: 1 }
                 }}
                 amountSol="0.1"
             />

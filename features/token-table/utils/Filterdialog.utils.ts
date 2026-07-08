@@ -42,25 +42,6 @@ export function getFilterRequestBody(formData: FilterFormData): TokenFilterReque
         tokenRequest.metrics = metrics;
     }
 
-    // Audits
-    const audit_filters: TokenFilterRequest["audit_filters"] = {};
-    if (formData.mint_authority_disabled) {
-        audit_filters.mint_authority_disabled = true;
-    }
-    if (formData.freeze_authority_disabled) {
-        audit_filters.freeze_authority_disabled = true;
-    }
-    if (formData.lp_burnt) {
-        audit_filters.lp_burnt = true;
-    }
-    if (formData.has_social_links) {
-        audit_filters.has_social_links = true;
-    }
-
-    if (Object.keys(audit_filters).length > 0) {
-        tokenRequest.audit_filters = audit_filters;
-    }
-
     // Categories
     if (formData.categories.length > 0) {
         tokenRequest.categories = formData.categories;

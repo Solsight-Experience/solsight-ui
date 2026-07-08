@@ -28,8 +28,7 @@ const token: TokenTableData = {
         sellCount: 1,
         buyVolumn: 1,
         sellVolumn: 1
-    },
-    audit: []
+    }
 };
 
 describe("token table action column", () => {

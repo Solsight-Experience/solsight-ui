@@ -25,12 +25,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 2010,
             buyVolumn: 27000,
             sellVolumn: 12000
-        },
-        audit: [
-            { label: "Risk", value: "22.6%", trend: "down" },
-            { label: "Fees", value: "0.83%", trend: "up" },
-            { label: "Score", value: "B 139", trend: "neutral" }
-        ]
+        }
     },
     // 2. RENDER
     {
@@ -56,12 +51,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 120000,
             buyVolumn: 83000,
             sellVolumn: 46000
-        },
-        audit: [
-            { label: "Risk", value: "28.3%", trend: "down" },
-            { label: "Fees", value: "0.63%", trend: "up" },
-            { label: "Score", value: "A 271", trend: "neutral" }
-        ]
+        }
     },
     // 3. UOG
     {
@@ -87,12 +77,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 480000,
             buyVolumn: 278000,
             sellVolumn: 204000
-        },
-        audit: [
-            { label: "Risk", value: "18.4%", trend: "down" },
-            { label: "Fees", value: "0.71%", trend: "up" },
-            { label: "Score", value: "B 188", trend: "neutral" }
-        ]
+        }
     },
     // 4. 2Z
     {
@@ -118,12 +103,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 12000,
             buyVolumn: 6800,
             sellVolumn: 5600
-        },
-        audit: [
-            { label: "Risk", value: "30.5%", trend: "down" },
-            { label: "Fees", value: "0.54%", trend: "up" },
-            { label: "Score", value: "A 272", trend: "neutral" }
-        ]
+        }
     },
     // 5. SOON
     {
@@ -149,12 +129,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 120000,
             buyVolumn: 1500,
             sellVolumn: 2500
-        },
-        audit: [
-            { label: "Risk", value: "14.2%", trend: "down" },
-            { label: "Fees", value: "0.72%", trend: "up" },
-            { label: "Score", value: "A 265", trend: "neutral" }
-        ]
+        }
     },
     // 6. DOGE
     {
@@ -180,12 +155,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 330000,
             buyVolumn: 130000,
             sellVolumn: 200000
-        },
-        audit: [
-            { label: "Risk", value: "25.8%", trend: "down" },
-            { label: "Fees", value: "0.59%", trend: "up" },
-            { label: "Score", value: "B 112", trend: "neutral" }
-        ]
+        }
     },
     // 7. FET
     {
@@ -211,12 +181,7 @@ export const mockTokenData: TokenTableData[] = [
             sellCount: 120000,
             buyVolumn: 1500,
             sellVolumn: 2500
-        },
-        audit: [
-            { label: "Risk", value: "19.1%", trend: "down" },
-            { label: "Fees", value: "0.68%", trend: "up" },
-            { label: "Score", value: "A 270", trend: "neutral" }
-        ]
+        }
     }
 ];
 

@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownRight, ArrowUpRight, Users, Shield, Star, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Star, Zap } from "lucide-react";
 import Sparkline from "../components/Sparkline";
 import TokenCell from "../components/TokenCell";
 import { TokenTableData } from "./types";
@@ -110,45 +110,6 @@ export const createColumns = (
                         <span className="text-emerald-400">{compactFormatter.format(buyCount)}</span>
                         <span className="text-muted-foreground">/</span>
                         <span className="text-rose-400">{compactFormatter.format(sellCount)}</span>
-                    </div>
-                </div>
-            );
-        }
-    },
-    {
-        accessorKey: "audit",
-        header: () => <span className="block text-right">Audit</span>,
-        enableSorting: false,
-        cell: ({ row }) => {
-            const auditData = row.original.audit;
-
-            if (!auditData || auditData.length === 0) {
-                return <div className="text-right text-white/25 text-xs">—</div>;
-            }
-
-            const risk = auditData[0] || { value: "—", label: "Risk" };
-            const fees = auditData[1] || { value: "—", label: "Fees" };
-
-            return (
-                <div className="flex items-center justify-end gap-2.5">
-                    {/* Risk */}
-                    <div className="flex flex-col items-end gap-0.5">
-                        <div className="flex items-center gap-1">
-                            <Users size={10} className="text-rose-400/70 shrink-0" />
-                            <span className="text-[12px] font-bold tabular-nums text-rose-400">{risk.value}</span>
-                        </div>
-                        <span className="text-[9px] font-semibold tracking-[0.07em] uppercase text-white/25">{risk.label || "Risk"}</span>
-                    </div>
-
-                    <div className="w-px h-6 bg-white/[0.07] shrink-0" />
-
-                    {/* Fees */}
-                    <div className="flex flex-col items-end gap-0.5">
-                        <div className="flex items-center gap-1">
-                            <Shield size={10} className="text-emerald-400/70 shrink-0" />
-                            <span className="text-[12px] font-bold tabular-nums text-emerald-400">{fees.value}</span>
-                        </div>
-                        <span className="text-[9px] font-semibold tracking-[0.07em] uppercase text-white/25">{fees.label || "Fees"}</span>
                     </div>
                 </div>
             );

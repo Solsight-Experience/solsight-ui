@@ -49,10 +49,6 @@ const getInitialFormData = (): FilterFormData => ({
     volume_24h_max: null,
     txns_24h_min: 0,
     txns_24h_max: null,
-    mint_authority_disabled: false,
-    freeze_authority_disabled: false,
-    lp_burnt: false,
-    has_social_links: false,
     categories: []
 });
 
@@ -63,10 +59,6 @@ function countActiveFilters(formData: FilterFormData): number {
     if (formData.market_cap_min || formData.market_cap_max) count++;
     if (formData.volume_24h_min || formData.volume_24h_max) count++;
     if (formData.txns_24h_min || formData.txns_24h_max) count++;
-    if (formData.mint_authority_disabled) count++;
-    if (formData.freeze_authority_disabled) count++;
-    if (formData.lp_burnt) count++;
-    if (formData.has_social_links) count++;
     if (formData.categories.length > 0) count++;
     return count;
 }

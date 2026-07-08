@@ -2,12 +2,10 @@ import { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterDialogProps, FilterFormData } from "../types/Filterdialog.types";
 import { MetricsFilterList } from "./MetricsFilterList";
-import { AuditsFilterList } from "./AuditsFilterList";
 import { CategoryFilterList } from "./CategoryFilterList";
 
 enum FilterTabList {
     METRICS = "Metrics",
-    AUDITS = "Audits",
     CATEGORY = "Category"
 }
 
@@ -26,7 +24,6 @@ const TAB_FIELDS: Record<FilterTabList, (keyof FilterFormData)[]> = {
         "txns_24h_min",
         "txns_24h_max"
     ],
-    [FilterTabList.AUDITS]: ["mint_authority_disabled", "freeze_authority_disabled", "lp_burnt", "has_social_links"],
     [FilterTabList.CATEGORY]: ["categories"]
 };
 
@@ -36,7 +33,6 @@ export default function FilterDialog({ formData, onFormChange, visibleFields }: 
 
     const tabContent: Record<FilterTabList, ReactNode> = {
         [FilterTabList.METRICS]: <MetricsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
-        [FilterTabList.AUDITS]: <AuditsFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />,
         [FilterTabList.CATEGORY]: <CategoryFilterList formData={formData} onFormChange={onFormChange} isFieldVisible={isFieldVisible} />
     };
 
@@ -52,7 +48,7 @@ export default function FilterDialog({ formData, onFormChange, visibleFields }: 
                     <TabsTrigger
                         key={tab}
                         value={tab}
-                        className="flex-1 rounded-lg text-[11px] font-semibold tracking-wide uppercase py-2
+                        className="flex-1 justify-center rounded-lg text-[11px] font-semibold tracking-wide uppercase py-2
                                    data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300 data-[state=active]:after:hidden
                                    data-[state=active]:shadow-[0_0_0_1px_rgba(139,92,246,0.3)]
                                    text-white/40 hover:text-white/70 after:hidden transition-all duration-200"
