@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CheckCircle2, Loader2, Mail, Unlink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEmailSubscription, useSubmitEmail, useEmailStatus, useDisconnectEmail } from "../hooks/useEmailSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,8 +31,7 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     const isPolling = open && step === "pending";
     useEmailStatus(isPolling);
 
-    async function handleSubmit() {
-        const email = user?.email;
+    async function handleSubmit(email: string) {
         if (!email) return;
         try {
             await submitEmail(email);
@@ -94,29 +96,49 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     );
 }
 
-function IdleState({ email, onSubmit, submitting }: { email: string; onSubmit: () => void; submitting: boolean }) {
+function IdleState({ email, onSubmit, submitting }: { email: string; onSubmit: (email: string) => void; submitting: boolean }) {
+    const [inputValue, setInputValue] = useState(email);
+
+    useEffect(() => {
+        setInputValue(email);
+    }, [email]);
+
     return (
-        <div className="flex flex-col gap-4">
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                onSubmit(inputValue);
+            }}
+            className="flex flex-col gap-4"
+        >
             <p className="text-[12px] text-white/50 leading-relaxed">
                 Receive wallet alert notifications via email. We&apos;ll send a verification link to confirm.
             </p>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-                <Mail className="size-3.5 text-white/30 shrink-0" />
-                <span className="text-[13px] text-white/70 truncate">{email}</span>
+            <div className="relative flex items-center min-w-0">
+                <Mail className="absolute left-3 size-3.5 text-white/30 pointer-events-none" />
+                <Input
+                    type="email"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    disabled={submitting}
+                    placeholder="Enter your email"
+                    className="h-10 pl-9 pr-3 rounded-xl bg-white/[0.04] border-white/[0.08] text-[13px] text-white/70 placeholder:text-white/20 focus-visible:ring-violet-500/30 dark:bg-white/[0.04] dark:border-white/[0.08] truncate min-w-0 w-full"
+                    required
+                />
             </div>
-            <button
-                onClick={onSubmit}
-                disabled={submitting || !email}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl
-                           bg-violet-500/15 border border-violet-500/25 text-violet-300
+            <Button
+                type="submit"
+                disabled={submitting || !inputValue}
+                className="flex items-center justify-center gap-2 w-full h-10 rounded-xl
+                           bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:text-violet-200
                            hover:bg-violet-500/25 hover:border-violet-500/40
                            disabled:opacity-50 disabled:cursor-not-allowed
                            text-[13px] font-semibold transition-all duration-150"
             >
                 {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Mail className="size-3.5" />}
                 {submitting ? "Sending..." : "Send verification email"}
-            </button>
-        </div>
+            </Button>
+        </form>
     );
 }
 
@@ -125,12 +147,12 @@ function PendingState({ email, onResend, resending }: { email: string; onResend:
         <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center gap-3 py-6 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                 <Mail className="size-8 text-violet-400/60" />
-                <div className="text-center">
+                <div className="text-center w-full px-4">
                     <p className="text-[13px] font-semibold text-white/80">Check your inbox</p>
                     <p className="text-[11px] text-white/40 mt-1">
                         Verification email sent to
                         <br />
-                        <span className="text-white/60 font-medium">{email}</span>
+                        <span className="text-white/60 font-medium break-all block mt-1">{email}</span>
                     </p>
                 </div>
             </div>
@@ -172,9 +194,9 @@ function VerifiedState({
         <div className="flex flex-col gap-5">
             <div className="flex flex-col items-center gap-3 py-6 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
                 <CheckCircle2 className="size-10 text-emerald-400" />
-                <div className="text-center">
+                <div className="text-center w-full px-4">
                     <p className="text-[13px] font-semibold text-emerald-300">Email Connected</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{email}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5 break-all block">{email}</p>
                     <p className="text-[11px] text-white/30 mt-0.5">Connected on {date}</p>
                 </div>
             </div>
