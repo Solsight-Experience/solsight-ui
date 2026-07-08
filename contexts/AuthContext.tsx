@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/network-requests/api-client";
 
 interface User {
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     // Load user từ localStorage khi component mount
     useEffect(() => {
@@ -64,6 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem("user");
+
+        // Xoá cache React Query — tránh lẫn data account cũ khi login account khác.
+        queryClient.clear();
 
         // Điều hướng
         router.push("/");
