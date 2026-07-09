@@ -26,11 +26,6 @@ export type TokenTableData = {
         buyVolumn: number;
         sellVolumn: number;
     };
-    audit: Array<{
-        label: string;
-        value: string;
-        trend: "up" | "down" | "neutral";
-    }>;
 };
 
 /**
