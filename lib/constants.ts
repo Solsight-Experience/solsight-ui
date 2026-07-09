@@ -189,6 +189,16 @@ export const CHAT_SOCKET_EVENTS = {
     TOOL_PROGRESS: "chat:tool_progress"
 } as const;
 
+// Billing API Endpoints — daily free quota (AI chat) + paid credits via SOL payment
+export const BILLING_ENDPOINTS = {
+    QUOTA: "/billing/quota",
+    PACKAGES: "/billing/payment/packages",
+    CREATE_ORDER: "/billing/payment/orders",
+    REFRESH_TX: (orderId: string) => `/billing/payment/orders/${orderId}/refresh-tx`,
+    SUBMIT_PAYMENT: (orderId: string) => `/billing/payment/orders/${orderId}/submit`,
+    ORDERS: "/billing/payment/orders"
+} as const;
+
 export const CLUSTERS = ["mainnet", "devnet"] as const;
 export type Cluster = (typeof CLUSTERS)[number];
 

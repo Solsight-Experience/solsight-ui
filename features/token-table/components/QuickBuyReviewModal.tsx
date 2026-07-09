@@ -207,46 +207,50 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
                 </DialogHeader>
 
                 {token ? (
-                    <div className="space-y-4 text-sm">
+                    <div className="space-y-4 text-sm min-w-0">
                         <div className="rounded-lg border border-border p-3">
                             <div className="text-muted-foreground mb-2">Token</div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <Avatar className="h-5 w-5">
                                     <AvatarImage src={token.token.iconUrl} alt="" />
                                     <AvatarFallback className="text-[9px]">{token.token.ticker.slice(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
-                                <span className="font-semibold">{token.token.ticker}</span>
-                                <span className="text-muted-foreground">{token.token.name}</span>
+                                <span className="font-semibold shrink-0" title={token.token.ticker}>
+                                    {token.token.ticker}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-muted-foreground" title={token.token.name}>
+                                    {token.token.name}
+                                </span>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-lg border border-border p-3">
+                            <div className="rounded-lg border border-border p-3 min-w-0">
                                 <div className="text-muted-foreground">Pay</div>
-                                <div className="font-semibold">{amountSol || "0"} SOL</div>
+                                <div className="font-semibold truncate">{amountSol || "0"} SOL</div>
                             </div>
-                            <div className="rounded-lg border border-border p-3">
+                            <div className="rounded-lg border border-border p-3 min-w-0">
                                 <div className="text-muted-foreground">Estimated Receive</div>
-                                <div className="font-semibold">
+                                <div className="font-semibold truncate" title={`${receiveAmount} ${token.token.ticker}`}>
                                     {receiveAmount} {token.token.ticker}
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-2 rounded-lg border border-border p-3">
-                            <div className="flex items-center justify-between">
-                                <span>Minimum Received</span>
-                                <span>
+                            <div className="flex items-center justify-between gap-2 min-w-0">
+                                <span className="shrink-0">Minimum Received</span>
+                                <span className="truncate text-right" title={`${minReceived} ${token.token.ticker}`}>
                                     {minReceived} {token.token.ticker}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span>Price Impact</span>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="shrink-0">Price Impact</span>
                                 <span>{quote?.priceImpactPct == null ? "--" : `${(quote.priceImpactPct * 100).toFixed(2)}%`}</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span>Route</span>
-                                <span>{quote?.routeLabel ?? "--"}</span>
+                            <div className="flex items-center justify-between gap-2 min-w-0">
+                                <span className="shrink-0">Route</span>
+                                <span className="truncate text-right">{quote?.routeLabel ?? "--"}</span>
                             </div>
                             <div
                                 className={`text-xs text-muted-foreground truncate transition-none ${!(quote?.routeDetails && quote.routeDetails.length > 0) ? "invisible" : ""}`}

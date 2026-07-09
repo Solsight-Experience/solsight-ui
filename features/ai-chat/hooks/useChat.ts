@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import useClusterStore from "@/stores/cluster.store";
 import { phantomWallet } from "@/lib/wallet";
@@ -9,6 +9,7 @@ import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto, ChatPageContext } from "@/types/dto";
 import apiClient from "@/lib/network-requests/api-client";
 import { CHAT_ENDPOINTS } from "@/lib/constants";
+import { queryKeys } from "@/lib/react-query-keys";
 
 const SESSION_ID_KEY = "solsight_chat_session_id";
 
@@ -47,6 +48,7 @@ export function useChat() {
     const [localMessages, setLocalMessages] = useState<ChatMessageDto[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [errorCode, setErrorCode] = useState<string | null>(null);
     const [toolProgressLabel, setToolProgressLabel] = useState<string | null>(null);
 
     const [sessionId, setSessionId] = useState<string>(getOrCreateSessionId());
@@ -55,6 +57,7 @@ export function useChat() {
     const socketManager = ChatSocketManager.getInstance();
     const { user } = useAuth();
     const cluster = useClusterStore((s) => s.cluster);
+    const queryClient = useQueryClient();
     // Fetch historical messages
     const {
         data,
@@ -124,10 +127,13 @@ export function useChat() {
         socketManager.onComplete(sessionId, () => {
             setIsTyping(false);
             setToolProgressLabel(null);
+            // Refetch quota — backend vừa trừ sau khi AI trả lời xong.
+            queryClient.invalidateQueries({ queryKey: queryKeys.billing.quota() });
         });
 
         socketManager.onError(sessionId, (err) => {
             setError(err.message);
+            setErrorCode(err.code ?? null);
             setIsTyping(false);
             setToolProgressLabel(null);
         });
@@ -141,7 +147,7 @@ export function useChat() {
         return () => {
             socketManager.offSession(sessionId);
         };
-    }, [sessionId, socketManager]);
+    }, [sessionId, socketManager, queryClient]);
 
     const buildPageContext = (): ChatPageContext => {
         const currentPathname = typeof window !== "undefined" ? window.location.pathname : "/";
@@ -163,6 +169,7 @@ export function useChat() {
         ]);
         setIsTyping(true);
         setError(null);
+        setErrorCode(null);
         setToolProgressLabel(null);
         socketManager.sendMessage({
             cluster,
@@ -180,6 +187,7 @@ export function useChat() {
         localStorage.setItem(SESSION_ID_KEY, newId);
         setSessionId(newId);
         setError(null);
+        setErrorCode(null);
         setToolProgressLabel(null);
         setIsTyping(false);
     };
@@ -190,6 +198,7 @@ export function useChat() {
         isHistoryLoading,
         toolProgressLabel,
         error,
+        errorCode,
         sendMessage,
         clearMessages,
         fetchNextPage,
