@@ -14,9 +14,7 @@ export function getStakingConnection(): Connection {
 }
 
 export interface IFProgramState {
-    program: null;
     isReady: boolean;
-    isLoading: boolean;
     error: string | null;
 }
 
@@ -30,9 +28,7 @@ export function useIFProgram(connected: boolean, walletPubkey: string | null): I
     }, [connected]);
 
     return {
-        program: null,
         isReady,
-        isLoading: false,
         error: IF_CONFIG.isEnabled ? null : (IF_CONFIG.unavailableReason ?? null)
     };
 }

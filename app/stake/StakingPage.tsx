@@ -79,14 +79,14 @@ export function StakingPage() {
                     <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-white/70 px-4 py-1.5 shadow-sm backdrop-blur-sm dark:border-purple-500/40 dark:bg-purple-500/10">
                         <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
                         <span className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-purple-300">
-                            Insurance Fund · {IF_CONFIG.label}
+                            SOL Staking · {IF_CONFIG.label}
                         </span>
                     </div>
 
                     <h1 className="mb-3 text-5xl font-extrabold tracking-tight text-slate-950 dark:text-white">Stake &amp; Earn</h1>
 
                     <p className="mx-auto max-w-xs text-[15px] leading-relaxed text-slate-600 dark:text-gray-400">
-                        Deposit SOL into the <span className="text-purple-400 font-semibold">Insurance Fund</span> and earn trading fees from the protocol.
+                        Stake SOL two ways: swap instantly into liquid jitoSOL, or delegate directly to a validator.
                     </p>
                 </div>
 
@@ -106,26 +106,26 @@ export function StakingPage() {
                             {
                                 step: "01",
                                 color: "text-purple-400 border-purple-500/40 bg-purple-500/10",
-                                title: "Connect wallet & Stake SOL",
-                                body: "Deposit SOL into the Insurance Fund. You receive IF Shares representing your ownership in the fund."
+                                title: "Liquid: instant jitoSOL swap",
+                                body: "Stake SOL and receive jitoSOL directly in your wallet. No lockup — unstake back to SOL any time, redeemed instantly from the pool's reserve."
                             },
                             {
                                 step: "02",
                                 color: "text-blue-400 border-blue-500/40 bg-blue-500/10",
-                                title: "Earn trading fees",
-                                body: "Fees from all trading activity (trading fees + borrow rate) are distributed proportionally to your IF Shares."
+                                title: "Native: direct validator delegation",
+                                body: "Stake SOL directly to an approved validator via a stake account only you control. No program custody, ever."
                             },
                             {
                                 step: "03",
                                 color: "text-yellow-400 border-yellow-500/40 bg-yellow-500/10",
-                                title: "Request unstake",
-                                body: "When you want to withdraw, submit a request first. The fund enforces a cooldown period to ensure protocol liquidity."
+                                title: "Native unstaking follows Solana's own cooldown",
+                                body: "Unstaking a native position starts deactivation, which finishes at the next epoch boundary (Solana's normal cooldown — not a fee or lockup added by this app)."
                             },
                             {
                                 step: "04",
                                 color: "text-green-400 border-green-500/40 bg-green-500/10",
-                                title: "Withdraw SOL after cooldown",
-                                body: "Once the cooldown ends, confirm the final withdrawal. Your SOL plus accrued fees will arrive in your wallet."
+                                title: "Withdraw once deactivated",
+                                body: "Once a native stake account finishes deactivating, withdraw it back to SOL in your wallet."
                             }
                         ].map(({ step, color, title, body }) => (
                             <li key={step} className="flex gap-3">

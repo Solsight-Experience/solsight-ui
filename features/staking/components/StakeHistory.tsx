@@ -6,45 +6,45 @@ import { formatDisplay } from "@/features/swap";
 import { useIFStakeHistory, StakeRecord, StakeActionType, StakeRecordStatus } from "../hooks/useIFStakeHistory";
 import { getSolscanTxUrl } from "../constants/program";
 import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
+import { shortenAddr } from "../lib/format";
 
 interface StakeHistoryProps {
     walletPubkey: string | null;
 }
 
 const ACTION_CONFIG: Record<StakeActionType, { label: string; icon: React.ReactNode; color: string }> = {
-    stake: {
-        label: "Stake",
+    stake_liquid: {
+        label: "Stake (Liquid)",
         icon: <ArrowDownToLine className="h-3.5 w-3.5" />,
         color: "text-purple-400 bg-purple-500/10 border-purple-500/25"
     },
-    unstake: {
-        label: "Unstake",
+    unstake_liquid: {
+        label: "Unstake (Liquid)",
         icon: <ArrowUpFromLine className="h-3.5 w-3.5" />,
         color: "text-orange-400 bg-orange-500/10 border-orange-500/25"
     },
-    withdraw: {
-        label: "Withdraw",
+    stake_native: {
+        label: "Stake (Native)",
+        icon: <ArrowDownToLine className="h-3.5 w-3.5" />,
+        color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25"
+    },
+    unstake_native: {
+        label: "Unstake (Native)",
+        icon: <ArrowUpFromLine className="h-3.5 w-3.5" />,
+        color: "text-orange-400 bg-orange-500/10 border-orange-500/25"
+    },
+    withdraw_native: {
+        label: "Withdraw (Native)",
         icon: <Wallet className="h-3.5 w-3.5" />,
         color: "text-blue-400 bg-blue-500/10 border-blue-500/25"
-    },
-    cancel: {
-        label: "Cancel",
-        icon: <History className="h-3.5 w-3.5" />,
-        color: "text-gray-400 bg-gray-500/10 border-gray-500/25"
     }
 };
 
 const STATUS_CONFIG: Record<StakeRecordStatus, { label: string; dot: string; text: string }> = {
     pending: { label: "Pending", dot: "bg-yellow-400", text: "text-yellow-400" },
     confirmed: { label: "Confirmed", dot: "bg-green-400", text: "text-green-400" },
-    failed: { label: "Failed", dot: "bg-red-400", text: "text-red-400" },
-    cooling_down: { label: "Cooling down", dot: "bg-orange-400", text: "text-orange-400" },
-    withdrawn: { label: "Withdrawn", dot: "bg-blue-400", text: "text-blue-400" }
+    failed: { label: "Failed", dot: "bg-red-400", text: "text-red-400" }
 };
-
-function shortenAddr(addr: string) {
-    return addr.slice(0, 5) + "…" + addr.slice(-4);
-}
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleString("en-US", {
@@ -60,6 +60,11 @@ const PAGE_SIZE = 8;
 const HISTORY_REFRESH_INTERVAL_MS = 1500;
 const HISTORY_REFRESH_ATTEMPTS = 2;
 const HISTORY_REFRESH_ATTEMPTS_WITH_SIGNATURE = 6;
+const PLACEHOLDER_ROW_COUNT = PAGE_SIZE;
+const TABLE_HEADER_CLASS =
+    "hidden grid-cols-[1fr_100px_110px_100px_44px] gap-3 border-b border-slate-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-white/5 dark:text-gray-600 sm:grid";
+const HISTORY_ROW_CLASS =
+    "grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.025] sm:grid-cols-[1fr_100px_110px_100px_44px]";
 
 function CopyButton({ text }: { text: string }) {
     const [copied, setCopied] = useState(false);
@@ -93,6 +98,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
 
     const records = data?.records ?? [];
     const nextCursor = data?.nextCursor ?? null;
+    const placeholderCount = records.length > 0 ? Math.max(0, PLACEHOLDER_ROW_COUNT - records.length) : 0;
 
     useEffect(() => {
         setPage(1);
@@ -164,6 +170,62 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
         setPage((currentPage) => currentPage + 1);
     };
 
+    const renderTableHeader = () => (
+        <div className={TABLE_HEADER_CLASS}>
+            <span>Stake Account</span>
+            <span>Amount</span>
+            <span>Type</span>
+            <span>Status</span>
+            <span />
+        </div>
+    );
+
+    const renderLoadingRows = () => (
+        <>
+            {renderTableHeader()}
+
+            <div className="divide-y divide-slate-200 dark:divide-white/5">
+                {Array.from({ length: PLACEHOLDER_ROW_COUNT }).map((_, index) => (
+                    <div
+                        key={`loading-row-${index}`}
+                        data-testid="stake-history-loading-row"
+                        className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-3.5 sm:grid-cols-[1fr_100px_110px_100px_44px]"
+                    >
+                        <div className="space-y-2">
+                            <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                            <div className="h-3 w-24 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                        </div>
+                        <div className="justify-self-end sm:justify-self-auto">
+                            <div className="ml-auto h-4 w-14 animate-pulse rounded bg-slate-100 dark:bg-white/5 sm:ml-0" />
+                            <div className="mt-2 ml-auto h-3 w-8 animate-pulse rounded bg-slate-100 dark:bg-white/5 sm:ml-0" />
+                        </div>
+                        <div className="hidden sm:block">
+                            <div className="h-7 w-20 animate-pulse rounded-full bg-slate-100 dark:bg-white/5" />
+                        </div>
+                        <div className="hidden sm:block">
+                            <div className="h-3.5 w-16 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                        </div>
+                        <div className="hidden sm:flex justify-end">
+                            <div className="h-7 w-7 animate-pulse rounded-lg bg-slate-100 dark:bg-white/5" />
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 sm:hidden">
+                            <div className="h-5 w-16 animate-pulse rounded-full bg-slate-100 dark:bg-white/5" />
+                            <div className="h-3 w-12 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3.5 dark:border-white/8">
+                <div className="h-3.5 w-12 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                <div className="flex gap-2">
+                    <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-100 dark:bg-white/5" />
+                    <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-100 dark:bg-white/5" />
+                </div>
+            </div>
+        </>
+    );
+
     return (
         <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(145deg,rgba(20,10,40,0.95)_0%,rgba(10,8,30,0.98)_100%)] dark:shadow-none">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-white/8">
@@ -179,11 +241,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                     <p className="text-sm text-slate-500 dark:text-gray-500">Connect wallet to view history</p>
                 </div>
             ) : isLoading ? (
-                <div className="space-y-2 p-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" />
-                    ))}
-                </div>
+                renderLoadingRows()
             ) : isError ? (
                 <div className="flex items-center justify-center py-12">
                     <p className="text-red-400 text-sm">Failed to load history</p>
@@ -196,13 +254,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                 </div>
             ) : (
                 <>
-                    <div className="hidden grid-cols-[1fr_100px_110px_100px_44px] gap-3 border-b border-slate-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-white/5 dark:text-gray-600 sm:grid">
-                        <span>Stake Account</span>
-                        <span>Amount</span>
-                        <span>Type</span>
-                        <span>Status</span>
-                        <span />
-                    </div>
+                    {renderTableHeader()}
 
                     <div className="divide-y divide-slate-200 dark:divide-white/5">
                         {records.map((r: StakeRecord) => {
@@ -210,10 +262,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                             const status = STATUS_CONFIG[r.status];
                             const formattedAmount = Number(r.amountSol) > 0 ? formatDisplay(r.amountSol, 4) : null;
                             return (
-                                <div
-                                    key={r.id}
-                                    className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.025] sm:grid-cols-[1fr_100px_110px_100px_44px]"
-                                >
+                                <div key={r.id} className={HISTORY_ROW_CLASS}>
                                     <div className="min-w-0">
                                         <div className="flex items-center">
                                             <p className="font-mono text-[12px] font-medium text-slate-700 dark:text-gray-300">
@@ -269,6 +318,43 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                                 </div>
                             );
                         })}
+                        {Array.from({ length: placeholderCount }).map((_, index) => (
+                            <div
+                                key={`placeholder-${index}`}
+                                aria-hidden="true"
+                                className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-3.5 opacity-0 sm:grid-cols-[1fr_100px_110px_100px_44px]"
+                            >
+                                <div className="min-w-0">
+                                    <p className="font-mono text-[12px] font-medium">placeholder</p>
+                                    <p className="mt-0.5 text-[11px]">placeholder</p>
+                                </div>
+                                <div className="text-right sm:text-left">
+                                    <p className="text-[13px] font-bold">placeholder</p>
+                                    <p className="text-[11px]">placeholder</p>
+                                </div>
+                                <div className="hidden sm:flex">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold">
+                                        placeholder
+                                    </span>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-1.5">
+                                    <span className="h-1.5 w-1.5 rounded-full" />
+                                    <span className="text-[12px] font-medium">placeholder</span>
+                                </div>
+                                <div className="hidden sm:flex justify-end">
+                                    <span className="flex h-7 w-7 rounded-lg border" />
+                                </div>
+                                <div className="flex sm:hidden flex-col items-end gap-1.5">
+                                    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold">
+                                        placeholder
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="h-1.5 w-1.5 rounded-full" />
+                                        <span className="text-[10px] font-medium">placeholder</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
                     {records.length > 0 && (

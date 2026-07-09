@@ -2,54 +2,62 @@
 
 import apiClient from "@/lib/network-requests/api-client";
 
-export type StakingTransactionAction = "stake" | "request-unstake" | "unstake" | "cancel-request";
+export type StakingMode = "liquid" | "native";
+export type StakingTransactionAction = "stake" | "unstake" | "withdraw";
 
 export interface BuildStakingTransactionRequest {
+    mode: StakingMode;
     action: StakingTransactionAction;
     wallet: string;
     amountLamports?: string;
+    voteAccount?: string;
+    nativeStakeAddress?: string;
 }
 
 export interface BuiltStakingTransaction {
+    mode: StakingMode;
     action: StakingTransactionAction;
     network: "mainnet" | "devnet";
     transaction: string;
     blockhash: string;
     lastValidBlockHeight: number;
+    nativeStakeAddress?: string;
 }
 
-export interface StakingFundSnapshot {
-    authority: string;
-    stakePool: string;
-    stakePoolProgram: string;
-    poolMint: string;
-    withdrawAuthority: string;
-    reserveStake: string;
-    managerFeeAccount: string;
-    vault: string;
-    vaultTokenAccount: string;
-    totalShares: string;
-    unstakingPeriod: number;
-    totalRevenue: string;
-    ifPaused: boolean;
+export interface LiquidPositionResponse {
+    poolTokenAmount: string;
+    estimatedSol: number;
+    poolTokenAccount: string;
+}
+
+export type NativeStakeStatus = "activating" | "active" | "deactivating" | "inactive";
+
+export interface NativeStakeAccountResponse {
+    address: string;
+    voteAccount: string;
+    lamports: string;
+    estimatedSol: number;
+    status: NativeStakeStatus;
+}
+
+export interface NativeStakePositionsPage {
+    items: NativeStakeAccountResponse[];
+    total: number;
+    page: number;
+    pageSize: number;
 }
 
 export interface StakingPositionResponse {
-    ifShares: string;
-    totalShares: string;
-    vaultJitoTokenUnits: string;
-    estimatedSol: number;
-    lastWithdrawRequestShares: string;
-    lastWithdrawRequestValue: number;
-    lastWithdrawRequestTs: number;
-    cooldownEndsAt: number;
-    canWithdraw: boolean;
-    unstakingPeriod: number;
-    fund: StakingFundSnapshot;
+    liquid: LiquidPositionResponse | null;
+    native: NativeStakePositionsPage;
 }
 
-export type StakeActionType = "stake" | "unstake" | "withdraw" | "cancel";
-export type StakeRecordStatus = "pending" | "confirmed" | "failed" | "cooling_down" | "withdrawn";
+export interface StakingValidatorResponse {
+    voteAccount: string;
+}
+
+export type StakeActionType = "stake_liquid" | "unstake_liquid" | "stake_native" | "unstake_native" | "withdraw_native";
+export type StakeRecordStatus = "pending" | "confirmed" | "failed";
 
 export interface StakeHistoryRecord {
     id: string;
@@ -70,9 +78,9 @@ export function buildStakingTransaction(request: BuildStakingTransactionRequest)
     return apiClient.post<BuiltStakingTransaction>("/staking/transaction", request);
 }
 
-export function getStakingPosition(wallet: string): Promise<StakingPositionResponse | null> {
-    return apiClient.get<StakingPositionResponse | null>("/staking/position", {
-        params: { wallet }
+export function getStakingPosition(wallet: string, page: number, pageSize: number): Promise<StakingPositionResponse> {
+    return apiClient.get<StakingPositionResponse>("/staking/position", {
+        params: { wallet, page, pageSize }
     });
 }
 
@@ -80,4 +88,8 @@ export function getStakingHistory(wallet: string, before: string | null, pageSiz
     return apiClient.get<StakingHistoryResponse>("/staking/history", {
         params: { wallet, before: before ?? undefined, pageSize }
     });
+}
+
+export function getStakingValidators(): Promise<StakingValidatorResponse[]> {
+    return apiClient.get<StakingValidatorResponse[]>("/staking/validators");
 }
