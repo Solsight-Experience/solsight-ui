@@ -2,10 +2,12 @@
 
 import React from "react";
 import { ChevronLeft, ChevronRight, Loader2, Wallet } from "lucide-react";
+import { AddressFormatter } from "@/lib/formatters";
 import { useNativeStaking, type StakeActionSuccessPayload } from "../hooks/useNativeStaking";
 import type { NativeStakePositionsPage, NativeStakeStatus } from "../lib/staking-api";
-import { shortenAddr } from "../lib/format";
 import type { VersionedTransaction } from "@solana/web3.js";
+
+const addressFormatter = new AddressFormatter(5, 4);
 
 interface NativeStakeListProps {
     native: NativeStakePositionsPage;
@@ -77,7 +79,7 @@ export function NativeStakeList({
                     >
                         <div className="min-w-0 flex-1">
                             <p className="text-[13px] font-bold text-slate-900 dark:text-white">{position.estimatedSol.toFixed(6)} SOL</p>
-                            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-gray-500">Validator {shortenAddr(position.voteAccount)}</p>
+                            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-gray-500">Validator {addressFormatter.format(position.voteAccount)}</p>
                             <div className="mt-1 flex items-center gap-1.5">
                                 <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
                                 <span className={`text-[11px] font-medium ${status.text}`}>{status.label}</span>

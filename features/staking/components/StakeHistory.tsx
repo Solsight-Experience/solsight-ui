@@ -3,10 +3,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { History, ExternalLink, ChevronLeft, ChevronRight, ArrowDownToLine, ArrowUpFromLine, Wallet, Copy, Check } from "lucide-react";
 import { formatDisplay } from "@/features/swap";
+import { AddressFormatter } from "@/lib/formatters";
 import { useIFStakeHistory, StakeRecord, StakeActionType, StakeRecordStatus } from "../hooks/useIFStakeHistory";
 import { getSolscanTxUrl } from "../constants/program";
 import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
-import { shortenAddr } from "../lib/format";
+
+const addressFormatter = new AddressFormatter(5, 4);
 
 interface StakeHistoryProps {
     walletPubkey: string | null;
@@ -266,7 +268,7 @@ export function StakeHistory({ walletPubkey }: StakeHistoryProps) {
                                     <div className="min-w-0">
                                         <div className="flex items-center">
                                             <p className="font-mono text-[12px] font-medium text-slate-700 dark:text-gray-300">
-                                                {shortenAddr(r.stakeAccountAddress)}
+                                                {addressFormatter.format(r.stakeAccountAddress)}
                                             </p>
                                             <CopyButton text={r.stakeAccountAddress} />
                                         </div>

@@ -4,12 +4,14 @@ import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Info, ShieldCheck, AlertCircle } from "lucide-react";
+import { AddressFormatter } from "@/lib/formatters";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
 import { useNativeStaking, type StakeActionSuccessPayload } from "../hooks/useNativeStaking";
 import { useStakingValidators, useStakeMinimumDelegation } from "../hooks/useStakingPosition";
-import { shortenAddr } from "../lib/format";
 import { StakeAmountInput } from "./StakeAmountInput";
 import type { VersionedTransaction } from "@solana/web3.js";
+
+const addressFormatter = new AddressFormatter(5, 4);
 
 interface NativeStakeModalProps {
     open: boolean;
@@ -129,7 +131,9 @@ export function NativeStakeModal({
                             </div>
                         ) : (
                             <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 dark:border-white/10 dark:bg-white/5">
-                                <span className="text-[14px] font-semibold text-slate-900 dark:text-white">{voteAccount ? shortenAddr(voteAccount) : "—"}</span>
+                                <span className="text-[14px] font-semibold text-slate-900 dark:text-white">
+                                    {voteAccount ? addressFormatter.format(voteAccount) : "—"}
+                                </span>
                                 <span className="text-[11px] font-semibold text-purple-400">Auto-assigned</span>
                             </div>
                         )}

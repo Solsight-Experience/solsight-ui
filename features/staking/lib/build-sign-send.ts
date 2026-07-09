@@ -2,30 +2,15 @@
 
 import bs58 from "bs58";
 import { VersionedTransaction } from "@solana/web3.js";
+import { getNativeSolanaProvider } from "@/features/wallets/hooks/useWallet";
 import { IF_CONFIG } from "../constants/program";
 import { getStakingConnection } from "../hooks/useIFProgram";
 import { buildStakingTransaction, type BuildStakingTransactionRequest, type BuiltStakingTransaction } from "./staking-api";
 
 export type SignTransactionFn = (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 
-type StakingWalletProvider = {
-    network?: string;
-};
-
-type WindowWithSolana = Window &
-    typeof globalThis & {
-        phantom?: { solana?: StakingWalletProvider };
-        solana?: StakingWalletProvider;
-    };
-
 function hasTransactionLogs(value: unknown): value is { logs?: string[] } {
     return typeof value === "object" && value !== null && "logs" in value;
-}
-
-function getWalletProvider(): StakingWalletProvider | undefined {
-    if (typeof window === "undefined") return undefined;
-    const walletWindow = window as WindowWithSolana;
-    return walletWindow.phantom?.solana ?? walletWindow.solana ?? undefined;
 }
 
 function base64ToBytes(value: string): Uint8Array {
@@ -52,7 +37,7 @@ export async function buildSignSend(
     signTransaction: SignTransactionFn
 ): Promise<{ signature: string; built: BuiltStakingTransaction }> {
     const conn = getStakingConnection();
-    const provider = getWalletProvider();
+    const provider = getNativeSolanaProvider();
 
     const providerNetwork = normalizeWalletNetwork(provider?.network);
     if (providerNetwork && providerNetwork !== IF_CONFIG.network) {
