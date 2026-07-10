@@ -102,7 +102,7 @@ export function CategoryDetailModal({ categorySlug, onClose }: CategoryDetailMod
                             <h3 className="text-xl font-semibold text-white mb-4">Top 3 Coins</h3>
                             <div className="space-y-3">
                                 {category.top_3_coins_id.map((coinId, index) => (
-                                    <div key={coinId} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+                                    <div key={coinId} className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
                                         <Avatar className="h-10 w-10">
                                             <AvatarImage src={category.top_3_coins[index]} alt={coinId} />
                                             <AvatarFallback>{coinId.charAt(0).toUpperCase()}</AvatarFallback>

@@ -1201,7 +1201,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             </div>
 
             {(!connected || !isWalletLinkedToUser) && (
-                <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-btn)]/70 p-4">
+                <div className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-btn)] p-4">
                     <div className="flex items-start gap-3">
                         <div className="mt-0.5 rounded-full bg-cyan-500/10 p-2 text-cyan-500">
                             <Wallet className="h-4 w-4" />
@@ -1219,7 +1219,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 type="button"
                                 onClick={() => connectWallet()}
                                 disabled={isConnecting}
-                                className="mt-3 h-9 bg-cyan-600 px-4 text-sm font-semibold text-white hover:bg-cyan-700"
+                                className="mt-3 h-9 bg-cyan-600 px-4 text-sm font-semibold !text-white hover:bg-cyan-700"
                             >
                                 {isConnecting ? (
                                     <span className="inline-flex items-center gap-2">

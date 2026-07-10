@@ -159,8 +159,8 @@ export default function Header() {
                                                 aria-label="Notifications"
                                                 className="relative flex items-center justify-center w-[34px] h-[34px]
                                                    bg-white/[0.04] border border-white/[0.09] rounded-lg
-                                                   text-white/45 cursor-pointer transition-all duration-150
-                                                   hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15"
+                                                   text-muted-foreground cursor-pointer transition-all duration-150
+                                                   hover:bg-white/[0.08] hover:text-foreground hover:border-white/15"
                                             >
                                                 <Bell size={15} />
                                                 <NotificationBadge count={unreadCount} />
