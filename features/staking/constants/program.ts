@@ -11,8 +11,12 @@ const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
 const CONFIGURED_CLUSTER = SOLANA_NETWORK === "mainnet" || SOLANA_NETWORK === "mainnet-beta" ? "mainnet" : "devnet";
 const IS_DEVNET = CONFIGURED_CLUSTER === "devnet";
 
+// Fallback only, used before the real cluster minimum loads via useStakeMinimumDelegation().
+// The native Stake program rejects DelegateStake below its own minimum delegation
+// (currently ~1 SOL on mainnet-beta) regardless of this value.
 export const IF_MIN_STAKE_SOL = 0.01;
 export const IF_RESERVE_SOL = 0.02;
+export const NATIVE_STAKE_PAGE_SIZE = 10;
 
 export const IF_CONFIG: IFConfig = {
     network: CONFIGURED_CLUSTER,

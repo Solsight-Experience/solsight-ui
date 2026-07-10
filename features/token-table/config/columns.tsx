@@ -5,6 +5,7 @@ import TokenCell from "../components/TokenCell";
 import { TokenTableData } from "./types";
 import { cn } from "@/lib/utils";
 import { compactFormatter, currencyFormatter, percentFormatter } from "@/lib/formatters";
+import { COMMON_TOKENS } from "@/lib/constants";
 
 /**
  * Creates columns with optional favorite toggle handler
@@ -120,7 +121,8 @@ export const createColumns = (
         header: "",
         enableHiding: false,
         cell: ({ row }) => {
-            const isDisabled = !quickBuyAmount || Number(quickBuyAmount) <= 0;
+            const isSol = row.original.id === COMMON_TOKENS.SOL.mint;
+            const isDisabled = !quickBuyAmount || Number(quickBuyAmount) <= 0 || isSol;
             return (
                 <div className="flex justify-end">
                     <button
@@ -136,7 +138,8 @@ export const createColumns = (
                             "border text-[11px] font-semibold tracking-wide whitespace-nowrap transition-all duration-150",
                             isDisabled
                                 ? "bg-violet-500/5 border-violet-500/10 text-violet-300/40 cursor-not-allowed"
-                                : "bg-violet-500/10 border-violet-500/20 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200 cursor-pointer"
+                                : "bg-violet-500/10 border-violet-500/20 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200 cursor-pointer",
+                            isSol && "invisible"
                         )}
                     >
                         <Zap size={10} className="shrink-0" />

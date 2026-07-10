@@ -7,16 +7,17 @@ import { WalletService } from "../services/wallet.service";
 import { getErrorMessage } from "@/lib/error-utils";
 import { toast } from "sonner";
 
-type NativeSolanaProvider = {
+export type NativeSolanaProvider = {
     isPhantom?: boolean;
     isConnected?: boolean;
+    network?: string;
     publicKey?: { toBase58?: () => string; toString?: () => string } | null;
     connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toBase58?: () => string; toString?: () => string } }>;
     disconnect?: () => Promise<void>;
     signTransaction?: <T extends Transaction | VersionedTransaction>(transaction: T) => Promise<T>;
 };
 
-function getNativeSolanaProvider(): NativeSolanaProvider | null {
+export function getNativeSolanaProvider(): NativeSolanaProvider | null {
     if (typeof window === "undefined") {
         return null;
     }
