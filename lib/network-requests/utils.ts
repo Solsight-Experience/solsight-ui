@@ -1,6 +1,6 @@
 import { ApiParams } from "./api-client";
 
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL;
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL!;
 
 export function normalizeApiOrigin(origin: string): string {
     return origin.replace(/\/+$/, "").replace(/\/api$/, "");
