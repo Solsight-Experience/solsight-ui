@@ -295,7 +295,7 @@ export const useWalletAuth = () => {
                     signature: signedPayload.signature,
                     nonce: signedPayload.nonce,
                     message: signedPayload.message,
-                    walletIcon: "solflare",
+                    walletIcon: "custom",
                     userId
                 });
 
