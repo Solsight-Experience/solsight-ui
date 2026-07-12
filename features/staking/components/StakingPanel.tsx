@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import React, { useCallback, useState } from "react";
 import { useTheme } from "next-themes";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { TrendingUp, Zap, Wallet, PlugZap, Layers, Landmark } from "lucide-react";
+import { TrendingUp, Zap, Wallet, PlugZap, Layers, Landmark, ExternalLink } from "lucide-react";
 import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
 import { useSolBalance } from "../hooks/useDevnetSolBalance";
 import { StakeModal } from "./StakeModal";
@@ -180,6 +181,15 @@ export function StakingPanel() {
                                     Your SOL is swapped into <strong className="text-indigo-700 dark:text-indigo-300">jitoSOL</strong>, held in your own wallet.
                                     No lockup — unstake back to SOL any time.
                                 </p>
+                                <Link
+                                    href="https://www.jito.network/docs/jitosol/jitosol-liquid-staking/liquid-staking-basics/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
+                                >
+                                    Jito Documentation
+                                    <ExternalLink className="h-3 w-3" />
+                                </Link>
                             </div>
                         </div>
 
@@ -229,6 +239,15 @@ export function StakingPanel() {
                                     Your SOL is delegated to an approved validator via a stake account only you control. Subject to Solana&apos;s normal
                                     epoch-based (de)activation wait.
                                 </p>
+                                <Link
+                                    href="https://solana.com/staking"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
+                                >
+                                    Solana Native Staking Documentation
+                                    <ExternalLink className="h-3 w-3" />
+                                </Link>
                             </div>
                         </div>
 
