@@ -1,5 +1,6 @@
 "use client";
 
+import { useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -43,6 +44,7 @@ export default function SocialAuthButtons() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login } = useAuth();
+    const { wallet, wallets, select, connect } = useWallet();
     const googleButtonRef = useRef<HTMLDivElement>(null);
     const isInitialized = useRef(false);
 
@@ -144,6 +146,7 @@ export default function SocialAuthButtons() {
     }, []);
 
     const [isPhantomLoading, setIsPhantomLoading] = useState(false);
+    const [isSolflareLoading, setIsSolflareLoading] = useState(false);
 
     const handlePhantomLogin = async () => {
         setIsPhantomLoading(true);
@@ -187,6 +190,59 @@ export default function SocialAuthButtons() {
         }
     };
 
+    const handleSolflareLogin = async () => {
+        setIsSolflareLoading(true);
+        try {
+            const solflare = wallets.find((candidate) => candidate.adapter.name === "Solflare");
+            if (!solflare) {
+                window.open("https://solflare.com/", "_blank");
+                toast.error("Solflare Wallet not found. Please install the Solflare extension.");
+                return;
+            }
+
+            // Select the Solflare adapter (if not already) and ensure it is connected.
+            if (wallet?.adapter.name !== "Solflare") {
+                select(solflare.adapter.name);
+                // Wait briefly for the adapter to become the active wallet.
+                const startedAt = Date.now();
+                while (Date.now() - startedAt < 1000) {
+                    if (wallets.find((c) => c.adapter.name === "Solflare")?.adapter) break;
+                    await new Promise((resolve) => window.setTimeout(resolve, 25));
+                }
+            }
+            if (!solflare.adapter.connected) {
+                await connect();
+            }
+
+            const walletAddress = solflare.adapter.publicKey?.toBase58();
+            if (!walletAddress) throw new Error("Failed to get public key from Solflare");
+
+            const signer = solflare.adapter as unknown as { signMessage?: (message: Uint8Array) => Promise<Uint8Array> };
+            if (!signer.signMessage) throw new Error("Solflare does not support message signing");
+
+            const data = await loginWithSolanaApi({
+                walletAddress,
+                walletIcon: "solflare",
+                signMessage: (messageBytes) => signer.signMessage!(messageBytes)
+            });
+
+            if (!data.user) {
+                throw new Error("Invalid login response from server");
+            }
+
+            loginRef.current(data.user);
+            toast.success("Wallet login successful!");
+            const finalRedirectTo = redirectToRef.current;
+            routerRef.current.push(finalRedirectTo);
+        } catch (error) {
+            console.error("Solflare login failed:", error);
+            const errorMessage = error instanceof Error ? error.message : "Solflare login failed. Please try again.";
+            toast.error(errorMessage);
+        } finally {
+            setIsSolflareLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-3">
             {/* Google Sign-In Button */}
@@ -204,6 +260,20 @@ export default function SocialAuthButtons() {
                     <Image src="/wallet_logo/phantom.svg" alt="Phantom Wallet" fill className="object-contain" />
                 </div>
                 <span className="font-semibold text-sm tracking-wide">{isPhantomLoading ? "Connecting Phantom..." : "Continue with Phantom"}</span>
+            </Button>
+
+            {/* Solflare Sign-In Button */}
+            <Button
+                type="button"
+                variant="outline"
+                onClick={handleSolflareLogin}
+                disabled={isSolflareLoading}
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border font-semibold text-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed border-[rgba(255,153,0,0.2)] bg-[rgba(255,153,0,0.1)] text-white hover:bg-[rgba(255,153,0,0.18)] hover:border-[rgba(255,153,0,0.4)] hover:shadow-[0_0_20px_rgba(255,153,0,0.2)] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_12px_rgba(255,153,0,0.05)] cursor-pointer"
+            >
+                <div className="relative w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                    <Image src="/wallet_logo/solflare.svg" alt="Solflare Wallet" fill className="object-contain" />
+                </div>
+                <span className="font-semibold text-sm tracking-wide">{isSolflareLoading ? "Connecting Solflare..." : "Continue with Solflare"}</span>
             </Button>
         </div>
     );
