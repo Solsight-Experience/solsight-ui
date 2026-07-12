@@ -222,7 +222,7 @@ export default function SocialAuthButtons() {
 
             const data = await loginWithSolanaApi({
                 walletAddress,
-                walletIcon: "metamask",
+                walletIcon: "solflare",
                 signMessage: (messageBytes) => signer.signMessage!(messageBytes)
             });
 
