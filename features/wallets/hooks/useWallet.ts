@@ -32,8 +32,12 @@ export function getNativeSolanaProvider(): NativeSolanaProvider | null {
 
 function normalizeWalletIcon(walletName?: string) {
     const normalized = walletName?.toLowerCase();
-    return normalized === "phantom" ? "phantom" : "custom";
+    if (normalized === "phantom") return "phantom";
+    if (normalized === "solflare") return "solflare";
+    return "custom";
 }
+
+const PREFERRED_WALLET_NAMES = ["Phantom", "Solflare"];
 
 function getAdapterPublicKey(wallet: ReturnType<typeof useSolanaWallet>["wallet"], fallback: string | null) {
     const adapter = wallet?.adapter as { publicKey?: { toBase58?: () => string; toString?: () => string } } | undefined;
@@ -63,7 +67,14 @@ function getSelectedOrPreferredWallet(wallet: ReturnType<typeof useSolanaWallet>
         return wallet;
     }
 
-    return wallets.find((candidate) => candidate.adapter.name === "Phantom") ?? wallets[0] ?? null;
+    for (const name of PREFERRED_WALLET_NAMES) {
+        const preferred = wallets.find((candidate) => candidate.adapter.name === name);
+        if (preferred) {
+            return preferred;
+        }
+    }
+
+    return wallets[0] ?? null;
 }
 
 function waitForWalletSelection(wallets: ReturnType<typeof useSolanaWallet>["wallets"], walletName: string, timeoutMs = 1000) {
@@ -130,7 +141,7 @@ export function useWallet() {
                 throw new Error("Failed to get public key from wallet");
             }
 
-            const walletName = selectedWallet?.adapter.name ?? (nativeProvider?.isPhantom ? "Phantom" : "wallet");
+            const walletName = selectedWallet?.adapter.name ?? wallet?.adapter.name ?? (nativeProvider?.isPhantom ? "Phantom" : "wallet");
 
             try {
                 const walletData = await WalletService.connectWallet(adapterPublicKey, walletName, normalizeWalletIcon(walletName));

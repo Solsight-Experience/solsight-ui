@@ -1,3 +1,4 @@
+import { useWallet as useSolanaWallet } from "@solana/wallet-adapter-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -73,11 +74,46 @@ const getMetaMaskProvider = (): EthereumProvider | undefined => {
 
 const SOLANA_SNAP_ID = "npm:@solflare-wallet/solana-snap";
 
+function waitForWalletSelection(wallets: ReturnType<typeof useSolanaWallet>["wallets"], walletName: string, timeoutMs = 1000) {
+    const startedAt = Date.now();
+
+    return new Promise<void>((resolve, reject) => {
+        const poll = () => {
+            const selected = wallets.find((candidate) => candidate.adapter.name === walletName);
+            if (selected?.adapter) {
+                resolve();
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                reject(new Error(`Wallet ${walletName} is not ready yet.`));
+                return;
+            }
+
+            window.setTimeout(poll, 25);
+        };
+
+        poll();
+    });
+}
+
 export const useWalletAuth = () => {
     const queryClient = useQueryClient();
+    const { wallet, wallets, select, connect } = useSolanaWallet();
     const [provider, setProvider] = useState<PhantomProvider | undefined>(undefined);
     const [walletKey, setWalletKey] = useState<string | null>(null);
     const [connected, setConnected] = useState(false);
+
+    // Shared post-verification handling: give the backend a moment to persist the wallet link,
+    // then refresh portfolio data so the newly linked wallet appears.
+    const refreshAfterVerify = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+        await queryClient.refetchQueries({
+            queryKey: portfolioKeys.all,
+            type: "active"
+        });
+    };
 
     useEffect(() => {
         const provider = getProvider();
@@ -218,16 +254,7 @@ export const useWalletAuth = () => {
                     });
 
                     if (response.success) {
-                        // Wait a bit for backend to process the wallet addition
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-
-                        // Invalidate and refetch all portfolio queries
-                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
-                        await queryClient.refetchQueries({
-                            queryKey: portfolioKeys.all,
-                            type: "active"
-                        });
-
+                        await refreshAfterVerify();
                         return true;
                     } else {
                         throw new Error(response.message || "Failed to verify wallet signature");
@@ -236,6 +263,50 @@ export const useWalletAuth = () => {
                 return false;
             } catch (error: unknown) {
                 console.error("Wallet connection/login error:", error);
+                throw new Error(getErrorMessage(error));
+            }
+        } else if (walletName === "Solflare") {
+            try {
+                const solflare = wallets.find((candidate) => candidate.adapter.name === "Solflare");
+                if (!solflare) {
+                    window.open("https://solflare.com/", "_blank");
+                    return false;
+                }
+
+                // Select the Solflare adapter (if not already) and ensure it is connected.
+                if (wallet?.adapter.name !== "Solflare") {
+                    select(solflare.adapter.name);
+                    await waitForWalletSelection(wallets, "Solflare");
+                }
+                if (!solflare.adapter.connected) {
+                    await connect();
+                }
+
+                const walletAddress = solflare.adapter.publicKey?.toBase58();
+                if (!walletAddress) throw new Error("Failed to get public key from Solflare");
+
+                const signMessage = solflare.adapter as unknown as { signMessage?: (message: Uint8Array) => Promise<Uint8Array> };
+                if (!signMessage.signMessage) throw new Error("Solflare does not support message signing");
+
+                const signedPayload = await signSolanaNonce(walletAddress, (messageBytes) => signMessage.signMessage!(messageBytes));
+
+                const response = await apiClient.post<{ success: boolean; message: string }>("/auth/solana/verify", {
+                    walletAddress,
+                    signature: signedPayload.signature,
+                    nonce: signedPayload.nonce,
+                    message: signedPayload.message,
+                    walletIcon: "solflare",
+                    userId
+                });
+
+                if (response.success) {
+                    await refreshAfterVerify();
+                    return true;
+                } else {
+                    throw new Error(response.message || "Failed to verify wallet signature");
+                }
+            } catch (error: unknown) {
+                console.error("Solflare connection/login error:", error);
                 throw new Error(getErrorMessage(error));
             }
         } else if (walletName === "MetaMask") {
@@ -272,16 +343,7 @@ export const useWalletAuth = () => {
                     });
 
                     if (response.success) {
-                        // Wait a bit for backend to process the wallet addition
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-
-                        // Invalidate and refetch all portfolio queries
-                        await queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
-                        await queryClient.refetchQueries({
-                            queryKey: portfolioKeys.all,
-                            type: "active"
-                        });
-
+                        await refreshAfterVerify();
                         return true;
                     } else {
                         throw new Error(response.message || "Failed to verify wallet signature");
