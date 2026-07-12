@@ -33,7 +33,7 @@ export function getNativeSolanaProvider(): NativeSolanaProvider | null {
 function normalizeWalletIcon(walletName?: string) {
     const normalized = walletName?.toLowerCase();
     if (normalized === "phantom") return "phantom";
-    if (normalized === "solflare") return "solflare";
+    // Backend WalletIcon enum has no "solflare"; fall back to the allowed "custom" value.
     return "custom";
 }
 
