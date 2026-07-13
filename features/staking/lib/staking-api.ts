@@ -78,6 +78,11 @@ export function buildStakingTransaction(request: BuildStakingTransactionRequest)
     return apiClient.post<BuiltStakingTransaction>("/staking/transaction", request);
 }
 
+// Broadcasting happens server-side (same as swap) so the browser never needs direct RPC access.
+export function executeStakingTransaction(signedTransactionBase64: string): Promise<{ signature: string }> {
+    return apiClient.post<{ signature: string }>("/staking/execute", { signedTransaction: signedTransactionBase64 });
+}
+
 export function getStakingPosition(wallet: string, page: number, pageSize: number): Promise<StakingPositionResponse> {
     return apiClient.get<StakingPositionResponse>("/staking/position", {
         params: { wallet, page, pageSize }

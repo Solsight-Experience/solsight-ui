@@ -1,16 +1,10 @@
 "use client";
 
-import bs58 from "bs58";
 import { VersionedTransaction } from "@solana/web3.js";
 import { IF_CONFIG } from "../constants/program";
-import { getStakingConnection } from "../hooks/useIFProgram";
-import { buildStakingTransaction, type BuildStakingTransactionRequest, type BuiltStakingTransaction } from "./staking-api";
+import { buildStakingTransaction, executeStakingTransaction, type BuildStakingTransactionRequest, type BuiltStakingTransaction } from "./staking-api";
 
 export type SignTransactionFn = (tx: VersionedTransaction) => Promise<VersionedTransaction>;
-
-function hasTransactionLogs(value: unknown): value is { logs?: string[] } {
-    return typeof value === "object" && value !== null && "logs" in value;
-}
 
 function base64ToBytes(value: string): Uint8Array {
     const binary = window.atob(value);
@@ -21,15 +15,15 @@ function base64ToBytes(value: string): Uint8Array {
     return bytes;
 }
 
-// ─── Core: API build → wallet sign → send ─────────────────────────────────────
-// The backend owns transaction construction; the browser only signs with the user's wallet.
+// ─── Core: API build → wallet sign → API send ─────────────────────────────────
+// The backend owns both transaction construction AND broadcast/confirmation (same as swap) —
+// the browser only signs with the user's wallet. This avoids sending sendRawTransaction directly
+// from the browser to a public RPC endpoint, which gets 403'd (origin-restricted / rate-limited).
 export async function buildSignSend(
     request: BuildStakingTransactionRequest,
     signTransaction: SignTransactionFn,
     walletNetwork?: "mainnet" | "devnet" | null
 ): Promise<{ signature: string; built: BuiltStakingTransaction }> {
-    const conn = getStakingConnection();
-
     if (walletNetwork && walletNetwork !== IF_CONFIG.network) {
         throw new Error(`Wallet is on ${walletNetwork}, but staking is configured for ${IF_CONFIG.network}.`);
     }
@@ -37,41 +31,10 @@ export async function buildSignSend(
     const built = await buildStakingTransaction(request);
     const vtx = VersionedTransaction.deserialize(base64ToBytes(built.transaction));
     const signed = await signTransaction(vtx);
-    // Transaction ID = base58 of first signature (derived before send for "already processed" handling)
-    const txSig = bs58.encode(signed.signatures[0]);
-    try {
-        await conn.sendRawTransaction(signed.serialize(), {
-            skipPreflight: false,
-            preflightCommitment: "confirmed"
-        });
-    } catch (sendErr: unknown) {
-        const errMsg = ((sendErr as Error)?.message ?? "").toLowerCase();
-        if (errMsg.includes("already been processed") || errMsg.includes("already processed")) {
-            // Tx was already submitted and landed — fall through to polling below.
-            console.warn("[Staking] tx already processed, verifying on-chain:", txSig);
-        } else {
-            const logs = hasTransactionLogs(sendErr) ? sendErr.logs : undefined;
-            if (logs?.length) {
-                console.error("[Staking] simulation logs:\n", logs.join("\n"));
-            }
-            throw sendErr;
-        }
-    }
-    // Poll getSignatureStatuses instead of confirmTransaction — avoids the race condition
-    // where the block-height monitor fires before the WebSocket notification on devnet.
-    // devnet typically confirms in < 2 s; poll every second for up to 20 attempts (20 s).
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const { value } = await conn.getSignatureStatuses([txSig], { searchTransactionHistory: true });
-        const status = value[0];
-        if (status) {
-            if (status.err) throw new Error(`Transaction failed: ${JSON.stringify(status.err)}`);
-            if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
-                return { signature: txSig, built };
-            }
-        }
-        await new Promise<void>((r) => setTimeout(r, 1000));
-    }
-    throw new Error("Transaction confirmation timed out. Check Solscan to verify the status.");
+    const signedTransactionBase64 = Buffer.from(signed.serialize()).toString("base64");
+
+    const { signature } = await executeStakingTransaction(signedTransactionBase64);
+    return { signature, built };
 }
 
 // ─── Error classification ──────────────────────────────────────────────────────
