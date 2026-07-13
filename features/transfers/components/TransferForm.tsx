@@ -11,7 +11,7 @@ import { DecimalFormatter } from "@/lib/number-formatters";
 import { transferFormSchema, TransferFormData } from "@/lib/validators";
 import { useTransfer } from "../hooks/useTransfer";
 import { useWalletBalance } from "@/features/wallets/hooks/useWallet";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { Wallet, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatWalletAddress } from "@/lib/formatters";
@@ -19,7 +19,7 @@ import { formatWalletAddress } from "@/lib/formatters";
 const TRANSFER_AMOUNT_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 9 });
 
 export default function TransferForm() {
-    const { connectWallet, isConnecting, connected, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
+    const { connectWallet, isConnecting, connected, publicKey, ensureWalletReadyForUserAction } = useLinkedWallet();
     const { createTransfer, isCreating } = useTransfer();
     const { data: balance, isLoading: balanceLoading } = useWalletBalance(publicKey || undefined);
 

@@ -5,7 +5,7 @@ import React, { useCallback, useState } from "react";
 import { useTheme } from "next-themes";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TrendingUp, Zap, Wallet, PlugZap, Layers, Landmark } from "lucide-react";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { StakeModal } from "./StakeModal";
 import { UnstakeModal } from "./UnstakeModal";
@@ -32,7 +32,7 @@ export function StakingPanel() {
         connectWallet,
         signTransaction,
         ensureWalletReadyForUserAction
-    } = useActionableWallet();
+    } = useLinkedWallet();
     const { data: walletsData, refetch: refetchWallets } = useWallets();
     const publishHistoryRefresh = useStakeHistoryRefreshStore((state) => state.publishRefresh);
 

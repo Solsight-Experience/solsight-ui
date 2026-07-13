@@ -2,7 +2,6 @@
 
 import bs58 from "bs58";
 import { VersionedTransaction } from "@solana/web3.js";
-import { getNativeSolanaProvider } from "@/features/wallets/hooks/useWallet";
 import { IF_CONFIG } from "../constants/program";
 import { getStakingConnection } from "../hooks/useIFProgram";
 import { buildStakingTransaction, type BuildStakingTransactionRequest, type BuiltStakingTransaction } from "./staking-api";
@@ -22,26 +21,17 @@ function base64ToBytes(value: string): Uint8Array {
     return bytes;
 }
 
-function normalizeWalletNetwork(network?: string): "mainnet" | "devnet" | null {
-    if (!network) return null;
-    const normalized = network.toLowerCase();
-    if (normalized === "devnet") return "devnet";
-    if (normalized === "mainnet" || normalized === "mainnet-beta") return "mainnet";
-    return null;
-}
-
 // ─── Core: API build → wallet sign → send ─────────────────────────────────────
 // The backend owns transaction construction; the browser only signs with the user's wallet.
 export async function buildSignSend(
     request: BuildStakingTransactionRequest,
-    signTransaction: SignTransactionFn
+    signTransaction: SignTransactionFn,
+    walletNetwork?: "mainnet" | "devnet" | null
 ): Promise<{ signature: string; built: BuiltStakingTransaction }> {
     const conn = getStakingConnection();
-    const provider = getNativeSolanaProvider();
 
-    const providerNetwork = normalizeWalletNetwork(provider?.network);
-    if (providerNetwork && providerNetwork !== IF_CONFIG.network) {
-        throw new Error(`Wallet is on ${providerNetwork}, but staking is configured for ${IF_CONFIG.network}.`);
+    if (walletNetwork && walletNetwork !== IF_CONFIG.network) {
+        throw new Error(`Wallet is on ${walletNetwork}, but staking is configured for ${IF_CONFIG.network}.`);
     }
 
     const built = await buildStakingTransaction(request);

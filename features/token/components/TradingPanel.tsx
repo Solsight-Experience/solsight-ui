@@ -10,7 +10,7 @@ import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
 import { Check, ChevronDown, Copy, Loader2, AlertTriangle, Wallet } from "lucide-react";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
@@ -99,7 +99,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
-    const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useActionableWallet();
+    const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useLinkedWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
