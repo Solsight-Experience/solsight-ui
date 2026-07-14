@@ -371,17 +371,21 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
             {!isTelegramLoading && (
                 <div
                     className={`mt-1 rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors
-          ${isTelegramConnected ? "border-green-500/20 bg-green-500/[0.04]" : "border-white/[0.07] bg-white/[0.02]"}`}
+          ${
+              isTelegramConnected
+                  ? "border-green-500/30 bg-green-500/[0.06] dark:border-green-500/20 dark:bg-green-500/[0.04]"
+                  : "border-[var(--border-subtle)] bg-[var(--surface-card)]"
+          }`}
                 >
                     <div
                         className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0
-            ${isTelegramConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-white/[0.06]"}`}
+            ${isTelegramConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-[var(--surface-btn)]"}`}
                     >
-                        <MessageCircle className={`size-3.5 ${isTelegramConnected ? "text-green-400" : "text-white/30"}`} />
+                        <MessageCircle className={`size-3.5 ${isTelegramConnected ? "text-green-600 dark:text-green-400" : "text-[var(--text-muted)]"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-white/80">Telegram Bot</div>
-                        <div className={`text-[11px] ${isTelegramConnected ? "text-green-400/80" : "text-white/30"}`}>
+                        <div className="text-[12px] font-semibold text-[var(--text-primary)]">Telegram Bot</div>
+                        <div className={`text-[11px] ${isTelegramConnected ? "text-green-600 dark:text-green-400/80" : "text-[var(--text-muted)]"}`}>
                             {isTelegramConnected ? "Connected — alerts will be sent to your Telegram" : "Not connected"}
                         </div>
                     </div>
@@ -390,7 +394,7 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
                         className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150
               ${
                   isTelegramConnected
-                      ? "text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.08]"
+                      ? "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-btn)] border border-[var(--border-subtle)]"
                       : "text-blue-600 dark:text-blue-300 bg-blue-500/15 border border-blue-500/25 hover:bg-blue-500/25"
               }`}
                     >
@@ -403,17 +407,21 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
             {!isEmailLoading && (
                 <div
                     className={`mt-1 rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors
-          ${isEmailConnected ? "border-green-500/20 bg-green-500/[0.04]" : "border-white/[0.07] bg-white/[0.02]"}`}
+          ${
+              isEmailConnected
+                  ? "border-green-500/30 bg-green-500/[0.06] dark:border-green-500/20 dark:bg-green-500/[0.04]"
+                  : "border-[var(--border-subtle)] bg-[var(--surface-card)]"
+          }`}
                 >
                     <div
                         className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0
-            ${isEmailConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-white/[0.06]"}`}
+            ${isEmailConnected ? "bg-green-500/15 ring-1 ring-green-500/25" : "bg-[var(--surface-btn)]"}`}
                     >
-                        <Mail className={`size-3.5 ${isEmailConnected ? "text-green-400" : "text-white/30"}`} />
+                        <Mail className={`size-3.5 ${isEmailConnected ? "text-green-600 dark:text-green-400" : "text-[var(--text-muted)]"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-white/80">Email Alerts</div>
-                        <div className={`text-[11px] ${isEmailConnected ? "text-green-400/80" : "text-white/30"}`}>
+                        <div className="text-[12px] font-semibold text-[var(--text-primary)]">Email Alerts</div>
+                        <div className={`text-[11px] ${isEmailConnected ? "text-green-600 dark:text-green-400/80" : "text-[var(--text-muted)]"}`}>
                             {isEmailConnected ? `Connected — alerts sent to ${emailSubscription?.email}` : "Not connected"}
                         </div>
                     </div>
@@ -422,7 +430,7 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
                         className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150
               ${
                   isEmailConnected
-                      ? "text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.08]"
+                      ? "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-btn)] border border-[var(--border-subtle)]"
                       : "text-violet-600 dark:text-violet-300 bg-violet-500/15 border border-violet-500/25 hover:bg-violet-500/25"
               }`}
                     >

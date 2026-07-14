@@ -92,7 +92,7 @@ export const ChatWidget: React.FC = () => {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-gradient-to-r from-card to-card/80 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                            <Bot className="w-4 h-4 text-white" />
+                            <Bot className="w-4 h-4 !text-white" />
                             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-background" />
                         </div>
                         <div>
@@ -182,15 +182,15 @@ export const ChatWidget: React.FC = () => {
                     "bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600",
                     "shadow-xl shadow-violet-500/30",
                     "transition-all duration-300",
-                    "hover:scale-110 hover:shadow-violet-500/50 hover:shadow-2xl hover:text-white",
-                    "text-white active:scale-95",
+                    "hover:scale-110 hover:shadow-violet-500/50 hover:shadow-2xl hover:!text-white",
+                    "!text-white active:scale-95",
                     isOpen ? "rotate-180 scale-90 opacity-0 pointer-events-none absolute" : "rotate-0 scale-100 opacity-100"
                 )}
                 aria-expanded={isOpen}
                 aria-label={isOpen ? "Close chat assistant" : "Open chat assistant"}
             >
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 opacity-0 group-hover:opacity-100 blur-sm -z-10" />
-                <Bot className="!h-6 !w-6 text-white" />
+                <Bot className="!h-6 !w-6 !text-white" />
                 <PulseRing />
             </Button>
         </div>
