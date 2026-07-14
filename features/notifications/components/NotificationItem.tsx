@@ -29,7 +29,7 @@ function TokenLogo({ mint, logo, symbol, size = "size-7" }: { mint?: string; log
                 alt={symbol ?? ""}
                 width={28}
                 height={28}
-                className={`${size} rounded-full object-cover shrink-0 bg-white/[0.06]`}
+                className={`${size} rounded-full object-cover shrink-0 bg-[var(--surface-btn)]`}
                 onError={() => setIdx((i) => i + 1)}
                 unoptimized
             />
@@ -37,7 +37,7 @@ function TokenLogo({ mint, logo, symbol, size = "size-7" }: { mint?: string; log
     }
     return (
         <div
-            className={`${size} rounded-full bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[10px] font-bold text-white/50 shrink-0`}
+            className={`${size} rounded-full bg-[var(--surface-btn)] border border-[var(--border-subtle)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] shrink-0`}
         >
             {letter}
         </div>
@@ -55,7 +55,7 @@ const BADGE_CONFIG: Partial<Record<NotificationEventType, { label: string; color
 };
 
 function TypeBadge({ type }: { type: NotificationEventType }) {
-    const cfg = BADGE_CONFIG[type] ?? { label: type, color: "text-white/40 bg-white/[0.05] border-white/[0.1]" };
+    const cfg = BADGE_CONFIG[type] ?? { label: type, color: "text-[var(--text-muted)] bg-[var(--surface-btn)] border-[var(--border-subtle)]" };
     return <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-semibold shrink-0 ${cfg.color}`}>{cfg.label}</span>;
 }
 
@@ -81,8 +81,8 @@ function LogoArea({ notification }: { notification: Notification }) {
     }
 
     return (
-        <div className="size-7 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center shrink-0">
-            <span className="text-[10px] text-white/30">?</span>
+        <div className="size-7 rounded-full bg-[var(--surface-btn)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
+            <span className="text-[10px] text-[var(--text-muted)]">?</span>
         </div>
     );
 }
@@ -100,7 +100,7 @@ function CopyBtn({ value, display }: { value: string; display: string }) {
         <button
             onClick={handleCopy}
             title={value}
-            className="inline-flex items-center gap-1 text-[10px] font-mono text-white/30 hover:text-white/60 transition-colors"
+            className="inline-flex items-center gap-1 text-[10px] font-mono text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
         >
             {display}
             {copied ? <Check className="size-2.5 text-emerald-400" /> : <Copy className="size-2.5" />}
@@ -123,10 +123,10 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
         <div
             onClick={onClick}
             className={`group relative flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors duration-150
-                  hover:bg-white/[0.03]
+                  hover:bg-[var(--surface-btn)]
                   ${onDelete ? "pr-10" : ""}
-                  ${isUnread ? "bg-violet-500/[0.03]" : ""}
-                  ${!isLast ? "border-b border-white/[0.05]" : ""}`}
+                  ${isUnread ? "bg-violet-500/[0.05]" : ""}
+                  ${!isLast ? "border-b border-[var(--border-faint)]" : ""}`}
         >
             {/* Unread strip */}
             {isUnread && <div className="absolute left-0 top-3.5 bottom-3.5 w-[2px] rounded-r-full bg-violet-500/70" />}
@@ -142,7 +142,7 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
                     className="absolute right-3 top-1/2 -translate-y-1/2
                                opacity-0 group-hover:opacity-100
                                flex items-center justify-center w-6 h-6 rounded-md
-                               text-white/25 hover:text-red-400 hover:bg-red-500/10
+                               text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10
                                border border-transparent hover:border-red-500/20
                                transition-all duration-150"
                 >
@@ -160,12 +160,16 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
                 {/* Row 1: type badge + title + time */}
                 <div className="flex items-center gap-2 min-w-0">
                     <TypeBadge type={notification.type} />
-                    <p className={`text-[12px] font-semibold truncate flex-1 min-w-0 ${isUnread ? "text-white" : "text-white/70"}`}>{notification.title}</p>
-                    <span className="text-[10px] text-white/25 shrink-0 tabular-nums">{relativeTime(notification.createdAt)}</span>
+                    <p
+                        className={`text-[12px] font-semibold truncate flex-1 min-w-0 ${isUnread ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
+                    >
+                        {notification.title}
+                    </p>
+                    <span className="text-[10px] text-[var(--text-muted)] shrink-0 tabular-nums">{relativeTime(notification.createdAt)}</span>
                 </div>
 
                 {/* Row 2: message */}
-                <p className="text-[11px] text-white/40 mt-0.5 truncate">{String(notification?.message ?? "")}</p>
+                <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">{String(notification?.message ?? "")}</p>
 
                 {/* Row 3: wallet + solscan */}
                 {(meta.walletShort || meta.txUrl) && (
@@ -179,7 +183,7 @@ export function NotificationItem({ notification, onClick, onDelete, isLast }: No
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-[10px] text-white/25 hover:text-violet-400 transition-colors ml-auto"
+                                className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--prim-brand-light-accent)] dark:hover:text-violet-400 transition-colors ml-auto"
                             >
                                 Solscan <ExternalLink className="size-2.5" />
                             </a>

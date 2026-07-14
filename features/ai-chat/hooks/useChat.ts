@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useClusterStore from "@/stores/cluster.store";
-import { phantomWallet } from "@/lib/wallet";
 import { ChatSocketManager } from "../services/chat.socket.service";
 import { ChatMessageDto, ChatResponseDto, ChatPageContext } from "@/types/dto";
 import apiClient from "@/lib/network-requests/api-client";
@@ -45,6 +45,7 @@ interface ChatMessagesResponse {
 }
 
 export function useChat() {
+    const { publicKey: walletPublicKey } = useWallet();
     const [localMessages, setLocalMessages] = useState<ChatMessageDto[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -176,7 +177,7 @@ export function useChat() {
             message: text,
             sessionId: sessionIdRef.current,
             userId: user?.id,
-            walletAddress: phantomWallet.publicKey ?? undefined,
+            walletAddress: walletPublicKey?.toBase58() ?? undefined,
             pageContext: buildPageContext()
         });
     };

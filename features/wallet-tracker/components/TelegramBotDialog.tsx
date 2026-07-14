@@ -142,7 +142,7 @@ function IdleState({ onConnect, connecting }: { onConnect: () => void; connectin
                 onClick={onConnect}
                 disabled={connecting}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl
-                           bg-blue-500/15 border border-blue-500/25 text-blue-300
+                           bg-blue-500/15 border border-blue-500/25 text-blue-600 dark:text-blue-300
                            hover:bg-blue-500/25 hover:border-blue-500/40
                            disabled:opacity-50 disabled:cursor-not-allowed
                            text-[13px] font-semibold transition-all duration-150"
@@ -176,7 +176,7 @@ function PendingState({ token, expiresAt, onRefresh, refreshing }: { token: stri
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-2 rounded-xl
-                           bg-blue-500/10 border border-blue-500/20 text-blue-300
+                           bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-300
                            hover:bg-blue-500/20 hover:border-blue-500/35
                            text-[12px] font-medium transition-all duration-150"
             >
@@ -192,7 +192,7 @@ function PendingState({ token, expiresAt, onRefresh, refreshing }: { token: stri
             <button
                 onClick={onRefresh}
                 disabled={refreshing}
-                className="text-[11px] text-white/30 hover:text-white/60 transition-colors disabled:opacity-50 text-left"
+                className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50 text-left"
             >
                 Code expired? Generate a new one
             </button>
@@ -210,9 +210,9 @@ function VerifiedState({ verifiedAt, onDisconnect, disconnecting }: { verifiedAt
     return (
         <div className="flex flex-col gap-5">
             <div className="flex flex-col items-center gap-3 py-6 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
-                <CheckCircle2 className="size-10 text-emerald-400" />
+                <CheckCircle2 className="size-10 text-emerald-600 dark:text-emerald-400" />
                 <div className="text-center">
-                    <p className="text-[13px] font-semibold text-emerald-300">Telegram Connected</p>
+                    <p className="text-[13px] font-semibold text-emerald-600 dark:text-emerald-300">Telegram Connected</p>
                     <p className="text-[11px] text-white/30 mt-0.5">Connected on {date}</p>
                 </div>
             </div>
@@ -223,7 +223,7 @@ function VerifiedState({ verifiedAt, onDisconnect, disconnecting }: { verifiedAt
                 onClick={onDisconnect}
                 disabled={disconnecting}
                 className="flex items-center justify-center gap-2 w-full py-2 rounded-xl
-                           text-[12px] font-medium text-white/40 hover:text-red-400
+                           text-[12px] font-medium text-white/40 hover:text-red-500 dark:hover:text-red-400
                            hover:bg-red-500/10 border border-transparent hover:border-red-500/20
                            disabled:opacity-50 transition-all duration-150"
             >

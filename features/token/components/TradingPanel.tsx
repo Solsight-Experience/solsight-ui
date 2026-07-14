@@ -10,7 +10,7 @@ import type { TokenDetail } from "../types/token.types";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { copyToClipboard } from "../utils/token.utils";
 import { Check, ChevronDown, Copy, Loader2, AlertTriangle, Wallet } from "lucide-react";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
@@ -99,13 +99,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
-    const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useActionableWallet();
+    const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useLinkedWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
     const [routeModalOpen, setRouteModalOpen] = useState(false);
     const [copiedMint, setCopiedMint] = useState<string | null>(null);
     const [selectedBuyPayMint, setSelectedBuyPayMint] = useState<string>(COMMON_TOKENS.SOL.mint);
     const [selectedSellReceiveMint, setSelectedSellReceiveMint] = useState<string>(COMMON_TOKENS.SOL.mint);
+    const [selectedTradingWalletAddress, setSelectedTradingWalletAddress] = useState<string>("");
     const [swapState, setSwapState] = useState<{
         loading: boolean;
         error: string | null;
@@ -199,15 +200,34 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     }, [pendingSlippageAction, setSlippageBps, setPendingSlippageAction]);
 
     const { data: walletsData, isLoading: isWalletsLoading, refetch: refetchWallets } = useWallets();
+    const availableWallets = useMemo(() => walletsData?.wallets ?? [], [walletsData?.wallets]);
+
+    useEffect(() => {
+        if (!availableWallets.length) {
+            if (selectedTradingWalletAddress) {
+                setSelectedTradingWalletAddress("");
+            }
+            return;
+        }
+
+        const selectedWalletStillExists = availableWallets.some((wallet) => wallet.address.toLowerCase() === selectedTradingWalletAddress.toLowerCase());
+
+        if (!selectedWalletStillExists && selectedTradingWalletAddress) {
+            setSelectedTradingWalletAddress("");
+        }
+    }, [availableWallets, selectedTradingWalletAddress]);
+
     const selectedWalletAddress = useMemo(() => {
-        const wallets = walletsData?.wallets ?? [];
-        if (!wallets.length) return publicKey ?? "";
-        const connectedWallet = publicKey ? wallets.find((wallet) => wallet.address.toLowerCase() === publicKey.toLowerCase()) : null;
-        if (connectedWallet) return connectedWallet.address;
-        const defaultWallet = wallets.find((wallet) => wallet.is_default);
-        if (defaultWallet) return defaultWallet.address;
-        return publicKey ?? wallets[0].address;
-    }, [walletsData?.wallets, publicKey]);
+        const connectedWallet = publicKey ? availableWallets.find((wallet) => wallet.address.toLowerCase() === publicKey.toLowerCase()) : null;
+        const defaultWallet = availableWallets.find((wallet) => wallet.is_default);
+        const fallbackWalletAddress = connectedWallet?.address ?? defaultWallet?.address ?? availableWallets[0]?.address ?? publicKey ?? "";
+        return selectedTradingWalletAddress || fallbackWalletAddress;
+    }, [availableWallets, publicKey, selectedTradingWalletAddress]);
+
+    const selectedWalletMatchesSigner = useMemo(() => {
+        if (!publicKey || !selectedWalletAddress) return false;
+        return publicKey.toLowerCase() === selectedWalletAddress.toLowerCase();
+    }, [publicKey, selectedWalletAddress]);
 
     const {
         data: positionsData,
@@ -633,12 +653,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
+        if (!selectedWalletMatchesSigner) {
+            toast.error("Switch your extension to the selected wallet before signing this trade.");
+            return;
+        }
+
         if (!signTransaction) {
             toast.error("Connected wallet cannot sign transactions.");
             return;
         }
 
-        const walletPublicKey = publicKey;
+        const walletPublicKey = selectedWalletAddress || publicKey;
         if (!walletPublicKey) {
             toast.error("Wallet address is unavailable.");
             return;
@@ -689,12 +714,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             return;
         }
 
+        if (!selectedWalletMatchesSigner) {
+            toast.error("Switch your extension to the selected wallet before signing this trade.");
+            return;
+        }
+
         if (!signTransaction) {
             toast.error("Connected wallet cannot sign transactions.");
             return;
         }
 
-        const walletPublicKey = publicKey;
+        const walletPublicKey = selectedWalletAddress || publicKey;
         if (!walletPublicKey) {
             toast.error("Wallet address is unavailable.");
             return;
@@ -875,6 +905,96 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 >
                     Limit
                 </button>
+            </div>
+
+            <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-btn)]/80 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Signing wallet</div>
+                        <div className="mt-1 text-xs text-[var(--text-muted)]">Choose which linked wallet should sign the next trade.</div>
+                    </div>
+                    {selectedWallet && (
+                        <span
+                            className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${selectedWallet.is_default ? "border-violet-500/20 bg-violet-500/10 text-violet-500" : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-muted)]"}`}
+                        >
+                            {selectedWallet.is_default ? "Default" : "Linked"}
+                        </span>
+                    )}
+                </div>
+
+                {availableWallets.length > 0 ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2 text-left transition-colors hover:border-[var(--border-default)]"
+                            >
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <Avatar className="h-8 w-8 shrink-0">
+                                        {selectedWallet?.icon ? <AvatarImage src={selectedWallet.icon} alt={selectedWallet.name} /> : null}
+                                        <AvatarFallback>{selectedWallet?.name?.slice(0, 2).toUpperCase() ?? "--"}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0">
+                                        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                                            {selectedWallet?.name ?? "Select wallet"}
+                                        </div>
+                                        <div className="truncate font-mono text-[11px] text-[var(--text-muted)]">
+                                            {selectedWalletAddress
+                                                ? `${selectedWalletAddress.slice(0, 6)}…${selectedWalletAddress.slice(-4)}`
+                                                : "No wallet selected"}
+                                        </div>
+                                    </div>
+                                </div>
+                                <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="start"
+                            className="w-[min(24rem,calc(100vw-2rem))] border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-primary)]"
+                        >
+                            {availableWallets.map((wallet) => {
+                                const isSelected = wallet.address.toLowerCase() === selectedWalletAddress.toLowerCase();
+
+                                return (
+                                    <DropdownMenuItem
+                                        key={wallet.address}
+                                        onSelect={() => setSelectedTradingWalletAddress(wallet.address)}
+                                        className="flex items-center gap-3 px-2 py-2"
+                                    >
+                                        <Avatar className="h-8 w-8 shrink-0">
+                                            {wallet.icon ? <AvatarImage src={wallet.icon} alt={wallet.name} /> : null}
+                                            <AvatarFallback>{wallet.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate text-sm font-medium text-[var(--text-primary)]">{wallet.name}</span>
+                                                {wallet.is_default && (
+                                                    <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-500">
+                                                        Default
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="truncate text-xs text-[var(--text-muted)]">
+                                                {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
+                                            </div>
+                                        </div>
+                                        {isSelected && <Check className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
+                                    </DropdownMenuItem>
+                                );
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <div className="rounded-lg border border-dashed border-[var(--border-subtle)] px-3 py-2 text-sm text-[var(--text-muted)]">
+                        No linked wallets found.
+                    </div>
+                )}
+
+                {selectedWalletAddress && publicKey && !selectedWalletMatchesSigner && (
+                    <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+                        Switch your extension to the selected wallet before signing this trade.
+                    </div>
+                )}
             </div>
 
             <div className="mb-4 rounded-lg space-y-4">
@@ -1201,7 +1321,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
             </div>
 
             {(!connected || !isWalletLinkedToUser) && (
-                <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-btn)]/70 p-4">
+                <div className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-btn)] p-4">
                     <div className="flex items-start gap-3">
                         <div className="mt-0.5 rounded-full bg-cyan-500/10 p-2 text-cyan-500">
                             <Wallet className="h-4 w-4" />
@@ -1219,7 +1339,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                                 type="button"
                                 onClick={() => connectWallet()}
                                 disabled={isConnecting}
-                                className="mt-3 h-9 bg-cyan-600 px-4 text-sm font-semibold text-white hover:bg-cyan-700"
+                                className="mt-3 h-9 bg-cyan-600 px-4 text-sm font-semibold !text-white hover:bg-cyan-700"
                             >
                                 {isConnecting ? (
                                     <span className="inline-flex items-center gap-2">
@@ -1249,6 +1369,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                     swapState.loading ||
                     (orderType === "market" && quoteState.loading) ||
                     !!validation.error ||
+                    !selectedWalletMatchesSigner ||
                     (tradeMode === "buy" && selectableBuyPayTokenOptions.length === 0) ||
                     (tradeMode === "sell" && selectableSellReceiveTokenOptions.length === 0)
                 }

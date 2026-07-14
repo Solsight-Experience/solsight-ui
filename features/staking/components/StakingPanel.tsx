@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import React, { useCallback, useState } from "react";
 import { useTheme } from "next-themes";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { TrendingUp, Zap, Wallet, PlugZap, Layers, Landmark } from "lucide-react";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
-import { useSolBalance } from "../hooks/useDevnetSolBalance";
+import { TrendingUp, Zap, Wallet, PlugZap, Layers, Landmark, ExternalLink } from "lucide-react";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
+import { useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { StakeModal } from "./StakeModal";
 import { UnstakeModal } from "./UnstakeModal";
 import { NativeStakeModal } from "./NativeStakeModal";
@@ -32,8 +33,8 @@ export function StakingPanel() {
         connectWallet,
         signTransaction,
         ensureWalletReadyForUserAction
-    } = useActionableWallet();
-    const { data: solBalanceData, refetch: refetchBalance } = useSolBalance(actionablePublicKey ?? undefined);
+    } = useLinkedWallet();
+    const { data: walletsData, refetch: refetchWallets } = useWallets();
     const publishHistoryRefresh = useStakeHistoryRefreshStore((state) => state.publishRefresh);
 
     const [mode, setMode] = useState<StakingViewMode>("liquid");
@@ -41,7 +42,10 @@ export function StakingPanel() {
     const [unstakeOpen, setUnstakeOpen] = useState(false);
     const [nativePage, setNativePage] = useState(1);
 
-    const solBalance = solBalanceData ?? 0;
+    // Sourced from the backend (same cluster-aware /users/me/wallets used by Portfolio) instead of a
+    // direct client-side RPC call, so it always reflects the app's Mainnet/Devnet toggle rather than
+    // whatever cluster got baked into the frontend bundle at build time.
+    const solBalance = walletsData?.wallets.find((w) => w.address === actionablePublicKey)?.balance_sol ?? 0;
 
     const { isReady: clientReady, error: programError } = useIFProgram(isReadyForUserAction, actionablePublicKey);
     const {
@@ -54,10 +58,10 @@ export function StakingPanel() {
         (payload?: StakeActionSuccessPayload) => {
             setNativePage(1);
             void refetchPosition();
-            void refetchBalance();
+            void refetchWallets();
             publishHistoryRefresh(actionablePublicKey, payload?.signature);
         },
-        [actionablePublicKey, publishHistoryRefresh, refetchBalance, refetchPosition]
+        [actionablePublicKey, publishHistoryRefresh, refetchWallets, refetchPosition]
     );
 
     const liquidPosition = position?.liquid ?? null;
@@ -180,6 +184,15 @@ export function StakingPanel() {
                                     Your SOL is swapped into <strong className="text-indigo-700 dark:text-indigo-300">jitoSOL</strong>, held in your own wallet.
                                     No lockup — unstake back to SOL any time.
                                 </p>
+                                <Link
+                                    href="https://www.jito.network/docs/jitosol/jitosol-liquid-staking/liquid-staking-basics/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
+                                >
+                                    Jito Documentation
+                                    <ExternalLink className="h-3 w-3" />
+                                </Link>
                             </div>
                         </div>
 
@@ -229,6 +242,15 @@ export function StakingPanel() {
                                     Your SOL is delegated to an approved validator via a stake account only you control. Subject to Solana&apos;s normal
                                     epoch-based (de)activation wait.
                                 </p>
+                                <Link
+                                    href="https://solana.com/staking"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
+                                >
+                                    Solana Native Staking Documentation
+                                    <ExternalLink className="h-3 w-3" />
+                                </Link>
                             </div>
                         </div>
 
