@@ -7,7 +7,7 @@ import { useWallet } from "./useWallet";
 import { useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { useWalletAuth } from "@/features/portfolio/hooks/useWalletAuth";
 
-export function useActionableWallet() {
+export function useLinkedWallet() {
     const wallet = useWallet();
     const { data: walletsData } = useWallets();
     const { handleWalletConnect } = useWalletAuth();
@@ -21,10 +21,7 @@ export function useActionableWallet() {
     });
 
     const isWalletLinkedToUser = useMemo(() => {
-        if (!wallet.publicKey) {
-            return false;
-        }
-
+        if (!wallet.publicKey) return false;
         return (walletsData?.wallets ?? []).some((userWallet) => userWallet.address.toLowerCase() === wallet.publicKey!.toLowerCase());
     }, [wallet.publicKey, walletsData?.wallets]);
 

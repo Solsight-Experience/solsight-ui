@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Coins, AlertCircle, CheckCircle2 } from "lucide-react";
 import useClusterStore from "@/stores/cluster.store";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { usePackages, useQuota } from "../hooks/useQuota";
 import { usePurchaseCredits } from "../hooks/usePurchaseCredits";
 import type { PaymentPackage } from "../types";
@@ -35,7 +35,7 @@ export function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsModalProp
     const isDark = resolvedTheme === "dark";
     const cluster = useClusterStore((s) => s.cluster);
 
-    const { connected, publicKey, signTransaction, ensureWalletReadyForUserAction } = useActionableWallet();
+    const { connected, publicKey, signTransaction, ensureWalletReadyForUserAction } = useLinkedWallet();
     const { data: quota } = useQuota();
     const freeRemaining = quota ? Math.max(quota.freeLimit - quota.freeUsed, 0) : null;
     const { data: packages, isLoading: packagesLoading } = usePackages();

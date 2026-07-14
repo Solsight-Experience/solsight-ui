@@ -16,7 +16,7 @@ const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelec
         <div className="relative w-16 h-16 sm:w-20 sm:h-20">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 opacity-20 blur-xl animate-pulse" />
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                <Bot className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                <Bot className="w-7 h-7 sm:w-9 sm:h-9 !text-white" />
             </div>
         </div>
 
@@ -61,7 +61,7 @@ const WelcomeScreen: React.FC<{ onSelect: (text: string) => void }> = ({ onSelec
 const TypingIndicator: React.FC<{ label?: string }> = ({ label }) => (
     <div className="flex items-start gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-            <Bot className="w-3.5 h-3.5 text-white" />
+            <Bot className="w-3.5 h-3.5 !text-white" />
         </div>
 
         <div className="bg-card border border-border/60 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
@@ -279,7 +279,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             <Button
                                 size="sm"
                                 onClick={onBuyCredits}
-                                className="shrink-0 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-[11px] font-semibold hover:brightness-110"
+                                className="shrink-0 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 !text-white text-[11px] font-semibold hover:brightness-110"
                             >
                                 Buy credits
                             </Button>
@@ -335,7 +335,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         className={cn(
                             "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 border-0",
                             inputValue.trim() && !isTyping
-                                ? "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
+                                ? "bg-gradient-to-br from-violet-500 to-indigo-600 !text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
                                 : "bg-muted-foreground/15 text-muted-foreground cursor-not-allowed"
                         )}
                         aria-label="Send message"

@@ -10,7 +10,7 @@ import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COMMON_TOKENS } from "@/lib/constants";
 import { DecimalFormatter } from "@/lib/number-formatters";
-import { useActionableWallet } from "@/features/wallets/hooks/useActionableWallet";
+import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
 import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
@@ -26,7 +26,7 @@ interface QuickBuyReviewModalProps {
 const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", maximumFractionDigits: 0 });
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
-    const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useActionableWallet();
+    const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useLinkedWallet();
     const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
     const [slippageBps, setSlippageBps] = useState(defaultSlippageBps);
     const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(defaultSlippageBps);
