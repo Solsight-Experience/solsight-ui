@@ -12,9 +12,7 @@ import { waitForWalletSelection } from "../lib/extension-wallet";
 
 export function useWallet() {
     const queryClient = useQueryClient();
-    const { extensionWallet, wallet, wallets, select, connect, disconnect, connecting } =
-         
-        useConnectedWallet();
+    const { extensionWallet, wallet, wallets, select, connect, disconnect, connecting } = useConnectedWallet();
 
     const connectWallet = useMutation({
         mutationFn: async () => {
