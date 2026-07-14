@@ -11,6 +11,11 @@ export default function WalletConnectButtons() {
             name: "Phantom",
             icon: "/wallet_logo/phantom.svg",
             label: "Connect Phantom"
+        },
+        {
+            name: "Solflare",
+            icon: "/wallet_logo/solflare.svg",
+            label: "Connect Solflare"
         }
         //// Metamask is having issue with invalid origin
         // {

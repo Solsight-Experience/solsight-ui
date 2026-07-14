@@ -1,0 +1,12 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="96" height="96" rx="20" fill="#1A1A1A"/>
+<path d="M48 20C48 20 34 34 34 50C34 58.837 40.268 66 48 66C55.732 66 62 58.837 62 50C62 34 48 20 48 20Z" fill="url(#solflare_gradient)"/>
+<path d="M31 62C31 62 24 70 24 76H72C72 70 65 62 65 62" stroke="url(#solflare_gradient)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<defs>
+<linearGradient id="solflare_gradient" x1="30" y1="20" x2="66" y2="76" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFC10A"/>
+<stop offset="0.5" stop-color="#FE8F1B"/>
+<stop offset="1" stop-color="#FC5D2C"/>
+</linearGradient>
+</defs>
+</svg>
