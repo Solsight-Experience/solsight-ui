@@ -12,7 +12,8 @@ interface TokenTabsProps {
 }
 
 export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
-    const { currentTradeTab, setCurrentTradeTab } = useTokenUIStore();
+    const currentTradeTab = useTokenUIStore((s) => s.currentTradeTab);
+    const setCurrentTradeTab = useTokenUIStore((s) => s.setCurrentTradeTab);
 
     return (
         <div className="flex flex-col w-full h-full">
@@ -26,11 +27,11 @@ export const TokenTabs: React.FC<TokenTabsProps> = ({ tokenAddress }) => {
                 </div>
 
                 <div className="flex-1 overflow-hidden p-0 flex flex-col">
-                    <TabsContent forceMount value="trades" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent value="trades" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <TradesTable tokenAddress={tokenAddress} />
                     </TabsContent>
 
-                    <TabsContent forceMount value="top_traders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
+                    <TabsContent value="top_traders" className="flex-1 m-0 h-full data-[state=inactive]:hidden flex flex-col pt-2">
                         <TopTradersTable tokenAddress={tokenAddress} />
                     </TabsContent>
 
