@@ -4,7 +4,7 @@ import type { HoldersResponse, SwapPreviewRequest, TokenDetail, TopTrader, Trade
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys } from "@/lib/react-query-keys";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartInterval } from "@/lib/constants";
 import { generateCandleData } from "../utils/token.utils";
 import { normalizeChartPoints } from "../utils/chart.utils";
@@ -88,6 +88,13 @@ export function useTrades(
     });
     const newTrades = useTradeStream(address, params);
     const [data, setData] = useState<{ trades: Trade[] }>({ trades: [] });
+    // tx_hashes added in the most recent flush — used by the table to animate only new rows
+    const [newHashes, setNewHashes] = useState<Set<string>>(() => new Set());
+
+    // Buffer + throttle: high-volume tokens emit trades far faster than we should re-render.
+    // We coalesce incoming trades and flush to state at most once per second.
+    const bufferRef = useRef<Trade[]>([]);
+    const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (initial.data) setData(initial.data);
@@ -96,16 +103,35 @@ export function useTrades(
     useEffect(() => {
         if (!newTrades || newTrades.length === 0) return;
 
-        setData((prev) => {
-            const existingHashes = new Set(prev.trades.map((t) => t.tx_hash));
-            const uniqueNew = newTrades.filter((t) => !existingHashes.has(t.tx_hash));
-            if (uniqueNew.length === 0) return prev;
-            const merged = [...uniqueNew, ...prev.trades].sort((a, b) => b.timestamp - a.timestamp);
-            return { trades: merged };
-        });
+        bufferRef.current.push(...newTrades);
+        if (flushTimerRef.current) return; // a flush is already scheduled
+
+        flushTimerRef.current = setTimeout(() => {
+            flushTimerRef.current = null;
+            const incoming = bufferRef.current;
+            bufferRef.current = [];
+            if (incoming.length === 0) return;
+
+            setData((prev) => {
+                const existingHashes = new Set(prev.trades.map((t) => t.tx_hash));
+                const uniqueNew = incoming.filter((t) => !existingHashes.has(t.tx_hash));
+                if (uniqueNew.length === 0) return prev;
+                setNewHashes(new Set(uniqueNew.map((t) => t.tx_hash)));
+                const merged = [...uniqueNew, ...prev.trades].sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+                return { trades: merged };
+            });
+        }, 1000);
     }, [newTrades]);
 
-    return { ...initial, data };
+    // Flush any pending timer on unmount
+    useEffect(
+        () => () => {
+            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+        },
+        []
+    );
+
+    return { ...initial, data, newHashes };
 }
 
 export function useTopTraders(address: string, timeFrame: "24h" | "7d" | "30d" | "all" = "24h") {

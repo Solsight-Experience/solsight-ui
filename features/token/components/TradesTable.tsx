@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { ExternalLink } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import useClusterStore, { type Cluster } from "@/stores/cluster.store";
@@ -42,7 +42,7 @@ const tradeRowVariants: Variants = {
     }
 };
 
-const TradeRow: React.FC<Trade & { cluster: Cluster; index: number; reduceMotion: boolean }> = ({
+const TradeRow = memo<Trade & { cluster: Cluster; index: number; reduceMotion: boolean; isNew: boolean }>(function TradeRow({
     timestamp,
     type,
     amount_token,
@@ -52,17 +52,20 @@ const TradeRow: React.FC<Trade & { cluster: Cluster; index: number; reduceMotion
     tx_url,
     cluster,
     index,
-    reduceMotion
-}) => {
+    reduceMotion,
+    isNew
+}) {
     const tradeUsdValue = calculateTradeUsdValue(amount_token, price_usd);
+    // Only freshly-arrived rows animate; existing rows render static so a new tick
+    // doesn't re-animate (or re-measure layout for) the whole table.
+    const animate = isNew && !reduceMotion;
 
     return (
         <motion.tr
-            layout={reduceMotion ? false : "position"}
             variants={tradeRowVariants}
             custom={index}
-            initial={reduceMotion ? false : "hidden"}
-            animate={reduceMotion ? undefined : "visible"}
+            initial={animate ? "hidden" : false}
+            animate={animate ? "visible" : undefined}
             exit={reduceMotion ? undefined : "exit"}
             className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-btn)] transition-colors"
         >
@@ -94,12 +97,12 @@ const TradeRow: React.FC<Trade & { cluster: Cluster; index: number; reduceMotion
             </td>
         </motion.tr>
     );
-};
+});
 
 export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
     const cluster = useClusterStore((state) => state.cluster);
     const shouldReduceMotion = useReducedMotion() ?? false;
-    const { data: tradesData, isLoading } = useTrades(tokenAddress, { limit: 50 });
+    const { data: tradesData, isLoading, newHashes } = useTrades(tokenAddress, { limit: 50 });
 
     if (isLoading) {
         return (
@@ -130,9 +133,16 @@ export const TradesTable: React.FC<TradesTableProps> = ({ tokenAddress }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    <AnimatePresence initial={!shouldReduceMotion}>
+                    <AnimatePresence initial={false}>
                         {tradesData.trades.map((trade, index) => (
-                            <TradeRow key={trade.tx_hash} cluster={cluster} index={index} reduceMotion={shouldReduceMotion} {...trade} />
+                            <TradeRow
+                                key={trade.tx_hash}
+                                cluster={cluster}
+                                index={index}
+                                reduceMotion={shouldReduceMotion}
+                                isNew={newHashes.has(trade.tx_hash)}
+                                {...trade}
+                            />
                         ))}
                     </AnimatePresence>
                 </tbody>
