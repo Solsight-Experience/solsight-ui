@@ -1,7 +1,17 @@
 import { io, Socket } from "socket.io-client";
 import useClusterStore from "@/stores/cluster.store";
+import apiClient from "@/lib/network-requests/api-client";
 
 export type EventHandler<T = unknown> = { bivarianceHack(payload: T): void }["bivarianceHack"];
+
+async function fetchSocketToken(): Promise<string | undefined> {
+    try {
+        const { token } = await apiClient.get<{ token: string }>("/auth/socket-token");
+        return token;
+    } catch {
+        return undefined;
+    }
+}
 
 export class SocketManager {
     protected socket: Socket;
@@ -10,23 +20,20 @@ export class SocketManager {
     protected constructor() {
         const opts: Record<string, unknown> = {
             transports: ["websocket", "polling"],
-            withCredentials: true,
-            autoConnect: false
+            autoConnect: false,
+            auth: (cb: (data: Record<string, unknown>) => void) => {
+                const cluster = useClusterStore.getState().cluster;
+                void fetchSocketToken().then((token) => cb({ token, cluster }));
+            }
         };
-
-        const cluster = useClusterStore.getState().cluster;
-        if (cluster) {
-            opts.auth = { cluster };
-        }
 
         this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, opts);
 
         // subscribe to cluster changes so we can re-handshake
-        let prevCluster = cluster;
+        let prevCluster = useClusterStore.getState().cluster;
         useClusterStore.subscribe((state) => {
             if (state.cluster === prevCluster) return;
             prevCluster = state.cluster;
-            this.socket.auth = { cluster: prevCluster };
             this.disconnect();
             this.connect();
         });
