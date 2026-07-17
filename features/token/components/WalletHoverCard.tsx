@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 interface WalletHoverCardProps {
     holder: Holder;
     children: React.ReactNode;
+    tokenAddress: string;
     tokenSymbol?: string;
 }
 
@@ -25,7 +26,7 @@ const formatHolderDuration = (firstTxTime: number): string => {
     return "<1m";
 };
 
-export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, children, tokenSymbol }) => {
+export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, children, tokenAddress, tokenSymbol }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isPnlPanelOpen, setIsPnlPanelOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -199,7 +200,7 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
             </Popover>
 
             {/* PnL Panel Dialog */}
-            <WalletPnlPanel holder={holder} tokenSymbol={tokenSymbol} open={isPnlPanelOpen} onOpenChange={setIsPnlPanelOpen} />
+            <WalletPnlPanel holder={holder} tokenAddress={tokenAddress} tokenSymbol={tokenSymbol} open={isPnlPanelOpen} onOpenChange={setIsPnlPanelOpen} />
         </div>
     );
 };

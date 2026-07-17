@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatNumber, formatTimeAgo } from "../utils/token.utils";
 import type { Holder } from "../types/token.types";
 import { PnlMiniChart } from "./PnlMiniChart";
-import type { UTCTimestamp } from "lightweight-charts";
+import { useHolderPnlChart } from "../hooks/token.hooks";
 import { numberFormatter } from "@/lib/formatters";
 
 interface WalletPnlPanelProps {
     holder: Holder;
+    tokenAddress: string;
     tokenSymbol?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -33,7 +34,7 @@ const formatHolderDuration = (firstTxTime: number): string => {
     return "<1m";
 };
 
-export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSymbol = "TOKEN", open, onOpenChange }) => {
+export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAddress, tokenSymbol = "TOKEN", open, onOpenChange }) => {
     const [activeTab, setActiveTab] = useState<TabType>("positions");
     const [timePeriod, setTimePeriod] = useState<TimePeriod>("30D");
     const [copied, setCopied] = useState(false);
@@ -53,65 +54,8 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
     const costBasis = holder.total_bought || 0;
     const roi = costBasis > 0 ? (totalPnl / costBasis) * 100 : 0;
 
-    // Generate PnL chart data based on holder's trading activity
-    // This simulates cumulative PnL over time - in production, this would come from API
-    const pnlChartData = useMemo(() => {
-        const now = Math.floor(Date.now() / 1000);
-        const daySeconds = 86400;
-
-        // Determine number of data points based on time period
-        let days: number;
-        switch (timePeriod) {
-            case "1D":
-                days = 1;
-                break;
-            case "7D":
-                days = 7;
-                break;
-            case "30D":
-                days = 30;
-                break;
-            case "ALL":
-                days = 90;
-                break;
-            default:
-                days = 30;
-        }
-
-        // If no trading data, return empty
-        if (totalTxns === 0) return [];
-
-        const data: { time: UTCTimestamp; value: number }[] = [];
-        const pointsPerDay = timePeriod === "1D" ? 24 : 1; // hourly for 1D, daily otherwise
-        const totalPoints = days * pointsPerDay;
-        const intervalSeconds = (days * daySeconds) / totalPoints;
-
-        // Scale to show realistic progression
-        let cumulativePnl = 0;
-
-        for (let i = totalPoints; i >= 0; i--) {
-            const time = (now - i * intervalSeconds) as UTCTimestamp;
-
-            // Simulate gradual PnL accumulation with some variance
-            const progress = (totalPoints - i) / totalPoints;
-            const basePnl = totalPnl * progress;
-            // Add slight variance for more realistic chart
-            const variance = (Math.sin(i * 0.5) * 0.1 + Math.random() * 0.05 - 0.025) * Math.abs(totalPnl);
-            cumulativePnl = basePnl + variance;
-
-            data.push({
-                time,
-                value: cumulativePnl
-            });
-        }
-
-        // Ensure last point matches actual total PnL
-        if (data.length > 0) {
-            data[data.length - 1].value = totalPnl;
-        }
-
-        return data;
-    }, [totalPnl, totalTxns, timePeriod]);
+    // Real per-holder PnL time series (realized + unrealized) from the API.
+    const { data: pnlChartData, isLoading: isPnlChartLoading } = useHolderPnlChart(tokenAddress, holder.address, timePeriod);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -230,7 +174,7 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenSym
                             ))}
                         </div>
                     </div>
-                    <PnlMiniChart data={pnlChartData} height={120} />
+                    <PnlMiniChart data={pnlChartData} height={120} isLoading={isPnlChartLoading} />
                 </div>
 
                 {/* Performance Stats */}

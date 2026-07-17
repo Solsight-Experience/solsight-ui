@@ -6,6 +6,7 @@ import type {
     TradesResponse,
     TopTradersResponse,
     HoldersResponse,
+    HolderPnlChartResponse,
     SwapPreviewRequest,
     SwapPreviewResponse,
     FavoriteToken
@@ -71,6 +72,21 @@ export const tokenApi = {
         }
     ): Promise<HoldersResponse> => {
         const response = await apiClient.get<HoldersResponse>(TOKEN_ENDPOINTS.TOKEN_HOLDERS(address), {
+            params
+        });
+        return response;
+    },
+
+    // Get a single holder's realized+unrealized PnL over time for this token
+    getHolderPnlChart: async (
+        address: string,
+        wallet: string,
+        params?: {
+            time_frame?: string;
+            interval?: string;
+        }
+    ): Promise<HolderPnlChartResponse> => {
+        const response = await apiClient.get<HolderPnlChartResponse>(TOKEN_ENDPOINTS.TOKEN_HOLDER_PNL_CHART(address, wallet), {
             params
         });
         return response;

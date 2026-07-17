@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useMemo } from "react";
 import { createChart, AreaSeries, UTCTimestamp } from "lightweight-charts";
 import { pnlChartOptions, getPnlSeriesOptions } from "@/lib/chart-config";
 
-interface PnlDataPoint {
+export interface PnlDataPoint {
     time: UTCTimestamp;
     value: number;
 }
@@ -138,27 +138,4 @@ export const PnlMiniChart: React.FC<PnlMiniChartProps> = ({ data, height = 120, 
     }
 
     return <div ref={containerRef} className="w-full bg-[#1a1a2e] rounded-lg overflow-hidden" style={{ height }} />;
-};
-
-// Helper to generate mock PnL data for testing
-export const generateMockPnlData = (days: number = 30): PnlDataPoint[] => {
-    const data: PnlDataPoint[] = [];
-    const now = Math.floor(Date.now() / 1000);
-    const daySeconds = 86400;
-
-    let cumulativePnl = 0;
-
-    for (let i = days; i >= 0; i--) {
-        const time = (now - i * daySeconds) as UTCTimestamp;
-        // Random daily PnL between -50 and +100
-        const dailyPnl = (Math.random() - 0.4) * 150;
-        cumulativePnl += dailyPnl;
-
-        data.push({
-            time,
-            value: cumulativePnl
-        });
-    }
-
-    return data;
 };

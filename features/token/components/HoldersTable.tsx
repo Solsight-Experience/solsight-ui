@@ -157,9 +157,10 @@ const HoldersSummary: React.FC<{
     );
 };
 
-const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string; columns: Record<string, boolean> }> = ({
+const HolderRow: React.FC<{ holder: Holder; rank: number; tokenAddress: string; tokenSymbol?: string; columns: Record<string, boolean> }> = ({
     holder,
     rank,
+    tokenAddress,
     tokenSymbol,
     columns
 }) => {
@@ -195,7 +196,7 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenSymbol?: string; 
 
             {/* Wallet Column */}
             <td className="py-2.5 px-2">
-                <WalletHoverCard holder={holder} tokenSymbol={tokenSymbol}>
+                <WalletHoverCard holder={holder} tokenAddress={tokenAddress} tokenSymbol={tokenSymbol}>
                     <div className="flex items-center gap-2 cursor-pointer">
                         {/* Action icons */}
                         <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100">
@@ -381,6 +382,7 @@ export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenS
                                 key={holder.address}
                                 holder={holder}
                                 rank={(currentPage - 1) * itemsPerPage + index + 1}
+                                tokenAddress={tokenAddress}
                                 tokenSymbol={tokenSymbol}
                                 columns={holdersTableColumns}
                             />

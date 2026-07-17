@@ -170,6 +170,18 @@ export interface HoldersResponse {
     };
 }
 
+export interface HolderPnlChartPoint {
+    timestamp: number;
+    realized_pnl: number;
+    unrealized_pnl: number;
+    total_pnl: number;
+    balance_usd: number;
+}
+
+export interface HolderPnlChartResponse {
+    chart_data: HolderPnlChartPoint[];
+}
+
 // Swap Types
 export interface SwapPreviewRequest {
     amount_in: number;
