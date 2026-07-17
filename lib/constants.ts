@@ -119,6 +119,7 @@ export const TOKEN_ENDPOINTS = {
     TOKEN_CHART: (address: string) => `/tokens/${address}/chart`,
     TOKEN_TRADES: (address: string) => `/tokens/${address}/trades`,
     TOKEN_HOLDERS: (address: string) => `/tokens/${address}/holders`,
+    TOKEN_HOLDER_PNL_CHART: (address: string, wallet: string) => `/tokens/${address}/holders/${wallet}/pnl-chart`,
     TOKEN_TOP_TRADERS: (address: string) => `/tokens/${address}/top-traders`,
 
     // Token Actions

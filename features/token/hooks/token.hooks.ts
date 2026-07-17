@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tokenApi } from "../services/token.services";
 import type { HoldersResponse, SwapPreviewRequest, TokenDetail, TopTrader, Trade, FavoriteToken } from "../types/token.types";
+import type { UTCTimestamp } from "lightweight-charts";
+import type { PnlDataPoint } from "../components/PnlMiniChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys } from "@/lib/react-query-keys";
 import { useChartDataStream, useHoldersStream, useTokenDetailStream, useTopTradersStream, useTradeStream } from "./token.socket.hooks";
@@ -16,7 +18,8 @@ export const tokenKeys = {
     chart: (address: string, interval: string) => [...tokenKeys.all, "chart", address, interval] as const,
     trades: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "trades", address, params] as const,
     topTraders: (address: string, timeFrame: string) => [...tokenKeys.all, "top-traders", address, timeFrame] as const,
-    holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const
+    holders: (address: string, params?: Record<string, unknown>) => [...tokenKeys.all, "holders", address, params] as const,
+    holderPnl: (address: string, wallet: string, timeFrame: string) => [...tokenKeys.all, "holder-pnl", address, wallet, timeFrame] as const
 };
 
 // Hooks
@@ -212,6 +215,27 @@ export function useHolders(
     }, [holderUpdate, params?.limit]);
 
     return { ...initial, data };
+}
+
+// Per-holder realized+unrealized PnL over time for this token.
+// Maps the API series to PnlMiniChart's { time, value } points using total_pnl.
+export function useHolderPnlChart(address: string, wallet: string, timeFrame: string) {
+    const query = useQuery({
+        queryKey: tokenKeys.holderPnl(address, wallet, timeFrame),
+        queryFn: () => tokenApi.getHolderPnlChart(address, wallet, { time_frame: timeFrame }),
+        enabled: !!address && !!wallet,
+        staleTime: 60000 // 1 minute
+    });
+
+    const data = useMemo<PnlDataPoint[]>(() => {
+        if (!query.data?.chart_data) return [];
+        return query.data.chart_data.map((point) => ({
+            time: Math.floor(point.timestamp / 1000) as UTCTimestamp,
+            value: point.total_pnl
+        }));
+    }, [query.data]);
+
+    return { data, isLoading: query.isLoading };
 }
 
 // Mutations
