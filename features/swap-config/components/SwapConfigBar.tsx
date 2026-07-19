@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { SWAP_CONFIG_ITEMS, gaslessItem, priorityFeeItem } from "../items";
 import type { SwapConfigItem } from "../core/swap-config-item";
 import type { SwapConfigSurfaceProps } from "./types";
+import { Button } from "@/components/ui/button";
 
 interface SwapConfigBarProps extends SwapConfigSurfaceProps {
     open: boolean;
@@ -62,15 +63,16 @@ export const SwapConfigBar: React.FC<SwapConfigBarProps> = ({ ctx, states, open,
                 ))}
             </div>
             <div className="flex-1" />
-            <button
+            <Button
+                variant="ghost"
                 type="button"
                 onClick={onToggleOpen}
                 aria-expanded={open}
                 aria-label={open ? "Collapse swap config" : "Expand swap config"}
-                className="p-1 rounded-md hover:bg-zinc-800 cursor-pointer"
+                className="p-1 rounded-md cursor-pointer"
             >
                 <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-            </button>
+            </Button>
         </div>
     );
 };
