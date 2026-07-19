@@ -66,7 +66,7 @@ export const WalletHoverCard: React.FC<WalletHoverCardProps> = ({ holder, childr
                     onMouseEnter={() => setIsOpen(true)}
                     onMouseLeave={() => setIsOpen(false)}
                 >
-                    <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-xl p-3 min-w-[280px] animate-in fade-in-0 zoom-in-95 duration-100">
+                    <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-xl p-3 min-w-70 animate-in fade-in-0 zoom-in-95 duration-100">
                         {/* Header with wallet address */}
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
                             <div className="flex items-center gap-2">

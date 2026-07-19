@@ -7,6 +7,8 @@ import type { Holder } from "../types/token.types";
 import { PnlMiniChart } from "./PnlMiniChart";
 import { useHolderPnlChart } from "../hooks/token.hooks";
 import { numberFormatter } from "@/lib/formatters";
+import { Button } from "@/components/ui/button";
+import useClusterStore from "@/stores/cluster.store";
 
 interface WalletPnlPanelProps {
     holder: Holder;
@@ -39,6 +41,8 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
     const [timePeriod, setTimePeriod] = useState<TimePeriod>("30D");
     const [copied, setCopied] = useState(false);
 
+    const selectedCluster = useClusterStore.getState().cluster;
+
     const handleCopy = async () => {
         await navigator.clipboard.writeText(holder.address);
         setCopied(true);
@@ -59,13 +63,13 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] bg-[#0d0d1a] border-gray-800 p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-150 bg-[#0d0d1a] border-gray-800 p-2 overflow-hidden">
                 {/* Header */}
-                <DialogHeader className="p-4 pb-0">
+                <DialogHeader className="p-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             {/* Avatar placeholder */}
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
                                 {holder.name?.[0]?.toUpperCase() || holder.address.slice(0, 2).toUpperCase()}
                             </div>
                             <div>
@@ -92,9 +96,12 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => window.open(`https://solscan.io/account/${holder.address}`, "_blank")}
-                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                            <Button
+                                variant="ghost"
+                                onClick={() =>
+                                    window.open(`https://solscan.io/account/${holder.address}${selectedCluster === "devnet" && "?cluster=devnet"}`, "_blank")
+                                }
+                                className="p-2 text-gray-400 hover:text-white hover:bg-purple-300/30 rounded-lg transition-colors"
                                 title="View on Solscan"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,13 +112,13 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                                     />
                                 </svg>
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </DialogHeader>
 
                 {/* Balance Section */}
-                <div className="p-4 border-b border-gray-800">
+                <div className="p-2 py-4 border-b border-gray-800/30">
                     <div className="grid grid-cols-2 gap-4">
                         {/* Left: Balance Info */}
                         <div className="space-y-3">
@@ -155,22 +162,23 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                 </div>
 
                 {/* PnL Chart */}
-                <div className="p-4 border-b border-gray-800">
+                <div className="p-4 border-b border-gray-800/30">
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-semibold text-white">PnL Over Time</h3>
                         <div className="flex gap-1">
                             {(["1D", "7D", "30D", "ALL"] as TimePeriod[]).map((period) => (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={period}
                                     onClick={() => setTimePeriod(period)}
                                     className={`px-2 py-1 text-xs rounded transition-colors ${
                                         timePeriod === period
-                                            ? "bg-purple-500/30 text-purple-300 border border-purple-500/50"
-                                            : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                                            ? "bg-purple-500/30 border border-purple-500/50"
+                                            : "text-gray-400 hover:text-white hover:bg-purple-400/30"
                                     }`}
                                 >
                                     {period}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
@@ -178,7 +186,7 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                 </div>
 
                 {/* Performance Stats */}
-                <div className="p-4 border-b border-gray-800">
+                <div className="p-4 border-b border-gray-800/30">
                     <h3 className="text-sm font-semibold text-white mb-3">Performance</h3>
                     <div className="grid grid-cols-4 gap-3">
                         <div className="bg-[#1a1a2e] rounded-lg p-3 text-center">
@@ -207,7 +215,7 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                 </div>
 
                 {/* Tabs */}
-                <div className="border-b border-gray-800">
+                <div className="border-b border-gray-800/30">
                     <div className="flex">
                         {[
                             { id: "positions" as TabType, label: "Active Position" },
@@ -228,14 +236,14 @@ export const WalletPnlPanel: React.FC<WalletPnlPanelProps> = ({ holder, tokenAdd
                 </div>
 
                 {/* Tab Content */}
-                <div className="p-4 max-h-[200px] overflow-y-auto">
+                <div className="p-4 max-h-50 overflow-y-auto">
                     {activeTab === "positions" && (
                         <div className="space-y-2">
                             {/* Current position for this token */}
                             <div className="bg-[#1a1a2e] rounded-lg p-3">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500"></div>
+                                        <div className="w-6 h-6 rounded-full bg-linear-to-br from-orange-500 to-yellow-500"></div>
                                         <span className="font-medium text-white">{tokenSymbol}</span>
                                     </div>
                                     <span className={`text-sm font-semibold ${totalPnl >= 0 ? "text-green-400" : "text-red-400"}`}>

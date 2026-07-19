@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useHolders } from "../hooks/token.hooks";
+import { useHolders, useTokenDetail } from "../hooks/token.hooks";
 import { formatTimeAgo } from "../utils/token.utils";
 import { currencyFormatter, compactFormatter } from "@/lib/formatters";
 import type { Holder } from "../types/token.types";
@@ -323,11 +323,12 @@ const HolderRow: React.FC<{ holder: Holder; rank: number; tokenAddress: string; 
 
 interface HoldersTableProps {
     tokenAddress: string;
-    tokenSymbol?: string;
 }
 
-export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress, tokenSymbol }) => {
+export const HoldersTable: React.FC<HoldersTableProps> = ({ tokenAddress }) => {
     const { data: holdersData, isLoading } = useHolders(tokenAddress, { limit: 100 });
+    const { data: tokenDetail } = useTokenDetail(tokenAddress);
+    const tokenSymbol = tokenDetail?.symbol;
     const { holdersTableColumns } = useTokenUIStore();
     const [currentPage, setCurrentPage] = useState(1);
 

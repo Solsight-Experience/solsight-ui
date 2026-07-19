@@ -78,10 +78,10 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
     };
 
     return (
-        <form onSubmit={handleSubmit} className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 flex flex-col gap-4">
             {/* Alert type selector */}
             <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Alert Type</label>
+                <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Alert Type</label>
                 <div className="grid grid-cols-1 gap-2">
                     {(Object.keys(ALERT_TYPE_META) as WalletAlertType[]).map((type) => {
                         const meta = ALERT_TYPE_META[type];
@@ -94,14 +94,14 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
                                 className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors
                   ${
                       selected
-                          ? "border-violet-500/60 bg-violet-500/10 text-white"
-                          : "border-white/[0.06] text-white/60 hover:border-white/20 hover:text-white/80"
+                          ? "border-violet-500/60 bg-violet-500/10 text-[var(--text-primary)]"
+                          : "border-[var(--border-faint)] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]"
                   }`}
                             >
                                 <span className={`mt-0.5 shrink-0 ${selected ? "text-violet-400" : ""}`}>{meta.icon}</span>
                                 <div>
                                     <div className="text-[12px] font-semibold">{meta.label}</div>
-                                    <div className="text-[11px] text-white/40">{meta.description}</div>
+                                    <div className="text-[11px] text-[var(--text-muted)]">{meta.description}</div>
                                 </div>
                             </button>
                         );
@@ -113,7 +113,7 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
             {alertType === WalletAlertType.TOKEN_BALANCE_CHANGE && (
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">
+                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                             Token Mint Address <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -121,26 +121,26 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
                             value={tokenMint}
                             onChange={(e) => setTokenMint(e.target.value)}
                             placeholder="e.g. EPjFWdd5AufqSSqeM2qN1..."
-                            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                         text-[12px] text-white placeholder:text-white/25 outline-none
+                            className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-btn)] px-3 py-2
+                         text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none
                          focus:border-violet-500/50 transition-colors"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Token Symbol (optional)</label>
+                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Token Symbol (optional)</label>
                         <input
                             type="text"
                             value={tokenSymbol}
                             onChange={(e) => setTokenSymbol(e.target.value)}
                             placeholder="e.g. USDC"
-                            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                         text-[12px] text-white placeholder:text-white/25 outline-none
+                            className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-btn)] px-3 py-2
+                         text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none
                          focus:border-violet-500/50 transition-colors"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Min Change Amount</label>
+                            <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Min Change Amount</label>
                             <NumbericInput
                                 mode="string"
                                 decimals={9}
@@ -149,18 +149,18 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
                                 onChange={setThreshold}
                                 placeholder="0"
                                 min={0}
-                                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                           text-[12px] text-white placeholder:text-white/25 outline-none
+                                className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-btn)] px-3 py-2
+                           text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none
                            focus:border-violet-500/50 transition-colors"
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Direction</label>
+                            <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Direction</label>
                             <select
                                 value={direction}
                                 onChange={(e) => setDirection(e.target.value as typeof direction)}
-                                className="w-full rounded-lg border border-white/[0.08] bg-[#1a1a2e] px-3 py-2
-                           text-[12px] text-white outline-none focus:border-violet-500/50 transition-colors"
+                                className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-overlay)] px-3 py-2
+                           text-[12px] text-[var(--text-primary)] outline-none focus:border-violet-500/50 transition-colors"
                             >
                                 <option value="any">Any</option>
                                 <option value="increase">Increase</option>
@@ -174,7 +174,7 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
             {/* Large Transfer conditions */}
             {alertType === WalletAlertType.LARGE_TRANSFER && (
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Minimum SOL Amount</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Minimum SOL Amount</label>
                     <NumbericInput
                         mode="string"
                         decimals={9}
@@ -183,8 +183,8 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
                         onChange={setMinAmountSol}
                         placeholder="1"
                         min={0}
-                        className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2
-                       text-[12px] text-white placeholder:text-white/25 outline-none
+                        className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-btn)] px-3 py-2
+                       text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none
                        focus:border-violet-500/50 transition-colors"
                     />
                 </div>
@@ -206,8 +206,8 @@ const AddAlertForm: React.FC<{ walletAddress: string; network: "mainnet" | "devn
                 <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-lg border border-white/[0.08] px-4 py-2 text-[12px]
-                     font-semibold text-white/50 hover:text-white hover:border-white/20
+                    className="rounded-lg border border-[var(--border-default)] px-4 py-2 text-[12px]
+                     font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]
                      transition-colors"
                 >
                     Cancel
@@ -263,20 +263,20 @@ const AlertRow: React.FC<{ alert: WalletAlert; walletAddress: string }> = ({ ale
     return (
         <div
             className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors
-        ${alert.isActive ? "border-white/[0.08] bg-white/[0.02]" : "border-white/[0.04] bg-transparent opacity-60"}`}
+        ${alert.isActive ? "border-[var(--border-subtle)] bg-[var(--surface-btn)]" : "border-[var(--border-faint)] bg-transparent opacity-60"}`}
         >
-            <span className={alert.isActive ? "text-violet-400" : "text-white/30"}>{meta.icon}</span>
+            <span className={alert.isActive ? "text-violet-400" : "text-[var(--text-disabled)]"}>{meta.icon}</span>
             <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-semibold text-white">{meta.label}</div>
-                {summary && <div className="text-[11px] text-white/40 truncate">{summary}</div>}
+                <div className="text-[12px] font-semibold text-[var(--text-primary)]">{meta.label}</div>
+                {summary && <div className="text-[11px] text-[var(--text-muted)] truncate">{summary}</div>}
             </div>
             <div className="flex items-center gap-1 shrink-0">
                 <button
                     onClick={toggleActive}
                     disabled={isUpdating}
                     title={alert.isActive ? "Pause alert" : "Enable alert"}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg text-white/40
-                     hover:text-white hover:bg-white/[0.06] disabled:opacity-50 transition-colors"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-muted)]
+                     hover:text-[var(--text-primary)] hover:bg-[var(--surface-btn-hover)] disabled:opacity-50 transition-colors"
                 >
                     {isUpdating ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -290,8 +290,8 @@ const AlertRow: React.FC<{ alert: WalletAlert; walletAddress: string }> = ({ ale
                     onClick={handleDelete}
                     disabled={isDeleting}
                     title="Delete alert"
-                    className="flex items-center justify-center w-7 h-7 rounded-lg text-white/40
-                     hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-muted)]
+                     hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                 >
                     {isDeleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
                 </button>
@@ -337,9 +337,9 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
             {!showForm && (
                 <button
                     onClick={() => setShowForm(true)}
-                    className="flex items-center gap-2 rounded-xl border border-dashed border-white/[0.12]
-                     px-4 py-3 text-[12px] font-semibold text-white/50
-                     hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+                    className="flex items-center gap-2 rounded-xl border border-dashed border-[var(--border-default)]
+                     px-4 py-3 text-[12px] font-semibold text-[var(--text-muted)]
+                     hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                 >
                     <Plus className="size-4" />
                     Add Alert
@@ -360,9 +360,9 @@ export const WalletAlertsTab: React.FC<{ walletAddress: string; network?: "mainn
             ) : (
                 !showForm && (
                     <div className="flex flex-col items-center gap-2 py-10 text-center">
-                        <Bell className="size-8 text-white/20" />
-                        <div className="text-[13px] font-semibold text-white/40">No alerts set up</div>
-                        <div className="text-[11px] text-white/25">Get notified when this wallet makes swaps, transfers, or balance changes</div>
+                        <Bell className="size-8 text-[var(--text-disabled)]" />
+                        <div className="text-[13px] font-semibold text-[var(--text-muted)]">No alerts set up</div>
+                        <div className="text-[11px] text-[var(--text-disabled)]">Get notified when this wallet makes swaps, transfers, or balance changes</div>
                     </div>
                 )
             )}
