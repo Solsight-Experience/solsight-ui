@@ -270,16 +270,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     )}
 
                     {error && errorCode === "quota_exceeded" && (
-                        <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
+                        <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/20 text-violet-750 dark:text-violet-300 text-[11px] font-medium px-4 py-3 rounded-xl mx-2 mt-4 animate-in fade-in slide-in-from-top-1">
                             <Coins className="w-4 h-4 shrink-0" />
                             <span className="flex-1">
                                 You&apos;ve used today&apos;s free AI chats. Buy credits to keep chatting.
-                                {resetTimeLabel && <span className="block text-violet-300/70 mt-0.5">Free chats reset at {resetTimeLabel}.</span>}
+                                {resetTimeLabel && (
+                                    <span className="block text-violet-650/70 dark:text-violet-300/70 mt-0.5">Free chats reset at {resetTimeLabel}.</span>
+                                )}
                             </span>
                             <Button
                                 size="sm"
                                 onClick={onBuyCredits}
-                                className="shrink-0 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 !text-white text-[11px] font-semibold hover:brightness-110"
+                                className="shrink-0 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 !text-white text-[11px] font-semibold hover:brightness-110 cursor-pointer"
                             >
                                 Buy credits
                             </Button>

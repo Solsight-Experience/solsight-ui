@@ -64,7 +64,7 @@ export function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsModalProp
             }}
         >
             <DialogContent
-                className="overflow-hidden border-0 p-0 text-slate-950 sm:max-w-md dark:text-white"
+                className="overflow-hidden border-0 p-0 gap-0 text-slate-950 sm:max-w-md dark:text-white"
                 style={{
                     background: isDark ? "linear-gradient(145deg, #110820 0%, #080612 100%)" : "#ffffff",
                     boxShadow: isDark ? "0 25px 60px rgba(139,92,246,0.25)" : "0 25px 60px rgba(15,23,42,0.18)"

@@ -13,20 +13,20 @@ export const AISummaryLoader: React.FC<AISummaryLoaderProps> = ({ isLoading }) =
 
     return (
         <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                 <span>Generating...</span>
                 <div className="flex gap-0.5">
-                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce"></div>
-                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                    <div className="w-1 h-1 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                    <div className="w-1 h-1 rounded-full bg-[var(--text-muted)] animate-bounce"></div>
+                    <div className="w-1 h-1 rounded-full bg-[var(--text-muted)] animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div className="w-1 h-1 rounded-full bg-[var(--text-muted)] animate-bounce" style={{ animationDelay: "0.4s" }}></div>
                 </div>
             </div>
 
             {/* Skeleton Lines */}
             <div className="space-y-2">
-                <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
-                <div className="h-2.5 bg-gray-800 rounded animate-pulse"></div>
-                <div className="h-2.5 bg-gray-800 rounded w-5/6 animate-pulse"></div>
+                <div className="h-2.5 bg-[var(--surface-btn)] rounded animate-pulse"></div>
+                <div className="h-2.5 bg-[var(--surface-btn)] rounded animate-pulse"></div>
+                <div className="h-2.5 bg-[var(--surface-btn)] rounded w-5/6 animate-pulse"></div>
             </div>
         </div>
     );
@@ -62,7 +62,7 @@ export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, gen
             if (part.startsWith("**") && part.endsWith("**")) {
                 const boldText = part.slice(2, -2);
                 return (
-                    <strong key={idx} className="font-semibold text-gray-100">
+                    <strong key={idx} className="font-semibold text-[var(--text-primary)]">
                         {boldText}
                     </strong>
                 );
@@ -72,15 +72,15 @@ export const AISummaryContent: React.FC<AISummaryContentProps> = ({ content, gen
     };
 
     return (
-        <div className="space-y-4 text-sm text-gray-300">
+        <div className="space-y-4 text-sm text-[var(--text-secondary)]">
             {paragraphs.map((paragraph, index) => (
                 <p key={index} className="leading-relaxed">
                     {parseMarkdownBold(paragraph)}
                 </p>
             ))}
 
-            <div className="pt-3 border-t border-gray-700">
-                <span className="text-xs text-gray-500">
+            <div className="pt-3 border-t border-[var(--border-subtle)]">
+                <span className="text-xs text-[var(--text-muted)]">
                     {formatDate(generatedAt)} • AI summary about {tokenName}
                 </span>
             </div>
@@ -131,13 +131,13 @@ export const AISummaryPanel: React.FC<AISummaryPanelProps> = ({ isOpen, onToggle
             }}
         >
             <DialogContent
-                className="max-w-[600px] border border-gray-700 bg-gray-900/60 backdrop-blur-xl shadow-2xl p-6 rounded-2xl [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0"
+                className="max-w-[600px] border border-[var(--border-subtle)] bg-[var(--surface-glass)] backdrop-blur-xl shadow-2xl p-6 rounded-2xl [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0"
                 showCloseButton={true}
                 onOpenAutoFocus={(e) => e.preventDefault()}
             >
-                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50">
-                    <Sparkles size={18} className="text-gray-300" />
-                    <DialogTitle className="text-base font-semibold text-gray-100">Token Summary</DialogTitle>
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[var(--border-subtle)]">
+                    <Sparkles size={18} className="text-[var(--text-secondary)]" />
+                    <DialogTitle className="text-base font-semibold text-[var(--text-primary)]">Token Summary</DialogTitle>
                 </div>
 
                 {/* Content */}
@@ -145,7 +145,7 @@ export const AISummaryPanel: React.FC<AISummaryPanelProps> = ({ isOpen, onToggle
                     {isLoading ? (
                         <AISummaryLoader isLoading={isLoading} />
                     ) : error ? (
-                        <div className="text-sm text-red-400 p-2">
+                        <div className="text-sm text-red-500 dark:text-red-400 p-2">
                             <p>{error}</p>
                         </div>
                     ) : summary ? (

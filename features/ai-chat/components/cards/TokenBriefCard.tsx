@@ -23,43 +23,54 @@ export const TokenBriefCard: React.FC<TokenBriefCardProps> = ({ data }) => {
     const isPositive = typeof change === "number" && change >= 0;
 
     return (
-        <div data-testid="token-brief-card" className="rounded-xl border border-border/60 bg-background/60 backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between p-3 border-b border-border/40 bg-muted/20">
+        <div
+            data-testid="token-brief-card"
+            className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-primary)] overflow-hidden shadow-sm"
+        >
+            <div className="flex items-center justify-between p-3 border-b border-[var(--border-faint)] bg-[var(--surface-panel)]">
                 <div className="flex items-center gap-2.5">
                     {logoUri ? (
-                        <Image src={logoUri} alt={symbol} width={36} height={36} className="rounded-full object-cover ring-1 ring-border/40" />
+                        <Image src={logoUri} alt={symbol} width={36} height={36} className="rounded-full object-cover ring-1 ring-[var(--border-subtle)]" />
                     ) : (
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-400">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-600 dark:text-violet-400">
                             {symbol?.[0] ?? "?"}
                         </div>
                     )}
                     <div>
                         <div className="font-semibold text-sm leading-none">{symbol}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[120px]">{name}</div>
+                        <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate max-w-[120px]">{name}</div>
                     </div>
                 </div>
 
-                <Link href={`/token/${address}`} className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                <Link
+                    href={`/token/${address}`}
+                    className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-750 dark:hover:text-violet-300 transition-colors"
+                >
                     View
                     <ExternalLink className="w-3 h-3" />
                 </Link>
             </div>
 
-            <div className="grid grid-cols-2 divide-x divide-border/40">
+            <div className="grid grid-cols-2 divide-x divide-[var(--border-subtle)]">
                 <div className="p-3 flex flex-col gap-0.5 min-w-0 overflow-hidden">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Price</span>
                     <span className="text-sm font-semibold font-mono truncate">{typeof price === "number" ? currencyFormatter.format(price) : "—"}</span>
                 </div>
 
                 <div className="p-3 flex flex-col gap-0.5 min-w-0 overflow-hidden">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">24h</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">24h</span>
                     {typeof change === "number" ? (
-                        <div className={cn("flex items-center gap-0.5 text-sm font-semibold", isPositive ? "text-emerald-400" : "text-red-400")}>
+                        <div
+                            className={cn(
+                                "flex items-center gap-0.5 text-sm font-semibold",
+                                isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
+                            )}
+                        >
                             {isPositive ? <TrendingUp className="w-3.5 h-3.5 shrink-0" /> : <TrendingDown className="w-3.5 h-3.5 shrink-0" />}
                             <span className="truncate">{percentFormatter.format(change)}</span>
                         </div>
                     ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
+                        <span className="text-sm text-[var(--text-muted)]">—</span>
                     )}
                 </div>
             </div>

@@ -26,14 +26,14 @@ export const NavigationCard: React.FC<NavigationCardProps> = ({ data }) => {
             <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-violet-500/25 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 transition-all duration-200 group cursor-pointer">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                        <MapPin className="w-4 h-4 text-violet-400" />
+                        <MapPin className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                     </div>
                     <div>
-                        <div className="text-xs text-muted-foreground">Navigate to</div>
-                        <div className="text-sm font-medium text-violet-300">{displayLabel}</div>
+                        <div className="text-xs text-[var(--text-muted)]">Navigate to</div>
+                        <div className="text-sm font-medium text-violet-750 dark:text-violet-300">{displayLabel}</div>
                     </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-violet-400 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-violet-600 dark:text-violet-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
         </Link>
     );

@@ -18,7 +18,7 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => (
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-violet-400 underline underline-offset-2 hover:text-violet-300 transition-colors break-all"
+                    className="text-violet-600 dark:text-violet-400 underline underline-offset-2 hover:text-violet-750 dark:hover:text-violet-300 transition-colors break-all"
                 >
                     {children}
                 </a>
@@ -42,7 +42,7 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => (
             strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
             em: ({ children }) => <em className="text-muted-foreground">{children}</em>,
             code: ({ children }) => (
-                <code className="bg-muted/70 border border-border/40 px-1.5 py-0.5 rounded-md text-xs font-mono text-violet-300 break-all whitespace-pre-wrap">
+                <code className="bg-muted/70 border border-border/40 px-1.5 py-0.5 rounded-md text-xs font-mono text-violet-600 dark:text-violet-300 break-all whitespace-pre-wrap">
                     {children}
                 </code>
             ),
@@ -61,7 +61,7 @@ export const ChatBubble: React.FC<{ message: ChatMessageDto }> = ({ message }) =
         <div className={cn("flex w-full gap-2.5 group animate-in fade-in slide-in-from-bottom-2 duration-200", isUser ? "flex-row-reverse" : "flex-row")}>
             <Avatar className="h-7 w-7 rounded-full shrink-0 mt-0.5">
                 {isUser ? (
-                    <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 border border-border/60 text-slate-300">
+                    <AvatarFallback className="bg-[var(--surface-btn)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                         <CircleUserRound className="w-4 h-4" />
                     </AvatarFallback>
                 ) : (
