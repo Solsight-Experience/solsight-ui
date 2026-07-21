@@ -108,6 +108,7 @@ export interface Trade {
     market_cap: number;
     trader_address: string;
     tx_url: string;
+    is_mev_protected?: boolean;
 }
 
 export interface TradesResponse {
