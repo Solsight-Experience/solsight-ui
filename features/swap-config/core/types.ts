@@ -44,6 +44,6 @@ export interface SwapRequestFragment {
     priorityFeeLamports?: number;
     tipLamports?: number;
     maxAutoFeeLamports?: number;
-    antiMevRpc?: "off" | "red" | "sec";
+    antiMevRpc?: "off" | "sec";
     gaslessFeeToken?: string; // mint address; when present, signals server to route through Kora
 }

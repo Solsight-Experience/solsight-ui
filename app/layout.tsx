@@ -12,6 +12,7 @@ import MockProvider from "@/providers/mock-provider";
 import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 import { SolanaWalletProvider } from "@/providers/wallet-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePaymentRecovery } from "@/features/billing/hooks/usePaymentRecovery";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -53,11 +54,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             {/* Bọc AuthProvider trước Header */}
                             <MockProvider>
                                 <AuthProvider>
-                                    <SmallScreenModal />
-                                    {showHeader && <Header />}
-                                    <main>{children}</main>
-                                    <ChatGate />
-                                    <ThemedToaster />
+                                    <TooltipProvider>
+                                        <SmallScreenModal />
+                                        {showHeader && <Header />}
+                                        <main>{children}</main>
+                                        <ChatGate />
+                                        <ThemedToaster />
+                                    </TooltipProvider>
                                 </AuthProvider>
                             </MockProvider>
                         </SolanaWalletProvider>

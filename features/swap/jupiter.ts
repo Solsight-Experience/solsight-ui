@@ -54,10 +54,15 @@ export async function fetchJupiterQuote(
 }
 
 export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<ExecuteSwapResult> {
+    // Only forward the anti-MEV flag when protection is requested; "off"/undefined lets the
+    // server use its default (non-Jito) RPC path.
+    const antiMevPayload = request.antiMevRpc === "sec" ? { antiMevRpc: request.antiMevRpc } : {};
+
     const txData = await apiClient.post<{ swapTransaction: string }>(SWAP_ENDPOINTS.TRANSACTION, {
         quoteResponse: request.quoteResponse,
         userPublicKey: request.userPublicKey,
-        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {})
+        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
+        ...antiMevPayload
     });
 
     if (!txData.swapTransaction) {
@@ -70,7 +75,8 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
 
     const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
         signedTransaction: signedTxBase64,
-        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {})
+        ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
+        ...antiMevPayload
     });
 
     return { signature: result.signature };
