@@ -31,6 +31,7 @@ export interface ExecuteSwapRequest {
     userPublicKey: string;
     signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
     gaslessFeeToken?: string;
+    antiMevRpc?: "off" | "sec";
 }
 
 export interface ExecuteSwapResult {

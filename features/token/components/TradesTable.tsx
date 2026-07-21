@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import useClusterStore, { type Cluster } from "@/stores/cluster.store";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTrades } from "../hooks/token.hooks";
 import { calculateTradeUsdValue, formatTimeAgo, formatNumber, formatTokenAmount } from "../utils/token.utils";
 import type { Trade } from "../types/token.types";
@@ -50,6 +51,7 @@ const TradeRow = memo<Trade & { cluster: Cluster; index: number; reduceMotion: b
     trader_address,
     market_cap,
     tx_url,
+    is_mev_protected,
     cluster,
     index,
     reduceMotion,
@@ -71,11 +73,23 @@ const TradeRow = memo<Trade & { cluster: Cluster; index: number; reduceMotion: b
         >
             <td className="py-3 px-4 text-sm text-[var(--text-muted)]">{formatTimeAgo(timestamp)}</td>
             <td className="py-3 px-4">
-                <span
-                    className={`px-3 py-1 rounded text-xs font-semibold ${type === "BUY" ? "bg-green-500/20 text-green-600 dark:text-green-500" : "bg-red-500/20 text-red-600 dark:text-red-500"}`}
-                >
-                    {type}
-                </span>
+                <div className="flex items-center gap-1.5">
+                    <span
+                        className={`px-3 py-1 rounded text-xs font-semibold ${type === "BUY" ? "bg-green-500/20 text-green-600 dark:text-green-500" : "bg-red-500/20 text-red-600 dark:text-red-500"}`}
+                    >
+                        {type}
+                    </span>
+                    {is_mev_protected && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="inline-flex text-violet-600 dark:text-violet-400" aria-label="Anti-MEV protected">
+                                    <ShieldCheck className="w-4 h-4" />
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-56">Anti-MEV protected</TooltipContent>
+                        </Tooltip>
+                    )}
+                </div>
             </td>
             <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatNumber(market_cap)}</td>
             <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{formatTokenAmount(amount_token, 2)}</td>

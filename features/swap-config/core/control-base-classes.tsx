@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { NumbericInput } from "@/components/ui/NumbericInput";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChevronDown } from "lucide-react";
 import { DecimalFormatter } from "@/lib/number-formatters";
 import { ExpandedFormProps, SwapConfigItem } from "./swap-config-item";
@@ -119,26 +120,40 @@ export abstract class NumericFieldItem extends SwapConfigItem<{ value: number | 
 
 // Segmented button group (anti-MEV)
 export abstract class SegmentedItem<TOption extends string> extends SwapConfigItem<{ value: TOption }> {
-    abstract options: ReadonlyArray<{ id: TOption; icon: React.FC<{ className?: string }>; label: string }>;
+    abstract options: ReadonlyArray<{ id: TOption; icon: React.FC<{ className?: string }>; label: string; tooltip?: string }>;
 
     renderExpandedForm({ state, onChange }: ExpandedFormProps<{ value: TOption }>): React.ReactNode {
         return (
             <div className="ml-auto flex w-fit max-w-full min-w-0 items-center gap-1 rounded-md bg-gray-100 dark:bg-zinc-800 p-0.5">
-                {this.options.map((option) => (
-                    <Button
-                        key={option.id}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onChange({ value: option.id })}
-                        className={cn(
-                            "h-6 min-w-0 shrink px-2 text-xs font-normal gap-1 rounded text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white",
-                            state.value === option.id && "bg-gray-300 dark:bg-zinc-700 text-gray-900 dark:text-white ring-1 ring-purple-400 dark:ring-white/80"
-                        )}
-                    >
-                        <option.icon className="h-3 w-3" />
-                        <span className="whitespace-nowrap">{option.label}</span>
-                    </Button>
-                ))}
+                {this.options.map((option) => {
+                    const button = (
+                        <Button
+                            key={option.id}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onChange({ value: option.id })}
+                            className={cn(
+                                "h-6 min-w-0 shrink px-2 text-xs font-normal gap-1 rounded text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white",
+                                state.value === option.id &&
+                                    "bg-gray-300 dark:bg-zinc-700 text-gray-900 dark:text-white ring-1 ring-purple-400 dark:ring-white/80"
+                            )}
+                        >
+                            <option.icon className="h-3 w-3" />
+                            <span className="whitespace-nowrap">{option.label}</span>
+                        </Button>
+                    );
+
+                    if (!option.tooltip) {
+                        return button;
+                    }
+
+                    return (
+                        <Tooltip key={option.id}>
+                            <TooltipTrigger asChild>{button}</TooltipTrigger>
+                            <TooltipContent className="max-w-56">{option.tooltip}</TooltipContent>
+                        </Tooltip>
+                    );
+                })}
             </div>
         );
     }

@@ -403,6 +403,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigFragment = useMemo(() => serializeAllSwapConfig(swapConfigStates, swapConfigCtx), [swapConfigStates, swapConfigCtx]);
     const slippageBps = swapConfigFragment.slippageBps ?? defaultSlippageBps;
     const gaslessFeeToken = swapConfigFragment.gaslessFeeToken;
+    const antiMevRpc = swapConfigFragment.antiMevRpc;
 
     const formattedQuote = useMemo(() => {
         if (!quoteState.otherAmountThreshold) {
@@ -676,7 +677,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: walletPublicKey,
                 signTransaction: (tx) => signTransaction(tx),
-                gaslessFeeToken
+                gaslessFeeToken,
+                antiMevRpc
             });
 
             setSwapState({ loading: false, error: null, signature });

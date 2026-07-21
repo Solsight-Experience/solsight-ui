@@ -5,21 +5,20 @@ import { ExecutorCapability } from "@/features/swap/types";
 import { SegmentedItem } from "../core/control-base-classes";
 import type { ConfigCtx, SwapRequestFragment } from "../core/types";
 
-type AntiMevOption = "off" | "red" | "sec";
+type AntiMevOption = "off" | "sec";
 
 export class AntiMevItem extends SegmentedItem<AntiMevOption> {
     readonly id = "antiMev" as const;
     readonly label = "Anti-MEV RPC";
     readonly icon = Shield;
 
-    readonly options: ReadonlyArray<{ id: AntiMevOption; icon: React.FC<{ className?: string }>; label: string }> = [
-        { id: "off", icon: ShieldOff, label: "Off" },
-        { id: "red", icon: Shield, label: "Red." },
-        { id: "sec", icon: ShieldCheck, label: "Sec." }
+    readonly options: ReadonlyArray<{ id: AntiMevOption; icon: React.FC<{ className?: string }>; label: string; tooltip: string }> = [
+        { id: "off", icon: ShieldOff, label: "Off", tooltip: "Off protection: transactions sent to all nodes, very fast" },
+        { id: "sec", icon: ShieldCheck, label: "Sec.", tooltip: "Reduced protection: transactions sent to limited nodes, fast, maybe front-run" }
     ];
 
     getDefaultState() {
-        return { value: "red" as AntiMevOption };
+        return { value: "sec" as AntiMevOption };
     }
 
     isVisible(ctx: ConfigCtx): boolean {
@@ -35,7 +34,7 @@ export class AntiMevItem extends SegmentedItem<AntiMevOption> {
         return (
             <span className="inline-flex items-center gap-1">
                 <Shield className="h-3 w-3" />
-                {selectedOption?.label ?? "Red."}
+                {selectedOption?.label ?? "Sec."}
             </span>
         );
     }
