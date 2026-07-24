@@ -1,13 +1,14 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { CalendarClock, Loader2, Mail, Send } from "lucide-react";
+import { CalendarClock, Check, ChevronDown, Loader2, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Toggle from "@/components/ui/Toggle";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Cluster } from "@/stores/cluster.store";
 import { useDailyReportSettings, useUpdateDailyReportSettings } from "../hooks/dailyReport.hooks";
 import { DailyReportChannel, UpdateDailyReportSettingsDto } from "../types/dailyReport.types";
@@ -18,10 +19,25 @@ const SELECT_CLASSNAME =
     "w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-overlay)] px-3 py-2 " +
     "text-[12px] text-[var(--text-primary)] outline-none focus:border-violet-500/50 transition-colors disabled:opacity-50";
 
-function clamp(value: number, min: number, max: number) {
-    if (Number.isNaN(value)) return min;
-    return Math.min(max, Math.max(min, value));
+const UTC_OFFSETS = Array.from({ length: 27 }, (_, i) => i - 12); // -12..+14
+
+function getDeviceUtcOffset(): number {
+    return Math.round(-new Date().getTimezoneOffset() / 60);
 }
+
+function utcToOffsetTime(hour: number, minute: number, offset: number): string {
+    const total = (((hour * 60 + minute + offset * 60) % 1440) + 1440) % 1440;
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function offsetTimeToUtc(value: string, offset: number): { hour: number; minute: number } {
+    const [h, m] = value.split(":").map(Number);
+    const total = (((h * 60 + m - offset * 60) % 1440) + 1440) % 1440;
+    return { hour: Math.floor(total / 60), minute: total % 60 };
+}
+
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
 
 interface DailyReportDialogProps {
     open: boolean;
@@ -37,16 +53,19 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
 
     const [enabled, setEnabled] = useState(false);
     const [channels, setChannels] = useState<DailyReportChannel[]>(["telegram"]);
-    const [hour, setHour] = useState(7);
-    const [minute, setMinute] = useState(0);
+    const [time, setTime] = useState("07:00");
+    const [utcOffset, setUtcOffset] = useState(0);
     const [network, setNetwork] = useState<Cluster>("mainnet");
 
     useEffect(() => {
         if (!settings) return;
+        const h = settings.hour ?? 7;
+        const m = settings.minute ?? 0;
+        const offset = getDeviceUtcOffset();
         setEnabled(settings.enabled);
         setChannels(settings.channels?.length ? settings.channels : ["telegram"]);
-        setHour(settings.hour ?? 7);
-        setMinute(settings.minute ?? 0);
+        setUtcOffset(offset);
+        setTime(utcToOffsetTime(h, m, offset));
         setNetwork(settings.network ?? "mainnet");
     }, [settings]);
 
@@ -58,15 +77,23 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
         setChannels((prev) => (checked ? [...prev.filter((c) => c !== target), target] : prev.filter((c) => c !== target)));
     }
 
+    const [timeHour, timeMinute] = time.split(":").map(Number);
+
+    function handleHourChange(newHour: number) {
+        setTime(`${String(newHour).padStart(2, "0")}:${String(timeMinute).padStart(2, "0")}`);
+    }
+
+    function handleMinuteChange(newMinute: number) {
+        setTime(`${String(timeHour).padStart(2, "0")}:${String(newMinute).padStart(2, "0")}`);
+    }
+
     async function handleSave() {
-        if (enabled && hour === undefined) {
-            toast.error("Please choose an hour");
-            return;
-        }
         if (enabled && channels.length === 0) {
             toast.error("Please choose at least one channel");
             return;
         }
+
+        const { hour, minute } = offsetTimeToUtc(time, utcOffset);
 
         const dto: UpdateDailyReportSettingsDto = enabled ? { enabled: true, channels, hour, minute, network } : { enabled: false, network };
 
@@ -165,26 +192,76 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Hour (UTC)</label>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            max={23}
-                                            value={hour}
-                                            onChange={(e) => setHour(clamp(Number(e.target.value), 0, 23))}
-                                            className={SELECT_CLASSNAME}
-                                        />
+                                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Time</label>
+                                        <div className="flex items-center gap-1.5">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button type="button" className={`${SELECT_CLASSNAME} flex items-center justify-between`}>
+                                                        <span>{String(timeHour).padStart(2, "0")}</span>
+                                                        <ChevronDown size={13} className="text-[var(--text-muted)]" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    align="start"
+                                                    className="max-h-56 w-[calc(var(--radix-dropdown-menu-trigger-width))] overflow-y-auto"
+                                                >
+                                                    {HOURS_24.map((h) => (
+                                                        <DropdownMenuItem key={h} onSelect={() => handleHourChange(h)} className="justify-between">
+                                                            <span>{String(h).padStart(2, "0")}</span>
+                                                            {h === timeHour && <Check size={13} className="text-violet-500" />}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            <span className="text-[var(--text-muted)]">:</span>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button type="button" className={`${SELECT_CLASSNAME} flex items-center justify-between`}>
+                                                        <span>{String(timeMinute).padStart(2, "0")}</span>
+                                                        <ChevronDown size={13} className="text-[var(--text-muted)]" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    align="start"
+                                                    className="max-h-56 w-[calc(var(--radix-dropdown-menu-trigger-width))] overflow-y-auto"
+                                                >
+                                                    {MINUTES.map((m) => (
+                                                        <DropdownMenuItem key={m} onSelect={() => handleMinuteChange(m)} className="justify-between">
+                                                            <span>{String(m).padStart(2, "0")}</span>
+                                                            {m === timeMinute && <Check size={13} className="text-violet-500" />}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Minute (UTC)</label>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            max={59}
-                                            value={minute}
-                                            onChange={(e) => setMinute(clamp(Number(e.target.value), 0, 59))}
-                                            className={SELECT_CLASSNAME}
-                                        />
+                                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">UTC Offset</label>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button type="button" className={`${SELECT_CLASSNAME} flex items-center justify-between`}>
+                                                    <span>
+                                                        UTC{utcOffset >= 0 ? "+" : ""}
+                                                        {utcOffset}
+                                                    </span>
+                                                    <ChevronDown size={13} className="text-[var(--text-muted)]" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="start"
+                                                className="max-h-56 w-[calc(var(--radix-dropdown-menu-trigger-width))] overflow-y-auto"
+                                            >
+                                                {UTC_OFFSETS.map((o) => (
+                                                    <DropdownMenuItem key={o} onSelect={() => setUtcOffset(o)} className="justify-between">
+                                                        <span>
+                                                            UTC{o >= 0 ? "+" : ""}
+                                                            {o}
+                                                        </span>
+                                                        {o === utcOffset && <Check size={13} className="text-violet-500" />}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             </div>
