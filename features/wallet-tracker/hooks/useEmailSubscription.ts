@@ -13,7 +13,7 @@ export const useEmailSubscription = () =>
 export const useSubmitEmail = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (email: string) => emailService.submitEmail(email),
+        mutationFn: ({ email, redirectPath }: { email: string; redirectPath?: string }) => emailService.submitEmail(email, redirectPath),
         onSuccess: () => qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY })
     });
 };

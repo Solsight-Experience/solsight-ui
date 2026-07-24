@@ -60,6 +60,11 @@ export interface EmailSubscriptionStatus {
     verifiedAt?: string;
 }
 
+export interface SubmitEmailRequest {
+    email: string;
+    redirectPath?: string;
+}
+
 // ── Watchlist ─────────────────────────────────────────────────────────────
 
 export interface WatchedWallet {

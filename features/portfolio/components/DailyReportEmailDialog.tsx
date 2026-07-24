@@ -6,17 +6,17 @@ import { CheckCircle2, Loader2, Mail, Unlink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEmailSubscription, useSubmitEmail, useEmailStatus, useDisconnectEmail } from "../hooks/useEmailSubscription";
+import { useEmailSubscription, useSubmitEmail, useEmailStatus, useDisconnectEmail } from "@/features/wallet-tracker/hooks/useEmailSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 
 type Step = "idle" | "pending" | "verified";
 
-interface EmailDialogProps {
+interface DailyReportEmailDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
+export function DailyReportEmailDialog({ open, onOpenChange }: DailyReportEmailDialogProps) {
     const { user } = useAuth();
     const pathname = usePathname();
     const redirectPath = `${pathname}?emailVerified=true`;
@@ -72,7 +72,7 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
                         <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-500/15 ring-1 ring-violet-500/25">
                             <Mail size={13} className="text-violet-400" />
                         </div>
-                        Email Notifications
+                        Email
                     </DialogTitle>
                 </DialogHeader>
 
@@ -115,7 +115,7 @@ function IdleState({ email, onSubmit, submitting }: { email: string; onSubmit: (
             className="flex flex-col gap-4"
         >
             <p className="text-[12px] text-white/50 leading-relaxed">
-                Receive wallet alert notifications via email. We&apos;ll send a verification link to confirm.
+                Receive your daily portfolio report via email. We&apos;ll send a verification link to confirm.
             </p>
             <div className="relative flex items-center min-w-0">
                 <Mail className="absolute left-3 size-3.5 text-white/30 pointer-events-none" />
@@ -205,7 +205,7 @@ function VerifiedState({
                 </div>
             </div>
 
-            <p className="text-[12px] text-white/40 text-center">Wallet alert notifications will be sent to your email.</p>
+            <p className="text-[12px] text-white/40 text-center">Your daily portfolio report will be sent to your email.</p>
 
             <button
                 onClick={onDisconnect}

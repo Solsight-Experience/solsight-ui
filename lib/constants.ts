@@ -94,6 +94,11 @@ export const PORTFOLIO_ENDPOINTS = {
     PERFORMANCE: "/portfolio/performance"
 } as const;
 
+// Daily Report API Endpoints
+export const DAILY_REPORT_ENDPOINTS = {
+    SETTINGS: "/daily-report/settings"
+} as const;
+
 // User API Endpoints
 export const USER_ENDPOINTS = {
     ME: "/account/me",

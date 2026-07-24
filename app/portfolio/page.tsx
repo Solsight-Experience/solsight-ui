@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Coins, ArrowRightLeft, SlidersHorizontal } from "lucide-react";
+import React, { useState } from "react";
+import { Coins, ArrowRightLeft, SlidersHorizontal, CalendarClock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,12 +9,14 @@ import { PortfolioSidebar } from "@/features/portfolio/components/Portfoliosideb
 import { PortfolioDashboard } from "@/features/portfolio/components/Portfoliodashboard";
 import { PositionsTab } from "@/features/portfolio/components/Positionstab";
 import { ActivityTab } from "@/features/portfolio/components/Activitytab";
+import { DailyReportDialog } from "@/features/portfolio/components/DailyReportDialog";
 import { usePortfolioUIStore } from "@/features/portfolio/stores/portfolioUIStore";
 
 import "@/lib/chart-config";
 
 export default function PortfolioPage() {
     const { currentTab, setCurrentTab } = usePortfolioUIStore();
+    const [dailyReportOpen, setDailyReportOpen] = useState(false);
 
     return (
         <div className="relative min-h-[calc(100vh-82px)] bg-[var(--surface-page)] text-[var(--text-primary)] font-sans overflow-hidden">
@@ -42,27 +44,41 @@ export default function PortfolioPage() {
                             <p className="text-[12.5px] text-[var(--text-muted)] mt-0.5">Track balances, positions, and activity across your wallets</p>
                         </div>
 
-                        {/* Mobile Wallet & Filter Trigger */}
-                        <div className="lg:hidden">
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex items-center gap-2 border-[var(--border-subtle)] bg-[var(--surface-btn)] hover:bg-[var(--surface-btn-hover)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--text-primary)] rounded-lg cursor-pointer"
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setDailyReportOpen(true)}
+                                className="flex items-center gap-2 border-[var(--border-subtle)] bg-[var(--surface-btn)] hover:bg-[var(--surface-btn-hover)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--text-primary)] rounded-lg cursor-pointer"
+                            >
+                                <CalendarClock className="size-4 text-violet-500" />
+                                Daily Report
+                            </Button>
+
+                            {/* Mobile Wallet & Filter Trigger */}
+                            <div className="lg:hidden">
+                                <Sheet>
+                                    <SheetTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex items-center gap-2 border-[var(--border-subtle)] bg-[var(--surface-btn)] hover:bg-[var(--surface-btn-hover)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--text-primary)] rounded-lg cursor-pointer"
+                                        >
+                                            <SlidersHorizontal className="size-4 text-violet-500" />
+                                            Wallets & Filters
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent
+                                        side="right"
+                                        className="w-[320px] p-0 pt-12 overflow-y-auto border-l border-[var(--border-faint)] bg-[var(--surface-glass)] backdrop-blur-xl"
                                     >
-                                        <SlidersHorizontal className="size-4 text-violet-500" />
-                                        Wallets & Filters
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent
-                                    side="right"
-                                    className="w-[320px] p-0 pt-12 overflow-y-auto border-l border-[var(--border-faint)] bg-[var(--surface-glass)] backdrop-blur-xl"
-                                >
-                                    <PortfolioSidebar />
-                                </SheetContent>
-                            </Sheet>
+                                        <PortfolioSidebar />
+                                    </SheetContent>
+                                </Sheet>
+                            </div>
                         </div>
+
+                        <DailyReportDialog open={dailyReportOpen} onOpenChange={setDailyReportOpen} />
                     </div>
 
                     {/* Dashboard summary cards */}
