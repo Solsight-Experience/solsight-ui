@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/components/ui/button";
 import Toggle from "@/components/ui/Toggle";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Cluster } from "@/stores/cluster.store";
 import { useDailyReportSettings, useUpdateDailyReportSettings } from "../hooks/dailyReport.hooks";
 import { DailyReportChannel, UpdateDailyReportSettingsDto } from "../types/dailyReport.types";
 import { DailyReportTelegramDialog } from "./DailyReportTelegramDialog";
@@ -37,6 +39,7 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
     const [channels, setChannels] = useState<DailyReportChannel[]>(["telegram"]);
     const [hour, setHour] = useState(7);
     const [minute, setMinute] = useState(0);
+    const [network, setNetwork] = useState<Cluster>("mainnet");
 
     useEffect(() => {
         if (!settings) return;
@@ -44,6 +47,7 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
         setChannels(settings.channels?.length ? settings.channels : ["telegram"]);
         setHour(settings.hour ?? 7);
         setMinute(settings.minute ?? 0);
+        setNetwork(settings.network ?? "mainnet");
     }, [settings]);
 
     const telegramConnected = settings?.telegramConnected ?? false;
@@ -64,7 +68,7 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
             return;
         }
 
-        const dto: UpdateDailyReportSettingsDto = enabled ? { enabled: true, channels, hour, minute } : { enabled: false };
+        const dto: UpdateDailyReportSettingsDto = enabled ? { enabled: true, channels, hour, minute, network } : { enabled: false, network };
 
         try {
             await updateSettings(dto);
@@ -105,6 +109,32 @@ export function DailyReportDialog({ open, onOpenChange }: DailyReportDialogProps
                                     </div>
                                 </div>
                                 <Toggle enabled={enabled} onChange={setEnabled} size="sm" />
+                            </div>
+
+                            {/* Network */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Network</label>
+                                <Tabs
+                                    value={network}
+                                    onValueChange={(value) => {
+                                        if (value === "mainnet" || value === "devnet") setNetwork(value);
+                                    }}
+                                >
+                                    <TabsList className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-1 flex w-fit">
+                                        <TabsTrigger
+                                            value="mainnet"
+                                            className={`px-3 py-1 rounded-md text-[12px] font-semibold ${network === "mainnet" ? "bg-white/[0.06] text-white" : "text-white/60"}`}
+                                        >
+                                            Mainnet
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="devnet"
+                                            className={`ml-1 px-3 py-1 rounded-md text-[12px] font-semibold ${network === "devnet" ? "bg-white/[0.06] text-white" : "text-white/60"}`}
+                                        >
+                                            Devnet
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
                             </div>
 
                             {/* Schedule */}

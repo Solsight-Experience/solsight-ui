@@ -1,3 +1,5 @@
+import type { Cluster } from "@/stores/cluster.store";
+
 export type DailyReportChannel = "telegram" | "email";
 
 export interface DailyReportSettings {
@@ -5,6 +7,7 @@ export interface DailyReportSettings {
     channels: DailyReportChannel[];
     hour?: number;
     minute?: number;
+    network?: Cluster;
     telegramConnected: boolean;
     emailConnected: boolean;
 }
@@ -14,4 +17,5 @@ export interface UpdateDailyReportSettingsDto {
     channels?: DailyReportChannel[];
     hour?: number;
     minute?: number;
+    network?: Cluster;
 }
