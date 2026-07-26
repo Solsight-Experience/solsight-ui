@@ -20,7 +20,8 @@ export async function fetchJupiterQuote(
                 outputMint: request.outputMint,
                 amount: request.amount,
                 swapMode: request.swapMode,
-                slippageBps: request.slippageBps
+                slippageBps: request.slippageBps,
+                ...(request.forJitoBundle ? { forJitoBundle: true } : {})
             },
             signal: opts?.signal
         });

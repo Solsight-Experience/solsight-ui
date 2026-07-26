@@ -13,6 +13,7 @@ export interface QuoteRequest {
     amount: string;
     swapMode: SwapMode;
     slippageBps: number;
+    forJitoBundle?: boolean;
 }
 
 export interface QuoteResult {

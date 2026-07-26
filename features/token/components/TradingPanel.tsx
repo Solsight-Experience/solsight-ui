@@ -561,7 +561,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         outputMint: receiveMint,
                         amount: amountBaseUnits,
                         swapMode,
-                        slippageBps
+                        slippageBps,
+                        forJitoBundle: antiMevRpc === "sec"
                     },
                     {
                         signal: controller.signal,
@@ -625,7 +626,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setReceiveAmount,
         payToken,
         receiveToken,
-        orderType
+        orderType,
+        antiMevRpc
     ]);
 
     const handleSwap = async () => {
