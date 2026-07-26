@@ -32,11 +32,19 @@ export class PriorityFeeItem extends PresetCustomItem<number> {
     }
 
     isLocked(ctx: ConfigCtx): LockResult {
-        const tip = ctx.getItemState<{ mode: "auto" | "custom"; custom: number | null }>("tipFee");
-        return tip?.mode === "custom" ? { locked: true, forcedMode: "custom", reason: "Custom tip fee requires custom priority fee." } : { locked: false };
+        // Jupiter's /swap carries a priority fee OR a Jito tip, never both. When anti-MEV
+        // is engaged the tip is used instead, so the priority fee is not applied — lock it.
+        const antiMev = ctx.getItemState<{ value: "off" | "sec" }>("antiMev");
+        return antiMev?.value === "sec" ? { locked: true, reason: "Anti-MEV uses a Jito tip — priority fee is not applied on this path." } : { locked: false };
     }
 
     serialize(state: { mode: "auto" | "custom"; custom: number | null }, ctx: ConfigCtx): SwapRequestFragment {
+        // On the anti-MEV (Jito tip) path the priority fee is unused; omit it so the request
+        // never carries both a priority fee and a tip (the backend rejects that on mainnet).
+        const antiMev = ctx.getItemState<{ value: "off" | "sec" }>("antiMev");
+        if (antiMev?.value === "sec") {
+            return {};
+        }
         const effectiveLamports = state.mode === "auto" ? (this.autoValue(ctx) ?? 0) : (state.custom ?? this.autoValue(ctx) ?? 0);
         return { priorityFeeLamports: effectiveLamports };
     }

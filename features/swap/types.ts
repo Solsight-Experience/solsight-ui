@@ -32,6 +32,9 @@ export interface ExecuteSwapRequest {
     signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
     gaslessFeeToken?: string;
     antiMevRpc?: "off" | "sec";
+    priorityFeeLamports?: number;
+    tipLamports?: number;
+    maxAutoFeeLamports?: number;
 }
 
 export interface JupiterDynamicSlippageReport {
@@ -50,6 +53,9 @@ export interface TransactionSwapResponse {
 
 export interface ExecuteSwapResult {
     signature: string;
+    lastValidBlockHeight: number;
+    /** Base64 of the transaction we signed — the client reads its recentBlockhash to confirm. */
+    signedTransaction: string;
 }
 
 export enum ExecutorCapability {

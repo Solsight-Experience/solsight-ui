@@ -58,11 +58,18 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     // server use its default (non-Jito) RPC path.
     const antiMevPayload = request.antiMevRpc === "sec" ? { antiMevRpc: request.antiMevRpc } : {};
 
+    // Forward user-selected fees only when set; omitted fields let the backend auto-derive.
+    const feePayload: Record<string, number> = {};
+    if (typeof request.priorityFeeLamports === "number") feePayload.priorityFeeLamports = request.priorityFeeLamports;
+    if (typeof request.tipLamports === "number") feePayload.tipLamports = request.tipLamports;
+    if (typeof request.maxAutoFeeLamports === "number") feePayload.maxAutoFeeLamports = request.maxAutoFeeLamports;
+
     const txData = await apiClient.post<TransactionSwapResponse>(SWAP_ENDPOINTS.TRANSACTION, {
         quoteResponse: request.quoteResponse,
         userPublicKey: request.userPublicKey,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
-        ...antiMevPayload
+        ...antiMevPayload,
+        ...feePayload
     });
 
     if (!txData.swapTransaction) {
@@ -73,14 +80,18 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     const signed = await request.signTransaction(tx);
     const signedTxBase64 = Buffer.from(signed.serialize()).toString("base64");
 
-    const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
+    const result = await apiClient.post<{ signature: string; lastValidBlockHeight: number }>(SWAP_ENDPOINTS.EXECUTE, {
         signedTransaction: signedTxBase64,
         lastValidBlockHeight: txData.lastValidBlockHeight,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
         ...antiMevPayload
     });
 
-    return { signature: result.signature };
+    return {
+        signature: result.signature,
+        lastValidBlockHeight: result.lastValidBlockHeight ?? txData.lastValidBlockHeight,
+        signedTransaction: signedTxBase64
+    };
 }
 
 export function mapQuoteError(payload: unknown): string {
