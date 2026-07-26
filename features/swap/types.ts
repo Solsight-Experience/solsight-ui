@@ -34,6 +34,20 @@ export interface ExecuteSwapRequest {
     antiMevRpc?: "off" | "sec";
 }
 
+export interface JupiterDynamicSlippageReport {
+    slippageBps?: number;
+    otherAmount?: number;
+    simulatedIncurredSlippageBps?: number;
+    amplificationRatio?: string;
+}
+
+export interface TransactionSwapResponse {
+    swapTransaction: string;
+    lastValidBlockHeight: number;
+    prioritizationFeeLamports?: number;
+    dynamicSlippageReport?: JupiterDynamicSlippageReport;
+}
+
 export interface ExecuteSwapResult {
     signature: string;
 }

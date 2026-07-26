@@ -2,7 +2,7 @@ import axios from "axios";
 import { VersionedTransaction } from "@solana/web3.js";
 import { apiClient } from "@/lib/network-requests/api-client";
 import { SWAP_ENDPOINTS } from "@/lib/constants";
-import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse } from "./types";
+import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse, TransactionSwapResponse } from "./types";
 import { buildRoutePathTokens, getRouteDetails } from "./utils";
 
 export async function fetchJupiterQuote(
@@ -58,7 +58,7 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     // server use its default (non-Jito) RPC path.
     const antiMevPayload = request.antiMevRpc === "sec" ? { antiMevRpc: request.antiMevRpc } : {};
 
-    const txData = await apiClient.post<{ swapTransaction: string }>(SWAP_ENDPOINTS.TRANSACTION, {
+    const txData = await apiClient.post<TransactionSwapResponse>(SWAP_ENDPOINTS.TRANSACTION, {
         quoteResponse: request.quoteResponse,
         userPublicKey: request.userPublicKey,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
@@ -75,6 +75,7 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
 
     const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
         signedTransaction: signedTxBase64,
+        lastValidBlockHeight: txData.lastValidBlockHeight,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
         ...antiMevPayload
     });
