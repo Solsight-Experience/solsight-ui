@@ -55,11 +55,8 @@ export async function fetchJupiterQuote(
 }
 
 export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<ExecuteSwapResult> {
-    // Only forward the anti-MEV flag when protection is requested; "off"/undefined lets the
-    // server use its default (non-Jito) RPC path.
     const antiMevPayload = request.antiMevRpc === "sec" ? { antiMevRpc: request.antiMevRpc } : {};
 
-    // Forward user-selected fees only when set; omitted fields let the backend auto-derive.
     const feePayload: Record<string, number> = {};
     if (typeof request.priorityFeeLamports === "number") feePayload.priorityFeeLamports = request.priorityFeeLamports;
     if (typeof request.tipLamports === "number") feePayload.tipLamports = request.tipLamports;

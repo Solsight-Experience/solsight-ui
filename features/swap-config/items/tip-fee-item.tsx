@@ -32,8 +32,6 @@ export class TipFeeItem extends PresetCustomItem<number> {
     }
 
     serialize(state: { mode: "auto" | "custom"; custom: number | null }, ctx: ConfigCtx): SwapRequestFragment {
-        // A Jito tip only lands via the anti-MEV path; off that path it is unused, so omit it
-        // to keep the request from carrying both a priority fee and a tip.
         const antiMev = ctx.getItemState<{ value: "off" | "sec" }>("antiMev");
         if (antiMev?.value !== "sec") {
             return {};

@@ -55,7 +55,6 @@ export interface TransactionSwapResponse {
 export interface ExecuteSwapResult {
     signature: string;
     lastValidBlockHeight: number;
-    /** Base64 of the transaction we signed — the client reads its recentBlockhash to confirm. */
     signedTransaction: string;
 }
 
