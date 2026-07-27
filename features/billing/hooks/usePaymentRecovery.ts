@@ -19,7 +19,7 @@ export function usePaymentRecovery() {
         const { pending, clearPending } = usePendingPaymentStore.getState();
         if (!pending) return;
 
-        BillingService.submitPayment(pending.orderId, pending.signedTransactionBase64)
+        BillingService.submitPayment(pending.orderId, pending.signedTransactionBase64, pending.lastValidBlockHeight)
             .then(() => {
                 queryClient.invalidateQueries({ queryKey: queryKeys.billing.quota() });
             })

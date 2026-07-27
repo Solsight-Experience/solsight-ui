@@ -14,6 +14,7 @@ import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { usePositions, useWallets } from "@/features/portfolio/hooks/portfolio.hooks";
 import { toast } from "sonner";
 import {
+    confirmSwapSignature,
     executeJupiterSwap,
     fetchJupiterQuote,
     formatDisplay,
@@ -99,6 +100,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
     const swapConfigStates = useSwapConfigStore((s) => s.items);
     const setSwapConfigItem = useSwapConfigStore((s) => s.setItem);
     const setSlippageBps = useSwapConfigStore((s) => s.setSlippageBps);
+    const cluster = useClusterStore((s) => s.cluster);
     const { isConnecting, publicKey, signTransaction, ensureWalletReadyForUserAction, connected, connectWallet, isWalletLinkedToUser } = useLinkedWallet();
 
     const [lastEdited, setLastEdited] = useState<"pay" | "receive" | null>(null);
@@ -559,7 +561,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
                         outputMint: receiveMint,
                         amount: amountBaseUnits,
                         swapMode,
-                        slippageBps
+                        slippageBps,
+                        forJitoBundle: antiMevRpc === "sec"
                     },
                     {
                         signal: controller.signal,
@@ -623,7 +626,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setReceiveAmount,
         payToken,
         receiveToken,
-        orderType
+        orderType,
+        antiMevRpc
     ]);
 
     const handleSwap = async () => {
@@ -673,17 +677,31 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ token }) => {
         setSwapState({ loading: true, error: null, signature: null });
 
         try {
-            const { signature } = await executeJupiterSwap({
+            const { signature, lastValidBlockHeight, signedTransaction } = await executeJupiterSwap({
                 quoteResponse: quoteState.rawQuote,
                 userPublicKey: walletPublicKey,
                 signTransaction: (tx) => signTransaction(tx),
                 gaslessFeeToken,
-                antiMevRpc
+                antiMevRpc,
+                priorityFeeLamports: swapConfigFragment.priorityFeeLamports,
+                tipLamports: swapConfigFragment.tipLamports,
+                maxAutoFeeLamports: swapConfigFragment.maxAutoFeeLamports
             });
 
+            // Backend sends and returns the signature without waiting; confirm on the client.
             setSwapState({ loading: false, error: null, signature });
-            await refreshBalancesAfterSwap();
             toast.success("Swap submitted!");
+
+            const confirm = await confirmSwapSignature({ cluster, signature, signedTransactionBase64: signedTransaction, lastValidBlockHeight });
+            if (confirm.status === "confirmed") {
+                toast.success("Swap confirmed!");
+                await refreshBalancesAfterSwap();
+            } else if (confirm.status === "expired") {
+                toast.warning("Swap not confirmed before the blockhash expired — it may still land. Check your wallet.");
+                await refreshBalancesAfterSwap();
+            } else {
+                toast.error("Swap failed on-chain.");
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : "Swap failed";
             const isUserRejected = /user rejected|rejected the request|denied|cancelled/i.test(message);

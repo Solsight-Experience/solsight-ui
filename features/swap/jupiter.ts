@@ -2,7 +2,7 @@ import axios from "axios";
 import { VersionedTransaction } from "@solana/web3.js";
 import { apiClient } from "@/lib/network-requests/api-client";
 import { SWAP_ENDPOINTS } from "@/lib/constants";
-import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse } from "./types";
+import type { ExecuteSwapRequest, ExecuteSwapResult, QuoteRequest, QuoteResult, SwapInfoResponse, TransactionSwapResponse } from "./types";
 import { buildRoutePathTokens, getRouteDetails } from "./utils";
 
 export async function fetchJupiterQuote(
@@ -20,7 +20,8 @@ export async function fetchJupiterQuote(
                 outputMint: request.outputMint,
                 amount: request.amount,
                 swapMode: request.swapMode,
-                slippageBps: request.slippageBps
+                slippageBps: request.slippageBps,
+                ...(request.forJitoBundle ? { forJitoBundle: true } : {})
             },
             signal: opts?.signal
         });
@@ -54,15 +55,19 @@ export async function fetchJupiterQuote(
 }
 
 export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<ExecuteSwapResult> {
-    // Only forward the anti-MEV flag when protection is requested; "off"/undefined lets the
-    // server use its default (non-Jito) RPC path.
     const antiMevPayload = request.antiMevRpc === "sec" ? { antiMevRpc: request.antiMevRpc } : {};
 
-    const txData = await apiClient.post<{ swapTransaction: string }>(SWAP_ENDPOINTS.TRANSACTION, {
+    const feePayload: Record<string, number> = {};
+    if (typeof request.priorityFeeLamports === "number") feePayload.priorityFeeLamports = request.priorityFeeLamports;
+    if (typeof request.tipLamports === "number") feePayload.tipLamports = request.tipLamports;
+    if (typeof request.maxAutoFeeLamports === "number") feePayload.maxAutoFeeLamports = request.maxAutoFeeLamports;
+
+    const txData = await apiClient.post<TransactionSwapResponse>(SWAP_ENDPOINTS.TRANSACTION, {
         quoteResponse: request.quoteResponse,
         userPublicKey: request.userPublicKey,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
-        ...antiMevPayload
+        ...antiMevPayload,
+        ...feePayload
     });
 
     if (!txData.swapTransaction) {
@@ -73,13 +78,18 @@ export async function executeJupiterSwap(request: ExecuteSwapRequest): Promise<E
     const signed = await request.signTransaction(tx);
     const signedTxBase64 = Buffer.from(signed.serialize()).toString("base64");
 
-    const result = await apiClient.post<{ signature: string }>(SWAP_ENDPOINTS.EXECUTE, {
+    const result = await apiClient.post<{ signature: string; lastValidBlockHeight: number }>(SWAP_ENDPOINTS.EXECUTE, {
         signedTransaction: signedTxBase64,
+        lastValidBlockHeight: txData.lastValidBlockHeight,
         ...(request.gaslessFeeToken ? { gaslessFeeToken: request.gaslessFeeToken } : {}),
         ...antiMevPayload
     });
 
-    return { signature: result.signature };
+    return {
+        signature: result.signature,
+        lastValidBlockHeight: result.lastValidBlockHeight ?? txData.lastValidBlockHeight,
+        signedTransaction: signedTxBase64
+    };
 }
 
 export function mapQuoteError(payload: unknown): string {

@@ -13,6 +13,7 @@ export interface QuoteRequest {
     amount: string;
     swapMode: SwapMode;
     slippageBps: number;
+    forJitoBundle?: boolean;
 }
 
 export interface QuoteResult {
@@ -32,10 +33,29 @@ export interface ExecuteSwapRequest {
     signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
     gaslessFeeToken?: string;
     antiMevRpc?: "off" | "sec";
+    priorityFeeLamports?: number;
+    tipLamports?: number;
+    maxAutoFeeLamports?: number;
+}
+
+export interface JupiterDynamicSlippageReport {
+    slippageBps?: number;
+    otherAmount?: number;
+    simulatedIncurredSlippageBps?: number;
+    amplificationRatio?: string;
+}
+
+export interface TransactionSwapResponse {
+    swapTransaction: string;
+    lastValidBlockHeight: number;
+    prioritizationFeeLamports?: number;
+    dynamicSlippageReport?: JupiterDynamicSlippageReport;
 }
 
 export interface ExecuteSwapResult {
     signature: string;
+    lastValidBlockHeight: number;
+    signedTransaction: string;
 }
 
 export enum ExecutorCapability {

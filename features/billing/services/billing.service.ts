@@ -19,8 +19,8 @@ export class BillingService {
         return apiClient.post<BuiltPaymentTransaction>(BILLING_ENDPOINTS.REFRESH_TX(orderId), { walletAddress });
     }
 
-    static async submitPayment(orderId: string, signedTransaction: string): Promise<SubmitPaymentResult> {
-        return apiClient.post<SubmitPaymentResult>(BILLING_ENDPOINTS.SUBMIT_PAYMENT(orderId), { signedTransaction });
+    static async submitPayment(orderId: string, signedTransaction: string, lastValidBlockHeight: number): Promise<SubmitPaymentResult> {
+        return apiClient.post<SubmitPaymentResult>(BILLING_ENDPOINTS.SUBMIT_PAYMENT(orderId), { signedTransaction, lastValidBlockHeight });
     }
 
     static async getOrders(page = 1, limit = 20): Promise<PaymentOrderPage> {

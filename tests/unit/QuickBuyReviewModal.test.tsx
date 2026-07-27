@@ -4,11 +4,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { QuickBuyReviewModal } from "@/features/token-table/components/QuickBuyReviewModal";
 
-const { mockConnectWallet, mockGetTokenDetail, mockFetchJupiterQuote, mockExecuteJupiterSwap } = vi.hoisted(() => ({
+const { mockConnectWallet, mockGetTokenDetail, mockFetchJupiterQuote, mockExecuteJupiterSwap, mockConfirmSwapSignature } = vi.hoisted(() => ({
     mockConnectWallet: vi.fn(),
     mockGetTokenDetail: vi.fn(),
     mockFetchJupiterQuote: vi.fn(),
-    mockExecuteJupiterSwap: vi.fn()
+    mockExecuteJupiterSwap: vi.fn(),
+    mockConfirmSwapSignature: vi.fn()
 }));
 
 vi.mock("@/features/wallets/hooks/useWallet", () => ({
@@ -31,7 +32,8 @@ vi.mock("@/features/swap", async () => {
     return {
         ...actual,
         fetchJupiterQuote: mockFetchJupiterQuote,
-        executeJupiterSwap: mockExecuteJupiterSwap
+        executeJupiterSwap: mockExecuteJupiterSwap,
+        confirmSwapSignature: mockConfirmSwapSignature
     };
 });
 
@@ -86,6 +88,12 @@ describe("QuickBuyReviewModal", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetTokenDetail.mockResolvedValue({ decimals: 6 });
+        mockExecuteJupiterSwap.mockResolvedValue({
+            signature: "test-signature",
+            lastValidBlockHeight: 123456,
+            signedTransaction: "c2lnbmVkLXR4"
+        });
+        mockConfirmSwapSignature.mockResolvedValue({ status: "confirmed" });
         mockFetchJupiterQuote.mockResolvedValue({
             rawQuote: { mock: true },
             priceImpactPct: 0.001,

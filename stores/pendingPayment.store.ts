@@ -4,6 +4,7 @@ import { createJSONStorage, persist, type StateStorage } from "zustand/middlewar
 export interface PendingPayment {
     orderId: string;
     signedTransactionBase64: string;
+    lastValidBlockHeight: number;
     createdAt: number;
 }
 
