@@ -212,3 +212,12 @@ export const CLUSTER_RPC_URLS: Record<(typeof CLUSTERS)[number], string> = {
     mainnet: "https://api.mainnet-beta.solana.com",
     devnet: "https://api.devnet.solana.com"
 };
+
+export const PORTFOLIO_ASSET_COLORS = [
+    "#8b5cf6", // violet-500
+    "#3b82f6", // blue-500
+    "#14b8a6", // teal-500
+    "#f59e0b", // amber-500
+    "#ec4899", // pink-500
+    "#8b5cf6" // violet-500
+] as const;
