@@ -32,6 +32,10 @@ export class TipFeeItem extends PresetCustomItem<number> {
     }
 
     serialize(state: { mode: "auto" | "custom"; custom: number | null }, ctx: ConfigCtx): SwapRequestFragment {
+        const antiMev = ctx.getItemState<{ value: "off" | "sec" }>("antiMev");
+        if (antiMev?.value !== "sec") {
+            return {};
+        }
         const effectiveLamports = state.mode === "auto" ? (this.autoValue(ctx) ?? 0) : (state.custom ?? this.autoValue(ctx) ?? 0);
         return { tipLamports: effectiveLamports };
     }

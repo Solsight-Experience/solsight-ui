@@ -13,8 +13,18 @@ import { DecimalFormatter } from "@/lib/number-formatters";
 import { useLinkedWallet } from "@/features/wallets/hooks/useLinkedWallet";
 import { tokenApi } from "@/features/token/services/token.services";
 import type { TokenTableData } from "../config/types";
-import { executeJupiterSwap, fetchJupiterQuote, formatDisplay, formatFromBaseUnits, isValidAmount, parseInputNumber, toBaseUnits } from "@/features/swap";
+import {
+    confirmSwapSignature,
+    executeJupiterSwap,
+    fetchJupiterQuote,
+    formatDisplay,
+    formatFromBaseUnits,
+    isValidAmount,
+    parseInputNumber,
+    toBaseUnits
+} from "@/features/swap";
 import useSettingsStore from "@/stores/settings.store";
+import useClusterStore from "@/stores/cluster.store";
 
 interface QuickBuyReviewModalProps {
     open: boolean;
@@ -27,6 +37,7 @@ const QUICK_BUY_SLIPPAGE_FORMATTER = new DecimalFormatter({ locale: "en-US", max
 
 export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: QuickBuyReviewModalProps) {
     const { isConnecting, signTransaction, publicKey, ensureWalletReadyForUserAction } = useLinkedWallet();
+    const cluster = useClusterStore((s) => s.cluster);
     const defaultSlippageBps = useSettingsStore((state) => state.defaultSlippageBps);
     const [slippageBps, setSlippageBps] = useState(defaultSlippageBps);
     const [debouncedSlippageBps, setDebouncedSlippageBps] = useState(defaultSlippageBps);
@@ -189,6 +200,21 @@ export function QuickBuyReviewModal({ open, onOpenChange, token, amountSol }: Qu
             });
             setSignature(result.signature);
             toast.success("Swap submitted!");
+
+            // Backend sends without confirming; confirm the signature on the client.
+            const confirm = await confirmSwapSignature({
+                cluster,
+                signature: result.signature,
+                signedTransactionBase64: result.signedTransaction,
+                lastValidBlockHeight: result.lastValidBlockHeight
+            });
+            if (confirm.status === "confirmed") {
+                toast.success("Swap confirmed!");
+            } else if (confirm.status === "expired") {
+                toast.warning("Swap not confirmed before the blockhash expired — it may still land.");
+            } else {
+                toast.error("Swap failed on-chain.");
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : "Swap failed.";
             setSwapError(message);

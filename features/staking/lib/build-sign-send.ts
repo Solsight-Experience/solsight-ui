@@ -33,7 +33,7 @@ export async function buildSignSend(
     const signed = await signTransaction(vtx);
     const signedTransactionBase64 = Buffer.from(signed.serialize()).toString("base64");
 
-    const { signature } = await executeStakingTransaction(signedTransactionBase64);
+    const { signature } = await executeStakingTransaction(signedTransactionBase64, built.lastValidBlockHeight);
     return { signature, built };
 }
 

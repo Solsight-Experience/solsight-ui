@@ -44,14 +44,15 @@ function isBlockhashExpiredError(err: unknown): boolean {
 async function signAndSubmit(
     orderId: string,
     transactionBase64: string,
+    lastValidBlockHeight: number,
     sign: SignTransactionFn,
-    onPending: (signedTransactionBase64: string) => void
+    onPending: (signedTransactionBase64: string, lastValidBlockHeight: number) => void
 ): Promise<SubmitPaymentResult> {
     const tx = VersionedTransaction.deserialize(base64ToBytes(transactionBase64));
     const signed = await sign(tx);
     const signedTransactionBase64 = Buffer.from(signed.serialize()).toString("base64");
-    onPending(signedTransactionBase64);
-    return BillingService.submitPayment(orderId, signedTransactionBase64);
+    onPending(signedTransactionBase64, lastValidBlockHeight);
+    return BillingService.submitPayment(orderId, signedTransactionBase64, lastValidBlockHeight);
 }
 
 export function usePurchaseCredits(
@@ -81,21 +82,21 @@ export function usePurchaseCredits(
                 const order = await BillingService.createOrder(pkg.code, walletPubkey);
                 setState((s) => ({ ...s, status: "signing" }));
 
-                const onPending = (signedTransactionBase64: string) => {
-                    setPending({ orderId: order.orderId, signedTransactionBase64, createdAt: Date.now() });
+                const onPending = (signedTransactionBase64: string, lastValidBlockHeight: number) => {
+                    setPending({ orderId: order.orderId, signedTransactionBase64, lastValidBlockHeight, createdAt: Date.now() });
                     setState((s) => ({ ...s, status: "submitting" }));
                 };
 
                 let result: SubmitPaymentResult;
                 try {
-                    result = await signAndSubmit(order.orderId, order.transaction, signTransaction, onPending);
+                    result = await signAndSubmit(order.orderId, order.transaction, order.lastValidBlockHeight, signTransaction, onPending);
                 } catch (err) {
                     if (!isBlockhashExpiredError(err)) throw err;
                     // Người dùng chần chừ ký quá lâu (>60-90s) — build lại tx với blockhash
                     // mới cho CÙNG order rồi ký lại 1 lần, không tạo order mới.
                     const refreshed = await BillingService.refreshTransaction(order.orderId, walletPubkey);
                     setState((s) => ({ ...s, status: "signing" }));
-                    result = await signAndSubmit(order.orderId, refreshed.transaction, signTransaction, onPending);
+                    result = await signAndSubmit(order.orderId, refreshed.transaction, refreshed.lastValidBlockHeight, signTransaction, onPending);
                 }
 
                 clearPending();
