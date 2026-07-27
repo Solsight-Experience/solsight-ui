@@ -527,7 +527,7 @@ const SignInButton = memo(function SignInButton() {
         <Link
             href="/authentication"
             className="flex items-center gap-1.5 px-5 h-[34px] rounded-lg
-               bg-gradient-to-r from-violet-600 to-indigo-500 text-white
+               bg-gradient-to-r from-violet-600 to-indigo-500 !text-white
                text-[12px] font-bold tracking-[0.06em] uppercase
                transition-all duration-200
                hover:brightness-110 hover:shadow-lg hover:shadow-violet-500/30
