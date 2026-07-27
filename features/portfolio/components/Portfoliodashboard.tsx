@@ -5,6 +5,7 @@ import { miniChartOptions, areaSeriesPresets } from "@/lib/chart-config";
 import { usePortfolioOverview, usePnlChart } from "../hooks/portfolio.hooks";
 import { MockConnectWalletDialog } from "./MockConnectWalletDialog";
 import { currencyFormatter } from "@/lib/formatters";
+import { PORTFOLIO_ASSET_COLORS } from "@/lib/constants";
 
 // Mini PnL chart component using lightweight-charts
 const PnlLineChart: React.FC<{ data: { time: UTCTimestamp; value: number }[] }> = ({ data }) => {
@@ -192,8 +193,7 @@ export const PortfolioDashboard: React.FC = () => {
         value: point.pnl
     }));
 
-    // Premium dark vibrant colors for donut
-    const assetColors = ["#8b5cf6", "#3b82f6", "#14b8a6", "#f59e0b", "#ec4899", "#8b5cf6"];
+    const assetColors = PORTFOLIO_ASSET_COLORS;
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-4 w-full">
