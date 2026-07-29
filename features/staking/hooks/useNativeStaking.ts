@@ -114,15 +114,14 @@ export function useNativeStaking(
     );
 
     const handleWithdrawNative = useCallback(
-        async (nativeStakeAddress: string, amountSol: number) => {
+        async (nativeStakeAddress: string, amountLamports: string) => {
             setWithdrawState(INIT_STATE);
             if (!checkWallet("withdraw SOL")) return false;
             setWithdrawState((s) => ({ ...s, status: "signing" }));
 
             try {
-                const lamports = BigInt(Math.round(amountSol * LAMPORTS_PER_SOL));
                 const { signature } = await buildSignSend(
-                    { mode: "native", action: "withdraw", wallet: walletPubkey!, nativeStakeAddress, amountLamports: lamports.toString() },
+                    { mode: "native", action: "withdraw", wallet: walletPubkey!, nativeStakeAddress, amountLamports },
                     signTransaction!
                 );
 

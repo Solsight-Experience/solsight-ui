@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Info, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, IF_RESERVE_SOL, getSolscanTxUrl } from "../constants/program";
+import { DEFAULT_STAKING_PROTOCOL, getStakingProtocolMeta, type StakingProtocolId } from "../constants/protocols";
 import { useLiquidStaking, type StakeStatus, type StakeActionSuccessPayload } from "../hooks/useLiquidStaking";
 import { useIFProgram } from "../hooks/useIFProgram";
 import { StakeAmountInput } from "./StakeAmountInput";
@@ -19,6 +20,7 @@ interface StakeModalProps {
     signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
     ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
     onSuccess?: (payload?: StakeActionSuccessPayload) => void;
+    protocol?: StakingProtocolId;
 }
 
 const STATUS_LABELS: Record<StakeStatus, string> = {
@@ -37,12 +39,21 @@ export function StakeModal({
     connected,
     signTransaction,
     ensureWalletReadyForUserAction,
-    onSuccess
+    onSuccess,
+    protocol = DEFAULT_STAKING_PROTOCOL
 }: StakeModalProps) {
     const { resolvedTheme } = useTheme();
     const [amount, setAmount] = useState("");
     const networkLabel = IF_CONFIG.label;
-    const { stakeState, resetStakeState, handleStake } = useLiquidStaking(connected, walletPubkey, signTransaction, ensureWalletReadyForUserAction, onSuccess);
+    const protocolMeta = getStakingProtocolMeta(protocol);
+    const { stakeState, resetStakeState, handleStake } = useLiquidStaking(
+        connected,
+        walletPubkey,
+        signTransaction,
+        ensureWalletReadyForUserAction,
+        onSuccess,
+        protocol
+    );
     const { isReady: clientReady } = useIFProgram(connected, walletPubkey);
 
     const loading = stakeState.status !== "idle" && stakeState.status !== "done" && stakeState.status !== "error";
@@ -106,7 +117,7 @@ export function StakeModal({
                     <div className="flex items-center gap-3 rounded-2xl border border-purple-500/25 bg-purple-500/8 px-4 py-3.5">
                         <ShieldCheck className="h-9 w-9 text-purple-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-bold text-slate-900 dark:text-white">Staking Pool</p>
+                            <p className="text-[13px] font-bold text-slate-900 dark:text-white">{protocolMeta.label} Staking Pool</p>
                             <p className="mt-0.5 text-[11px] text-slate-500 dark:text-gray-400">SOL Market · {networkLabel} · Earn fees from protocol</p>
                         </div>
                         <div className="flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-1">
@@ -142,8 +153,8 @@ export function StakeModal({
                     <div className="flex gap-2.5 rounded-2xl border border-blue-500/20 bg-blue-500/10 px-3.5 py-3 text-[12px] text-blue-700 dark:bg-blue-500/6 dark:text-blue-300">
                         <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-blue-400" />
                         <span className="leading-relaxed">
-                            Your SOL is swapped into <strong className="text-slate-900 dark:text-white">jitoSOL</strong>, held directly in your own wallet. No
-                            lockup — unstake back to SOL any time.
+                            Your SOL is swapped into <strong className="text-slate-900 dark:text-white">{protocolMeta.lstSymbol}</strong>, held directly in your
+                            own wallet. No lockup — unstake back to SOL any time.
                         </span>
                     </div>
 

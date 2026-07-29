@@ -13,7 +13,9 @@ import { UnstakeModal } from "./UnstakeModal";
 import { NativeStakeModal } from "./NativeStakeModal";
 import { NativeStakeList } from "./NativeStakeList";
 import { IF_CONFIG, NATIVE_STAKE_PAGE_SIZE } from "../constants/program";
+import { DEFAULT_STAKING_PROTOCOL, STAKING_PROTOCOLS, getStakingProtocolMeta, type StakingProtocolId } from "../constants/protocols";
 import { useStakingPosition } from "../hooks/useStakingPosition";
+import { useStakingApy } from "../hooks/useStakingApy";
 import { useIFProgram } from "../hooks/useIFProgram";
 import type { StakeActionSuccessPayload } from "../hooks/useLiquidStaking";
 import { useStakeHistoryRefreshStore } from "../lib/stake-history-refresh.store";
@@ -38,9 +40,13 @@ export function StakingPanel() {
     const publishHistoryRefresh = useStakeHistoryRefreshStore((state) => state.publishRefresh);
 
     const [mode, setMode] = useState<StakingViewMode>("liquid");
+    const [protocol, setProtocol] = useState<StakingProtocolId>(DEFAULT_STAKING_PROTOCOL);
     const [stakeOpen, setStakeOpen] = useState(false);
     const [unstakeOpen, setUnstakeOpen] = useState(false);
     const [nativePage, setNativePage] = useState(1);
+    const protocolMeta = getStakingProtocolMeta(protocol);
+    const { data: apyData } = useStakingApy();
+    const apyByProtocol = new Map(apyData?.map((entry) => [entry.protocol, entry.apyPercent]));
 
     // Sourced from the backend (same cluster-aware /users/me/wallets used by Portfolio) instead of a
     // direct client-side RPC call, so it always reflects the app's Mainnet/Devnet toggle rather than
@@ -52,7 +58,7 @@ export function StakingPanel() {
         data: position,
         isLoading: positionLoading,
         refetch: refetchPosition
-    } = useStakingPosition(isReadyForUserAction, actionablePublicKey, nativePage, NATIVE_STAKE_PAGE_SIZE);
+    } = useStakingPosition(isReadyForUserAction, actionablePublicKey, nativePage, NATIVE_STAKE_PAGE_SIZE, protocol);
 
     const refetchAll = useCallback(
         (payload?: StakeActionSuccessPayload) => {
@@ -66,10 +72,10 @@ export function StakingPanel() {
 
     const liquidPosition = position?.liquid ?? null;
     const nativePositions = position?.native ?? { items: [], total: 0, page: nativePage, pageSize: NATIVE_STAKE_PAGE_SIZE };
-    // poolTokenAmount is the actual jitoSOL held (raw units); estimatedSol is that same
-    // balance converted to its current SOL value via the pool's exchange rate — the two
+    // poolTokenAmount is the actual LST (jitoSOL/bSOL) held (raw units); estimatedSol is that
+    // same balance converted to its current SOL value via the pool's exchange rate — the two
     // diverge once the pool has accrued staking rewards, so they're shown separately.
-    const jitoSolAmount = liquidPosition ? Number(liquidPosition.poolTokenAmount) / LAMPORTS_PER_SOL : 0;
+    const lstAmount = liquidPosition ? Number(liquidPosition.poolTokenAmount) / LAMPORTS_PER_SOL : 0;
     const stakedSol = liquidPosition?.estimatedSol ?? 0;
     const isDark = resolvedTheme === "dark";
 
@@ -154,6 +160,34 @@ export function StakingPanel() {
 
                 {mode === "liquid" ? (
                     <>
+                        {/* Protocol selector — pick which LST pool to stake into, APY shown side by side */}
+                        <div className="flex gap-2">
+                            {STAKING_PROTOCOLS.map((p) => {
+                                const apy = apyByProtocol.get(p.id);
+                                const isSelected = p.id === protocol;
+                                return (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => setProtocol(p.id)}
+                                        className={`flex-1 cursor-pointer flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-all ${
+                                            isSelected
+                                                ? "border-purple-500/50 bg-purple-500/10 dark:bg-purple-500/10"
+                                                : "border-slate-200 bg-white/60 hover:border-purple-500/30 dark:border-white/8 dark:bg-white/4"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`text-[13px] font-bold ${isSelected ? "text-purple-600 dark:text-purple-300" : "text-slate-700 dark:text-gray-300"}`}
+                                        >
+                                            {p.label}
+                                        </span>
+                                        <span className="text-[11px] font-semibold text-emerald-500 dark:text-emerald-400">
+                                            {apy != null ? `${apy.toFixed(2)}% APY` : "—"}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         {/* Balances */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="rounded-2xl border border-purple-500/20 bg-purple-500/10 px-4 py-3 dark:bg-purple-500/5">
@@ -162,11 +196,11 @@ export function StakingPanel() {
                                     {positionLoading ? (
                                         <span className="inline-block h-6 w-20 animate-pulse rounded-lg bg-slate-200 dark:bg-white/10" />
                                     ) : (
-                                        <>{jitoSolAmount.toFixed(6)}</>
+                                        <>{lstAmount.toFixed(6)}</>
                                     )}
                                 </p>
                                 <p className="mt-1 text-xs text-slate-500 dark:text-gray-500">
-                                    jitoSOL {!positionLoading && liquidPosition && <>· ≈ {stakedSol.toFixed(4)} SOL</>}
+                                    {protocolMeta.lstSymbol} {!positionLoading && liquidPosition && <>· ≈ {stakedSol.toFixed(4)} SOL</>}
                                 </p>
                             </div>
                             <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 dark:bg-blue-500/5">
@@ -179,18 +213,18 @@ export function StakingPanel() {
                         <div className="flex gap-3 rounded-2xl border border-indigo-500/25 bg-gradient-to-r from-indigo-500/12 to-purple-500/12 p-4 dark:from-indigo-500/8 dark:to-purple-500/8">
                             <TrendingUp className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                             <div>
-                                <p className="text-[13px] font-bold text-slate-900 dark:text-white">Instant jitoSOL Swap</p>
+                                <p className="text-[13px] font-bold text-slate-900 dark:text-white">Instant {protocolMeta.lstSymbol} Swap</p>
                                 <p className="mt-0.5 text-[12px] leading-relaxed text-slate-600 dark:text-gray-400">
-                                    Your SOL is swapped into <strong className="text-indigo-700 dark:text-indigo-300">jitoSOL</strong>, held in your own wallet.
-                                    No lockup — unstake back to SOL any time.
+                                    Your SOL is swapped into <strong className="text-indigo-700 dark:text-indigo-300">{protocolMeta.lstSymbol}</strong>, held in
+                                    your own wallet. No lockup — unstake back to SOL any time.
                                 </p>
                                 <Link
-                                    href="https://www.jito.network/docs/jitosol/jitosol-liquid-staking/liquid-staking-basics/"
+                                    href={protocolMeta.docsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
                                 >
-                                    Jito Documentation
+                                    {protocolMeta.label} Documentation
                                     <ExternalLink className="h-3 w-3" />
                                 </Link>
                             </div>
@@ -211,7 +245,7 @@ export function StakingPanel() {
                                 <button
                                     className="flex-1 cursor-pointer rounded-2xl border border-slate-300/90 bg-white/60 py-3.5 text-[14px] font-semibold text-slate-700 backdrop-blur-sm transition-all duration-200 hover:border-orange-500/50 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-30 active:scale-[0.98] dark:border-white/15 dark:bg-transparent dark:text-gray-300 dark:hover:text-orange-300"
                                     onClick={() => setUnstakeOpen(true)}
-                                    disabled={!clientReady || jitoSolAmount === 0}
+                                    disabled={!clientReady || lstAmount === 0}
                                 >
                                     Unstake
                                 </button>
@@ -300,6 +334,7 @@ export function StakingPanel() {
                         signTransaction={signTransaction}
                         ensureWalletReadyForUserAction={ensureWalletReadyForUserAction}
                         onSuccess={refetchAll}
+                        protocol={protocol}
                     />
                     <UnstakeModal
                         open={unstakeOpen}
@@ -311,6 +346,7 @@ export function StakingPanel() {
                         signTransaction={signTransaction}
                         ensureWalletReadyForUserAction={ensureWalletReadyForUserAction}
                         onSuccess={refetchAll}
+                        protocol={protocol}
                     />
                 </>
             ) : (

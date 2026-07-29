@@ -16,7 +16,9 @@ import {
     ChevronDown,
     ArrowDownLeft,
     ArrowUpRight,
-    Repeat2
+    Repeat2,
+    Lock,
+    Unlock
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -126,6 +128,20 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color:
         color: "text-red-400",
         bg: "bg-red-500/10",
         border: "border-red-500/20"
+    },
+    STAKE: {
+        label: "Stake",
+        icon: <Lock className="size-3" />,
+        color: "text-amber-400",
+        bg: "bg-amber-500/10",
+        border: "border-amber-500/20"
+    },
+    UNSTAKE: {
+        label: "Unstake",
+        icon: <Unlock className="size-3" />,
+        color: "text-cyan-400",
+        bg: "bg-cyan-500/10",
+        border: "border-cyan-500/20"
     }
 };
 
@@ -440,9 +456,9 @@ const ActivityRow: React.FC<{ activity: ActivityData; isLast: boolean }> = ({ ac
                             <div className="text-[13px] font-bold text-white leading-tight">{transferToken.symbol}</div>
                             <div
                                 className={`text-[11px] font-mono tabular-nums leading-tight
-                              ${activity.type === "TRANSFER_IN" ? "text-emerald-400" : "text-red-400"}`}
+                              ${activity.type === "TRANSFER_IN" || activity.type === "UNSTAKE" ? "text-emerald-400" : "text-red-400"}`}
                             >
-                                {activity.type === "TRANSFER_IN" ? "+" : "-"}
+                                {activity.type === "TRANSFER_IN" || activity.type === "UNSTAKE" ? "+" : "-"}
                                 {formatAmount(transferToken.amount)}
                             </div>
                         </div>

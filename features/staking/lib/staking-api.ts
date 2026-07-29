@@ -1,6 +1,7 @@
 "use client";
 
 import apiClient from "@/lib/network-requests/api-client";
+import type { StakingProtocolId } from "../constants/protocols";
 
 export type StakingMode = "liquid" | "native";
 export type StakingTransactionAction = "stake" | "unstake" | "withdraw";
@@ -9,6 +10,8 @@ export interface BuildStakingTransactionRequest {
     mode: StakingMode;
     action: StakingTransactionAction;
     wallet: string;
+    /** Which LST pool to stake/unstake against. Only used for mode=liquid; defaults to jito. */
+    protocol?: StakingProtocolId;
     amountLamports?: string;
     voteAccount?: string;
     nativeStakeAddress?: string;
@@ -22,6 +25,13 @@ export interface BuiltStakingTransaction {
     blockhash: string;
     lastValidBlockHeight: number;
     nativeStakeAddress?: string;
+    protocol?: StakingProtocolId;
+}
+
+export interface StakingApyResponse {
+    protocol: StakingProtocolId;
+    apyPercent: number;
+    asOf: string | null;
 }
 
 export interface LiquidPositionResponse {
@@ -38,6 +48,7 @@ export interface NativeStakeAccountResponse {
     lamports: string;
     estimatedSol: number;
     status: NativeStakeStatus;
+    withdrawableLamports: string;
 }
 
 export interface NativeStakePositionsPage {
@@ -48,6 +59,7 @@ export interface NativeStakePositionsPage {
 }
 
 export interface StakingPositionResponse {
+    protocol: StakingProtocolId;
     liquid: LiquidPositionResponse | null;
     native: NativeStakePositionsPage;
 }
@@ -82,10 +94,15 @@ export function executeStakingTransaction(signedTransactionBase64: string, lastV
     return apiClient.post<{ signature: string }>("/staking/execute", { signedTransaction: signedTransactionBase64, lastValidBlockHeight });
 }
 
-export function getStakingPosition(wallet: string, page: number, pageSize: number): Promise<StakingPositionResponse> {
+export function getStakingPosition(wallet: string, page: number, pageSize: number, protocol?: StakingProtocolId): Promise<StakingPositionResponse> {
     return apiClient.get<StakingPositionResponse>("/staking/position", {
-        params: { wallet, page, pageSize }
+        params: { wallet, page, pageSize, protocol }
     });
+}
+
+// Cluster-agnostic: always mainnet-sourced APY, used for both devnet and mainnet deployments.
+export function getStakingApy(): Promise<StakingApyResponse[]> {
+    return apiClient.get<StakingApyResponse[]>("/staking/apy");
 }
 
 export function getStakingHistory(wallet: string, before: string | null, pageSize: number): Promise<StakingHistoryResponse> {
