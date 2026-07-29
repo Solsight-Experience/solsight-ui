@@ -97,7 +97,7 @@ export function NativeStakeList({
                             )}
                             {position.status === "inactive" && (
                                 <button
-                                    onClick={() => handleWithdrawNative(position.address, position.estimatedSol)}
+                                    onClick={() => handleWithdrawNative(position.address, position.withdrawableLamports)}
                                     disabled={withdrawing}
                                     className="cursor-pointer rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-semibold text-green-700 transition-colors hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-green-300"
                                 >
