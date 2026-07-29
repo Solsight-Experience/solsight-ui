@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, Zap } from "lucide-react";
 import { useLiquidStaking, type StakeActionSuccessPayload } from "../hooks/useLiquidStaking";
 import type { LiquidPositionResponse } from "../lib/staking-api";
 import { IF_MIN_STAKE_SOL, getSolscanTxUrl } from "../constants/program";
+import { DEFAULT_STAKING_PROTOCOL, getStakingProtocolMeta, type StakingProtocolId } from "../constants/protocols";
 import { StakeAmountInput } from "./StakeAmountInput";
 import type { VersionedTransaction } from "@solana/web3.js";
 
@@ -20,6 +21,7 @@ interface UnstakeModalProps {
     signTransaction: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null;
     ensureWalletReadyForUserAction: (actionLabel?: string) => boolean;
     onSuccess?: (payload?: StakeActionSuccessPayload) => void;
+    protocol?: StakingProtocolId;
 }
 
 export function UnstakeModal({
@@ -31,15 +33,18 @@ export function UnstakeModal({
     connected,
     signTransaction,
     ensureWalletReadyForUserAction,
-    onSuccess
+    onSuccess,
+    protocol = DEFAULT_STAKING_PROTOCOL
 }: UnstakeModalProps) {
     const { resolvedTheme } = useTheme();
+    const protocolMeta = getStakingProtocolMeta(protocol);
     const { unstakeState, resetUnstakeState, handleUnstake } = useLiquidStaking(
         connected,
         walletPubkey,
         signTransaction,
         ensureWalletReadyForUserAction,
-        onSuccess
+        onSuccess,
+        protocol
     );
 
     const [amount, setAmount] = useState("");
@@ -94,7 +99,9 @@ export function UnstakeModal({
 
                 <div className="p-6 space-y-5">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">Unstake jitoSOL</DialogTitle>
+                        <DialogTitle className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+                            Unstake {protocolMeta.lstSymbol}
+                        </DialogTitle>
                     </DialogHeader>
 
                     {isLoadingPosition && (

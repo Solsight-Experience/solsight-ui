@@ -3,20 +3,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, NATIVE_STAKE_PAGE_SIZE } from "../constants/program";
+import { DEFAULT_STAKING_PROTOCOL, type StakingProtocolId } from "../constants/protocols";
 import { getStakingPosition, getStakingValidators, type StakingPositionResponse, type StakingValidatorResponse } from "../lib/staking-api";
 import { getStakingConnection } from "./useIFProgram";
 
 export type { LiquidPositionResponse, NativeStakeAccountResponse, NativeStakePositionsPage, NativeStakeStatus } from "../lib/staking-api";
 
-export function useStakingPosition(connected: boolean, walletPubkey: string | null, nativePage: number = 1, nativePageSize: number = NATIVE_STAKE_PAGE_SIZE) {
+export function useStakingPosition(
+    connected: boolean,
+    walletPubkey: string | null,
+    nativePage: number = 1,
+    nativePageSize: number = NATIVE_STAKE_PAGE_SIZE,
+    protocol: StakingProtocolId = DEFAULT_STAKING_PROTOCOL
+) {
     return useQuery<StakingPositionResponse>({
-        queryKey: ["staking-position", walletPubkey, nativePage, nativePageSize],
+        queryKey: ["staking-position", walletPubkey, nativePage, nativePageSize, protocol],
         enabled: !!walletPubkey && connected && IF_CONFIG.isEnabled,
         staleTime: 15_000,
         refetchInterval: 30_000,
         queryFn: async (): Promise<StakingPositionResponse> => {
-            if (!walletPubkey) return { liquid: null, native: { items: [], total: 0, page: nativePage, pageSize: nativePageSize } };
-            return getStakingPosition(walletPubkey, nativePage, nativePageSize);
+            if (!walletPubkey) return { protocol, liquid: null, native: { items: [], total: 0, page: nativePage, pageSize: nativePageSize } };
+            return getStakingPosition(walletPubkey, nativePage, nativePageSize, protocol);
         }
     });
 }

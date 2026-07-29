@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { toast } from "sonner";
 import { IF_CONFIG, IF_MIN_STAKE_SOL, getSolscanTxUrl } from "../constants/program";
+import { DEFAULT_STAKING_PROTOCOL, type StakingProtocolId } from "../constants/protocols";
 import { buildSignSend, parseStakingError, type SignTransactionFn } from "../lib/build-sign-send";
 import useClusterStore from "@/stores/cluster.store";
 
@@ -26,7 +27,8 @@ export function useLiquidStaking(
     walletPubkey: string | null,
     signTransaction: SignTransactionFn | null,
     ensureWalletReadyForUserAction: ((actionLabel?: string) => boolean) | undefined,
-    onSuccess?: (payload?: StakeActionSuccessPayload) => void
+    onSuccess?: (payload?: StakeActionSuccessPayload) => void,
+    protocol: StakingProtocolId = DEFAULT_STAKING_PROTOCOL
 ) {
     const [stakeState, setStakeState] = useState<StakeState>(INIT_STATE);
     const [unstakeState, setUnstakeState] = useState<StakeState>(INIT_STATE);
@@ -68,7 +70,7 @@ export function useLiquidStaking(
             try {
                 const lamports = BigInt(Math.round(amountSol * LAMPORTS_PER_SOL));
                 const { signature } = await buildSignSend(
-                    { mode: "liquid", action: "stake", wallet: walletPubkey!, amountLamports: lamports.toString() },
+                    { mode: "liquid", action: "stake", wallet: walletPubkey!, protocol, amountLamports: lamports.toString() },
                     signTransaction!
                 );
 
@@ -87,7 +89,7 @@ export function useLiquidStaking(
                 return false;
             }
         },
-        [checkWallet, onSuccess, signTransaction, walletPubkey]
+        [checkWallet, onSuccess, protocol, signTransaction, walletPubkey]
     );
 
     const handleUnstake = useCallback(
@@ -103,7 +105,7 @@ export function useLiquidStaking(
             try {
                 const lamports = BigInt(Math.round(amountSol * LAMPORTS_PER_SOL));
                 const { signature, built } = await buildSignSend(
-                    { mode: "liquid", action: "unstake", wallet: walletPubkey!, amountLamports: lamports.toString() },
+                    { mode: "liquid", action: "unstake", wallet: walletPubkey!, protocol, amountLamports: lamports.toString() },
                     signTransaction!
                 );
 
@@ -129,7 +131,7 @@ export function useLiquidStaking(
                 return false;
             }
         },
-        [checkWallet, onSuccess, signTransaction, walletPubkey]
+        [checkWallet, onSuccess, protocol, signTransaction, walletPubkey]
     );
 
     return { stakeState, unstakeState, resetStakeState, resetUnstakeState, handleStake, handleUnstake };
